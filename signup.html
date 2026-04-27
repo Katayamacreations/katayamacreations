@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up — Katayama Creations</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(180deg, #1a0f2e 0%, #2a1745 50%, #1a0f2e 100%);
+      color: #e8e3f0;
+      min-height: 100vh;
+    }
+    header {
+      padding: 20px 40px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      background: rgba(20, 10, 40, 0.85);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+      border-bottom: 1px solid rgba(192, 192, 210, 0.2);
+    }
+    nav a {
+      margin-left: 20px;
+      color: #c0bcd0;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    nav a:hover { color: #e8e3f0; }
+    .hero {
+      text-align: center;
+      padding: 50px 20px 10px;
+    }
+    h1 { font-size: 38px; margin-bottom: 8px; color: #e8e3f0; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+    .subtitle { max-width: 700px; margin: 0 auto 20px; color: #b8b3c8; }
+    .section {
+      padding: 20px 20px 60px;
+      max-width: 720px;
+      margin: auto;
+    }
+    .card {
+      background: linear-gradient(160deg, rgba(45, 27, 70, 0.85) 0%, rgba(30, 18, 50, 0.95) 100%);
+      padding: 28px;
+      border-radius: 20px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+      border: 1px solid rgba(192, 192, 210, 0.15);
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 22px;
+      border-bottom: 1px solid rgba(192, 192, 210, 0.15);
+    }
+    .tab {
+      flex: 1;
+      padding: 12px 14px;
+      background: transparent;
+      color: #b8b3c8;
+      border: none;
+      border-bottom: 2px solid transparent;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: color 0.15s ease, border-color 0.15s ease;
+    }
+    .tab:hover { color: #e8e3f0; }
+    .tab.active {
+      color: #e8e3f0;
+      border-bottom-color: #6b48a6;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .full { grid-column: 1 / -1; }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+      color: #c0bcd0;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      border-radius: 10px;
+      font-size: 14px;
+      box-sizing: border-box;
+      background: rgba(20, 10, 40, 0.6);
+      color: #e8e3f0;
+      font-family: inherit;
+    }
+    input::placeholder, textarea::placeholder { color: #8b87a0; }
+    select option { background: #2a1745; color: #e8e3f0; }
+    textarea { min-height: 80px; resize: vertical; }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #c0bcd0;
+      background: rgba(30, 18, 50, 0.8);
+    }
+    .button {
+      display: inline-block;
+      padding: 12px 22px;
+      background: linear-gradient(135deg, #4a2d75 0%, #6b48a6 100%);
+      color: #e8e3f0;
+      border: 1px solid rgba(192, 192, 210, 0.3);
+      border-radius: 10px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .button[disabled] { opacity: 0.6; cursor: not-allowed; }
+    .button.link {
+      background: transparent;
+      box-shadow: none;
+      border: none;
+      color: #b8b3c8;
+      padding: 8px 4px;
+      font-weight: 600;
+      text-decoration: underline;
+    }
+    .actions { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .alert {
+      display: none;
+      padding: 12px 14px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    .alert.show { display: block; }
+    .alert.success {
+      background: rgba(45, 90, 60, 0.4);
+      color: #b8e0c2;
+      border: 1px solid rgba(184, 224, 194, 0.3);
+    }
+    .alert.error {
+      background: rgba(120, 40, 40, 0.4);
+      color: #f0b8a8;
+      border: 1px solid rgba(230, 115, 92, 0.4);
+    }
+    .alert.info {
+      background: rgba(45, 60, 90, 0.4);
+      color: #b8c8e0;
+      border: 1px solid rgba(184, 200, 224, 0.3);
+    }
+    .pane { display: none; }
+    .pane.active { display: block; }
+    .helper { font-size: 12px; color: #8b87a0; margin-top: 4px; }
+    footer {
+      text-align: center;
+      padding: 30px;
+      background: rgba(15, 8, 30, 0.9);
+      margin-top: 40px;
+      color: #8b87a0;
+      border-top: 1px solid rgba(192, 192, 210, 0.15);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/shipping.html">Shipping</a>
+    <a href="/dashboard.html">Custom Order</a>
+    <a href="/orders.html">Orders</a>
+    <a href="/signup.html" id="signupNav">Sign Up</a>
+    <a href="/signup.html?mode=login" id="loginNav">Log In</a>
+    <a href="/admin.html" id="adminNav" style="display:none;">Admin</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <h1>Your Account</h1>
+  <p class="subtitle">Create an account or log back in to save your shipping address, place new orders quickly, and track the status of past orders.</p>
+</section>
+
+<section class="section">
+  <div class="card">
+    <div class="tabs" role="tablist">
+      <button class="tab active" type="button" id="tabSignup" role="tab" aria-selected="true">Sign Up</button>
+      <button class="tab" type="button" id="tabLogin" role="tab" aria-selected="false">Log In</button>
+    </div>
+
+    <div class="alert success" id="alertSuccess"></div>
+    <div class="alert error" id="alertError"></div>
+    <div class="alert info" id="alertInfo"></div>
+
+    <div class="pane active" id="paneSignup">
+      <form id="signupForm">
+        <div class="grid">
+          <div>
+            <label for="suFirstName">First name</label>
+            <input id="suFirstName" name="firstName" required placeholder="Jane" autocomplete="given-name">
+          </div>
+          <div>
+            <label for="suLastName">Last name</label>
+            <input id="suLastName" name="lastName" required placeholder="Reader" autocomplete="family-name">
+          </div>
+          <div>
+            <label for="suEmail">Email (your username)</label>
+            <input id="suEmail" name="email" type="email" required placeholder="jane@example.com" autocomplete="email">
+          </div>
+          <div>
+            <label for="suPassword">Password</label>
+            <input id="suPassword" name="password" type="password" required minlength="8" placeholder="At least 8 characters" autocomplete="new-password">
+            <div class="helper">Minimum 8 characters. You'll use this with your email to log back in.</div>
+          </div>
+          <div>
+            <label for="suPhone">Phone (optional)</label>
+            <input id="suPhone" name="phone" type="tel" placeholder="(555) 123-4567" autocomplete="tel">
+          </div>
+          <div class="full">
+            <label for="suAddress1">Street address</label>
+            <input id="suAddress1" name="address1" required placeholder="123 Main St" autocomplete="address-line1">
+          </div>
+          <div class="full">
+            <label for="suAddress2">Apt / Suite (optional)</label>
+            <input id="suAddress2" name="address2" placeholder="Apt 4B" autocomplete="address-line2">
+          </div>
+          <div>
+            <label for="suCity">City</label>
+            <input id="suCity" name="city" required placeholder="Springfield" autocomplete="address-level2">
+          </div>
+          <div>
+            <label for="suState">State</label>
+            <select id="suState" name="state" required autocomplete="address-level1">
+              <option value="">— select —</option>
+              <option>Alabama</option><option>Alaska</option><option>Arizona</option>
+              <option>Arkansas</option><option>California</option><option>Colorado</option>
+              <option>Connecticut</option><option>Delaware</option><option>Florida</option>
+              <option>Georgia</option><option>Hawaii</option><option>Idaho</option>
+              <option>Illinois</option><option>Indiana</option><option>Iowa</option>
+              <option>Kansas</option><option>Kentucky</option><option>Louisiana</option>
+              <option>Maine</option><option>Maryland</option><option>Massachusetts</option>
+              <option>Michigan</option><option>Minnesota</option><option>Mississippi</option>
+              <option>Missouri</option><option>Montana</option><option>Nebraska</option>
+              <option>Nevada</option><option>New Hampshire</option><option>New Jersey</option>
+              <option>New Mexico</option><option>New York</option><option>North Carolina</option>
+              <option>North Dakota</option><option>Ohio</option><option>Oklahoma</option>
+              <option>Oregon</option><option>Pennsylvania</option><option>Rhode Island</option>
+              <option>South Carolina</option><option>South Dakota</option><option>Tennessee</option>
+              <option>Texas</option><option>Utah</option><option>Vermont</option>
+              <option>Virginia</option><option>Washington</option><option>West Virginia</option>
+              <option>Wisconsin</option><option>Wyoming</option>
+            </select>
+          </div>
+          <div>
+            <label for="suZip">ZIP code</label>
+            <input id="suZip" name="zip" required inputmode="numeric" pattern="[0-9-]*" placeholder="12345" autocomplete="postal-code">
+          </div>
+          <div>
+            <label for="suCountry">Country</label>
+            <input id="suCountry" name="country" value="United States" required autocomplete="country-name">
+          </div>
+          <div class="full">
+            <label for="suNotes">Delivery notes (optional)</label>
+            <textarea id="suNotes" name="notes" placeholder="Leave at front door, ring buzzer 3, etc."></textarea>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="button" type="submit" id="signupBtn">Create my account</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="pane" id="paneLogin">
+      <form id="loginForm">
+        <div class="grid">
+          <div class="full">
+            <label for="liEmail">Email</label>
+            <input id="liEmail" name="email" type="email" required autocomplete="email" placeholder="jane@example.com">
+          </div>
+          <div class="full">
+            <label for="liPassword">Password</label>
+            <input id="liPassword" name="password" type="password" required autocomplete="current-password">
+          </div>
+        </div>
+        <div class="actions">
+          <button class="button" type="submit" id="loginBtn">Log in</button>
+          <button class="button link" type="button" id="forgotBtn">Forgot password?</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer>© 2026 Katayama Creations — Curated reads, hand wrapped.</footer>
+
+<script type="module">
+  import {
+    signup,
+    login,
+    updateUser,
+    getUser,
+    handleAuthCallback,
+    requestPasswordRecovery,
+    AuthError,
+    MissingIdentityError,
+  } from 'https://esm.sh/@netlify/identity@1.0.0?bundle'
+
+  const params = new URLSearchParams(window.location.search);
+  const nextRaw = params.get('next');
+  const nextSafe = nextRaw && nextRaw.startsWith('/') && !nextRaw.startsWith('//') ? nextRaw : '/dashboard.html';
+
+  const tabSignup = document.getElementById('tabSignup');
+  const tabLogin = document.getElementById('tabLogin');
+  const paneSignup = document.getElementById('paneSignup');
+  const paneLogin = document.getElementById('paneLogin');
+  const alertSuccess = document.getElementById('alertSuccess');
+  const alertError = document.getElementById('alertError');
+  const alertInfo = document.getElementById('alertInfo');
+
+  function showTab(name) {
+    const isSignup = name === 'signup';
+    tabSignup.classList.toggle('active', isSignup);
+    tabLogin.classList.toggle('active', !isSignup);
+    tabSignup.setAttribute('aria-selected', String(isSignup));
+    tabLogin.setAttribute('aria-selected', String(!isSignup));
+    paneSignup.classList.toggle('active', isSignup);
+    paneLogin.classList.toggle('active', !isSignup);
+    clearAlerts();
+  }
+  tabSignup.addEventListener('click', () => showTab('signup'));
+  tabLogin.addEventListener('click', () => showTab('login'));
+  if (params.get('mode') === 'login') showTab('login');
+
+  function clearAlerts() {
+    [alertSuccess, alertError, alertInfo].forEach(el => { el.classList.remove('show'); el.textContent = ''; });
+  }
+  function showAlert(kind, message) {
+    clearAlerts();
+    const el = kind === 'error' ? alertError : kind === 'info' ? alertInfo : alertSuccess;
+    el.textContent = message;
+    el.classList.add('show');
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function describeAuthError(error) {
+    if (error instanceof MissingIdentityError) {
+      return 'Account service is not configured yet. Please run "netlify dev" or enable Identity on the site.';
+    }
+    if (error instanceof AuthError) {
+      switch (error.status) {
+        case 400:
+        case 401: return 'Email or password is incorrect.';
+        case 403: return 'Sign-ups are currently closed. Please contact Megan for an invite.';
+        case 404: return 'No account found for that email.';
+        case 422: return 'Please check your email format and that your password is at least 8 characters.';
+        default: return error.message || 'Something went wrong. Please try again.';
+      }
+    }
+    return 'Something went wrong. Please try again.';
+  }
+
+  async function processCallback() {
+    try {
+      const result = await handleAuthCallback();
+      if (!result) return;
+      switch (result.type) {
+        case 'confirmation':
+          showAlert('success', 'Email confirmed — you are now logged in.');
+          setTimeout(() => { window.location.href = nextSafe; }, 800);
+          break;
+        case 'recovery':
+          showAlert('info', 'Recovery link accepted. Please update your password from your account.');
+          break;
+        case 'invite':
+          showAlert('info', 'You were invited! Set a password below to finish creating your account.');
+          showTab('signup');
+          break;
+      }
+    } catch (error) {
+      showAlert('error', describeAuthError(error));
+    }
+  }
+
+  // If already logged in, send them along
+  (async () => {
+    await processCallback();
+    const user = await getUser().catch(() => null);
+    if (user) {
+      const signupLink = document.getElementById('signupNav');
+      const loginLink = document.getElementById('loginNav');
+      if (signupLink) signupLink.style.display = 'none';
+      if (loginLink) loginLink.style.display = 'none';
+      if ((user.email || '').toLowerCase() === 'ogmegbeast@gmail.com') {
+        const adminLink = document.getElementById('adminNav');
+        if (adminLink) adminLink.style.display = '';
+      }
+      showAlert('info', `You're already logged in as ${user.email}. Redirecting…`);
+      setTimeout(() => { window.location.href = nextSafe; }, 600);
+    }
+  })();
+
+  document.getElementById('signupForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearAlerts();
+    const btn = document.getElementById('signupBtn');
+    btn.disabled = true;
+    const f = e.currentTarget;
+    const fd = new FormData(f);
+    const email = String(fd.get('email') || '').trim();
+    const password = String(fd.get('password') || '');
+    const profile = {
+      firstName: String(fd.get('firstName') || '').trim(),
+      lastName:  String(fd.get('lastName')  || '').trim(),
+      phone:     String(fd.get('phone')     || '').trim(),
+      address1:  String(fd.get('address1')  || '').trim(),
+      address2:  String(fd.get('address2')  || '').trim(),
+      city:      String(fd.get('city')      || '').trim(),
+      state:     String(fd.get('state')     || '').trim(),
+      zip:       String(fd.get('zip')       || '').trim(),
+      country:   String(fd.get('country')   || '').trim(),
+      notes:     String(fd.get('notes')     || '').trim(),
+    };
+    const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(' ').trim();
+
+    try {
+      const user = await signup(email, password, { full_name: fullName, ...profile });
+      if (!user.emailVerified) {
+        showAlert('info', 'Account created! Check your inbox to confirm your email, then log in.');
+        btn.disabled = false;
+        return;
+      }
+      try { await updateUser({ data: { full_name: fullName, ...profile } }); } catch (_) {}
+      showAlert('success', `Welcome, ${fullName || email}! Redirecting to your dashboard…`);
+      setTimeout(() => { window.location.href = nextSafe; }, 600);
+    } catch (error) {
+      showAlert('error', describeAuthError(error));
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearAlerts();
+    const btn = document.getElementById('loginBtn');
+    btn.disabled = true;
+    const fd = new FormData(e.currentTarget);
+    const email = String(fd.get('email') || '').trim();
+    const password = String(fd.get('password') || '');
+    try {
+      const user = await login(email, password);
+      showAlert('success', `Welcome back, ${user.name || user.email}!`);
+      setTimeout(() => { window.location.href = nextSafe; }, 500);
+    } catch (error) {
+      showAlert('error', describeAuthError(error));
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById('forgotBtn').addEventListener('click', async () => {
+    clearAlerts();
+    const email = String(document.getElementById('liEmail').value || '').trim();
+    if (!email) {
+      showAlert('error', 'Enter your email above first, then click "Forgot password?" again.');
+      return;
+    }
+    try {
+      await requestPasswordRecovery(email);
+      showAlert('info', 'If an account exists for that email, a reset link is on its way.');
+    } catch (error) {
+      showAlert('error', describeAuthError(error));
+    }
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Katayama Creations</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(180deg, #1a0f2e 0%, #2a1745 50%, #1a0f2e 100%);
+      color: #e8e3f0;
+      min-height: 100vh;
+    }
+    header {
+      padding: 20px 40px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      background: rgba(20, 10, 40, 0.85);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+      border-bottom: 1px solid rgba(192, 192, 210, 0.2);
+    }
+    .logo {
+      font-size: 28px;
+      font-weight: bold;
+      color: #d4d0e0;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+    nav a {
+      margin-left: 20px;
+      color: #c0bcd0;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+    nav a:hover {
+      color: #e8e3f0;
+    }
+    .banner {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      padding: 24px 20px 0;
+      background: #1a0f2e;
+    }
+    .banner img {
+      width: 100%;
+      max-width: 460px;
+      height: auto;
+      display: block;
+      max-height: 320px;
+      object-fit: contain;
+      object-position: center;
+    }
+    .site-title {
+      text-align: center;
+      font-size: 40px;
+      font-weight: bold;
+      color: #d4d0e0;
+      letter-spacing: 2px;
+      margin-top: 16px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+    .hero {
+      text-align: center;
+      padding: 60px 20px;
+      background: linear-gradient(180deg, rgba(26, 15, 46, 0.0) 0%, rgba(26, 15, 46, 0.6) 100%);
+    }
+    h1 {
+      font-size: 52px;
+      margin-bottom: 20px;
+      color: #e8e3f0;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      letter-spacing: 1px;
+    }
+    .subtitle {
+      font-size: 20px;
+      max-width: 700px;
+      margin: 0 auto 30px;
+      color: #b8b3c8;
+      line-height: 1.6;
+    }
+    .button {
+      display: inline-block;
+      padding: 14px 28px;
+      background: linear-gradient(135deg, #4a2d75 0%, #6b48a6 100%);
+      color: #e8e3f0;
+      text-decoration: none;
+      border-radius: 12px;
+      font-weight: bold;
+      margin: 10px;
+      border: 1px solid rgba(192, 192, 210, 0.3);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+    }
+    .button.venmo {
+      background: linear-gradient(135deg, #2c5f8f 0%, #3d95ce 100%);
+    }
+    .button.venmo::before {
+      content: "💸 ";
+    }
+    .section {
+      padding: 60px 20px;
+      max-width: 1100px;
+      margin: auto;
+    }
+    .section h2 {
+      text-align: center;
+      color: #d4d0e0;
+      font-size: 32px;
+      margin-bottom: 30px;
+      letter-spacing: 0.5px;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 24px;
+    }
+    .book-tile {
+      display: block;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+      border: 1px solid rgba(192, 192, 210, 0.15);
+      background: #1a0f2e;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .book-tile:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.5);
+    }
+    .book-tile img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    footer {
+      text-align: center;
+      padding: 30px;
+      background: rgba(15, 8, 30, 0.9);
+      margin-top: 40px;
+      color: #8b87a0;
+      border-top: 1px solid rgba(192, 192, 210, 0.15);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/shipping.html">Shipping</a>
+    <a href="/dashboard.html">Custom Order</a>
+    <a href="/orders.html">Orders</a>
+    <a href="/signup.html" id="signupNav">Sign Up</a>
+    <a href="/signup.html?mode=login" id="loginNav">Log In</a>
+    <a href="/admin.html" id="adminNav" style="display:none;">Admin</a>
+  </nav>
+</header>
+
+<div class="banner">
+  <img src="/assets/katayama-banner.png" alt="Katayama Creations — open book under a starry purple sky with castle silhouettes">
+</div>
+
+<section class="hero">
+  <h1>Blind Date With A Book</h1>
+  <p class="subtitle">
+    Choose a mystery book bundle, get it beautifully wrapped, and discover your next favorite read with cozy extras and spoiler-free surprises.
+  </p>
+  <a href="#shop" class="button">Shop Blind Dates</a>
+  <a href="/dashboard.html" class="button">Custom Order</a>
+  <a href="/shipping.html" class="button">Shipping Rates</a>
+</section>
+
+<section class="section" id="shop">
+  <h2>Choose Your Book Date</h2>
+  <div class="cards" id="shopCards">
+    <a href="/dashboard.html" class="book-tile" aria-label="Order the $18 Kindle Blind Date Box">
+      <img src="/assets/kindle-blind-date.png" alt="$18 Kindle Blind Date Box — includes Kindle download code, 2 coasters, self-care goodies, tea or hot chocolate, stickers, pin, and a magnetic bookmark">
+    </a>
+    <a href="/dashboard.html" class="book-tile" aria-label="Order the $25 Blind Date with a Book">
+      <img src="/assets/blind-date-book.png" alt="$25 Blind Date with a Book — includes self care items, pen/highlighter, tabs, stickers, a bookmark, and hot chocolate">
+    </a>
+    <a href="/dashboard.html" class="book-tile" aria-label="Order the $45 Blind Date with a Book Box — the ultimate bookish surprise">
+      <img src="/assets/blind-date-book-deluxe.png" alt="$45 Blind Date with a Book Box — the ultimate bookish surprise with double the goodies, tote, pencil bag, glass bookish cup, tea, and hot chocolate">
+    </a>
+  </div>
+</section>
+
+<section class="section" id="gallery" style="display:none;">
+  <h2>From The Studio</h2>
+  <div class="cards" id="galleryCards"></div>
+</section>
+
+<section class="section" id="order">
+  <h2>Ready for Your Mystery Match?</h2>
+  <p style="text-align:center; color:#b8b3c8; max-width:700px; margin:0 auto 24px;">Place a custom order and it'll be emailed straight to Megan, then send payment by Venmo.</p>
+  <div style="text-align:center;">
+    <a href="/dashboard.html" class="button">Place a Custom Order</a>
+    <a href="https://venmo.com/u/MeganKatayama1" class="button venmo" target="_blank" rel="noopener">Pay with Venmo</a>
+  </div>
+</section>
+
+<footer>
+  © 2026 Katayama Creations — Blind dates with books, not people.
+</footer>
+
+<script>
+  // If a Netlify Identity confirmation/recovery/invite link lands on the home page,
+  // forward to the dedicated confirmation landing page (preserving the hash).
+  (function () {
+    var hash = window.location.hash || '';
+    if (/(confirmation_token|recovery_token|invite_token|email_change_token)/.test(hash)) {
+      window.location.replace('/confirm.html' + hash);
+    }
+  })();
+</script>
+
+<script type="module">
+  import { getUser } from 'https://esm.sh/@netlify/identity@1.0.0?bundle';
+  const ADMIN_EMAIL = 'ogmegbeast@gmail.com';
+  try {
+    const u = await getUser();
+    if (u) {
+      const signupLink = document.getElementById('signupNav');
+      const loginLink = document.getElementById('loginNav');
+      if (signupLink) signupLink.style.display = 'none';
+      if (loginLink) loginLink.style.display = 'none';
+      if ((u.email || '').toLowerCase() === ADMIN_EMAIL) {
+        const link = document.getElementById('adminNav');
+        if (link) link.style.display = '';
+      }
+    }
+  } catch (_) {}
+</script>
+
+<script>
+  (function () {
+    function escapeHtml(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+    fetch('/.netlify/functions/get-site-content')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) return;
+        const products = (data.products || []).filter(p => p.active !== false);
+        if (products.length > 0) {
+          const cards = document.getElementById('shopCards');
+          cards.innerHTML = products.map(p => {
+            const cover = p.imageId
+              ? `/.netlify/functions/serve-photo?id=${encodeURIComponent(p.imageId)}`
+              : '/assets/blind-date-book.png';
+            const desc = p.description ? `<div style="padding:14px; color:#c0bcd0; font-size:14px;">${escapeHtml(p.description)}</div>` : '';
+            return `<a href="/dashboard.html" class="book-tile" aria-label="Order ${escapeHtml(p.label)} — $${Number(p.price).toFixed(2)}">
+              <img src="${cover}" alt="${escapeHtml(p.label)} — $${Number(p.price).toFixed(2)}">
+              <div style="padding:14px 14px 6px; font-weight:700; color:#e8e3f0;">${escapeHtml(p.label)} — $${Number(p.price).toFixed(2)}${escapeHtml(p.suffix || '')}</div>
+              ${desc}
+            </a>`;
+          }).join('');
+        }
+        const photos = data.photos || [];
+        if (photos.length > 0) {
+          const gallery = document.getElementById('gallery');
+          const cards = document.getElementById('galleryCards');
+          cards.innerHTML = photos.map(ph => {
+            const url = `/.netlify/functions/serve-photo?id=${encodeURIComponent(ph.id)}`;
+            const cap = ph.caption ? `<div style="padding:10px; font-size:13px; color:#c0bcd0; text-align:center;">${escapeHtml(ph.caption)}</div>` : '';
+            return `<div class="book-tile"><img src="${url}" alt="${escapeHtml(ph.caption || ph.name || '')}">${cap}</div>`;
+          }).join('');
+          gallery.style.display = '';
+        }
+      })
+      .catch(() => {});
+  })();
+</script>
+
+</body>
+</html>

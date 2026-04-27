@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Orders — Katayama Creations</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(180deg, #1a0f2e 0%, #2a1745 50%, #1a0f2e 100%);
+      color: #e8e3f0;
+      min-height: 100vh;
+    }
+    header {
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(20, 10, 40, 0.85);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+      border-bottom: 1px solid rgba(192, 192, 210, 0.2);
+    }
+    .who { font-size: 13px; color: #b8b3c8; }
+    .who strong { color: #e8e3f0; }
+    .who .signout {
+      margin-left: 12px;
+      background: transparent;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      color: #c0bcd0;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .who .signout:hover { color: #e8e3f0; border-color: #c0bcd0; }
+    nav a {
+      margin-left: 20px;
+      color: #c0bcd0;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    nav a:hover { color: #e8e3f0; }
+    .hero { text-align: center; padding: 50px 20px 10px; }
+    h1 { font-size: 38px; margin-bottom: 8px; color: #e8e3f0; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+    .subtitle { max-width: 700px; margin: 0 auto 20px; color: #b8b3c8; }
+    .section { padding: 20px 20px 60px; max-width: 820px; margin: auto; }
+    .card {
+      background: linear-gradient(160deg, rgba(45, 27, 70, 0.85) 0%, rgba(30, 18, 50, 0.95) 100%);
+      padding: 28px;
+      border-radius: 20px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+      border: 1px solid rgba(192, 192, 210, 0.15);
+    }
+    .card + .card { margin-top: 20px; }
+    .card h2 { margin: 0 0 16px; color: #e8e3f0; font-size: 22px; letter-spacing: 0.3px; }
+    .button {
+      display: inline-block;
+      padding: 12px 22px;
+      background: linear-gradient(135deg, #4a2d75 0%, #6b48a6 100%);
+      color: #e8e3f0;
+      border: 1px solid rgba(192, 192, 210, 0.3);
+      border-radius: 10px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      text-decoration: none;
+    }
+    .button.secondary { background: rgba(20, 10, 40, 0.6); }
+    .actions { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px; }
+    .gate { display: none; text-align: center; padding: 50px 24px; }
+    .gate h2 { color: #e8e3f0; font-size: 26px; margin: 0 0 12px; }
+    .gate p { color: #b8b3c8; max-width: 520px; margin: 0 auto 24px; line-height: 1.5; }
+    .gate .actions { justify-content: center; }
+    .orders-list { list-style: none; padding: 0; margin: 0; }
+    .order-item {
+      padding: 16px;
+      background: rgba(20, 10, 40, 0.5);
+      border: 1px solid rgba(192, 192, 210, 0.12);
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+    .order-head {
+      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;
+    }
+    .order-when { color: #8b87a0; font-size: 12px; }
+    .order-id { color: #8b87a0; font-size: 12px; font-family: monospace; }
+    .order-total { font-weight: 700; color: #e8e3f0; font-size: 16px; }
+    .order-state {
+      display: inline-block;
+      padding: 3px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      border-radius: 999px;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      color: #c0bcd0;
+      background: rgba(20, 10, 40, 0.6);
+      margin-left: 8px;
+    }
+    .order-state.paid { color: #b8e0c2; border-color: rgba(184, 224, 194, 0.4); }
+    .order-state.shipped { color: #b8c8e0; border-color: rgba(184, 200, 224, 0.4); }
+    .order-state.delivered { color: #d4c0f0; border-color: rgba(212, 192, 240, 0.4); }
+    .order-state.cancelled { color: #f0b8a8; border-color: rgba(230, 115, 92, 0.4); }
+    .order-cart { margin: 8px 0; font-size: 13px; color: #c0bcd0; line-height: 1.6; }
+    .order-meta-row { font-size: 12px; color: #8b87a0; margin-top: 4px; }
+    .tracking { color: #b8c8e0; font-family: monospace; }
+    .order-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .order-actions .button { padding: 8px 14px; font-size: 13px; }
+    .empty {
+      padding: 28px;
+      border-radius: 12px;
+      background: rgba(20, 10, 40, 0.4);
+      color: #b8b3c8;
+      text-align: center;
+      font-size: 14px;
+    }
+    footer {
+      text-align: center;
+      padding: 30px;
+      background: rgba(15, 8, 30, 0.9);
+      margin-top: 40px;
+      color: #8b87a0;
+      border-top: 1px solid rgba(192, 192, 210, 0.15);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/shipping.html">Shipping</a>
+    <a href="/dashboard.html">Custom Order</a>
+    <a href="/orders.html">Orders</a>
+    <a href="/signup.html" id="signupNav">Sign Up</a>
+    <a href="/signup.html?mode=login" id="loginNav">Log In</a>
+    <a href="/admin.html" id="adminNav" style="display:none;">Admin</a>
+  </nav>
+  <div class="who" id="whoami" style="display:none;">
+    Signed in as <strong id="whoEmail">…</strong>
+    <button type="button" class="signout" id="signOutBtn">Sign out</button>
+  </div>
+</header>
+
+<section class="hero">
+  <h1>Your Orders</h1>
+  <p class="subtitle">Track the status of every order you've placed and re-order any past favorite in one click.</p>
+</section>
+
+<section class="section" id="gate">
+  <div class="card gate" id="gateCard">
+    <h2>Sign in to see your orders</h2>
+    <p>Order history is only available to signed-in customers. Log in to see status, tracking, and re-order any past bundle.</p>
+    <div class="actions">
+      <a class="button" href="/signup.html?mode=login&next=/orders.html">Log in</a>
+      <a class="button secondary" href="/signup.html?next=/orders.html">Create account</a>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="ordersSection" style="display:none;">
+  <div class="card">
+    <h2>Past orders</h2>
+    <div id="ordersStatus" style="color:#8b87a0; font-size:14px; margin-bottom:12px;">Loading…</div>
+    <ul class="orders-list" id="ordersList"></ul>
+  </div>
+</section>
+
+<footer>© 2026 Katayama Creations — Curated reads, hand wrapped.</footer>
+
+<script type="module">
+  import {
+    getUser,
+    logout,
+    handleAuthCallback,
+    MissingIdentityError,
+  } from 'https://esm.sh/@netlify/identity@1.0.0?bundle'
+
+  const CART_KEY = 'kc_cart_v1';
+  const PENDING_STATE_KEY = 'kc_pending_state';
+
+  const gateCard = document.getElementById('gateCard');
+  const ordersSection = document.getElementById('ordersSection');
+  const whoami = document.getElementById('whoami');
+  const whoEmail = document.getElementById('whoEmail');
+
+  let currentUser = null;
+
+  try { await handleAuthCallback(); } catch (_) {}
+
+  try {
+    currentUser = await getUser();
+  } catch (err) {
+    if (err instanceof MissingIdentityError) {
+      gateCard.style.display = 'block';
+      gateCard.querySelector('h2').textContent = 'Account service unavailable';
+      gateCard.querySelector('p').textContent = 'Authentication is not configured for this site yet. Please reach out to Megan.';
+    }
+  }
+
+  if (!currentUser) {
+    gateCard.style.display = 'block';
+  } else {
+    ordersSection.style.display = 'block';
+    whoami.style.display = 'block';
+    whoEmail.textContent = currentUser.email || 'your account';
+    const signupLink = document.getElementById('signupNav');
+    const loginLink = document.getElementById('loginNav');
+    if (signupLink) signupLink.style.display = 'none';
+    if (loginLink) loginLink.style.display = 'none';
+    if ((currentUser.email || '').toLowerCase() === 'ogmegbeast@gmail.com') {
+      const adminLink = document.getElementById('adminNav');
+      if (adminLink) adminLink.style.display = '';
+    }
+    document.getElementById('signOutBtn').addEventListener('click', async () => {
+      try { await logout(); } catch (_) {}
+      window.location.href = '/';
+    });
+    loadOrders();
+  }
+
+  async function getAuthToken() {
+    const match = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : null;
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  async function loadOrders() {
+    const status = document.getElementById('ordersStatus');
+    const list = document.getElementById('ordersList');
+    status.textContent = 'Loading…';
+    list.innerHTML = '';
+    const token = await getAuthToken();
+    if (!token) { status.textContent = 'Please log in again to see your orders.'; return; }
+    try {
+      const res = await fetch('/.netlify/functions/list-orders', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const { orders } = await res.json();
+      if (!orders || orders.length === 0) {
+        status.textContent = '';
+        const li = document.createElement('li');
+        li.className = 'empty';
+        li.innerHTML = `You haven't placed any orders yet. <a href="/dashboard.html" style="color:#d4c0f0;">Place your first custom order →</a>`;
+        list.appendChild(li);
+        return;
+      }
+      status.textContent = '';
+      orders.forEach(o => list.appendChild(renderOrder(o)));
+    } catch (err) {
+      console.error(err);
+      status.textContent = "Couldn't load past orders right now. Please refresh and try again.";
+    }
+  }
+
+  function renderOrder(o) {
+    const li = document.createElement('li');
+    li.className = 'order-item';
+    const when = o.placedAt ? new Date(o.placedAt).toLocaleString(undefined, {
+      month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
+    }) : '';
+    const items = (o.cart || []).map(it => {
+      const extras = [it.theme, it.color].filter(Boolean).join(' · ');
+      return `${it.qty}× ${escapeHtml(it.bundleLabel || '')}${extras ? ` <span style="color:#8b87a0;">(${escapeHtml(extras)})</span>` : ''}`;
+    }).join('<br>');
+    const stateClass = (o.status || 'pending').toLowerCase();
+    li.innerHTML = `
+      <div class="order-head">
+        <div>
+          <div class="order-when">${escapeHtml(when)}</div>
+          <div class="order-id">#${escapeHtml(o.id || '')}</div>
+        </div>
+        <div>
+          <span class="order-state ${escapeHtml(stateClass)}">${escapeHtml(o.status || 'pending')}</span>
+        </div>
+      </div>
+      <div class="order-cart">${items}</div>
+      <div class="order-meta-row">
+        Ship to ${escapeHtml(o.state || '—')} · ${escapeHtml(o.shippingMethod || '—')}
+      </div>
+      ${o.trackingNumber ? `<div class="order-meta-row">Tracking: <span class="tracking">${escapeHtml(o.trackingNumber)}</span></div>` : ''}
+      ${o.orderNotes ? `<div class="order-meta-row">Note: ${escapeHtml(o.orderNotes)}</div>` : ''}
+      <div class="order-meta-row" style="margin-top:8px;">
+        <span style="color:#c0bcd0;">Subtotal ${escapeHtml('$' + (o.subtotal || '0.00'))}</span>
+        · Shipping ${escapeHtml('$' + (o.shippingCost || '0.00'))}
+        · <span class="order-total">Total ${escapeHtml('$' + (o.total || '0.00'))}</span>
+      </div>
+      <div class="order-actions">
+        <button type="button" class="button secondary" data-act="reorder">Re-order this</button>
+      </div>
+    `;
+    li.querySelector('[data-act="reorder"]').addEventListener('click', () => reorder(o));
+    return li;
+  }
+
+  function reorder(o) {
+    if (!o || !Array.isArray(o.cart)) return;
+    const newCart = o.cart.map(it => ({
+      bundleId: it.bundleId,
+      bundleLabel: it.bundleLabel,
+      price: it.price,
+      qty: it.qty || 1,
+      theme: it.theme || '',
+      color: it.color || '',
+      notes: it.notes || '',
+    }));
+    try {
+      sessionStorage.setItem(CART_KEY, JSON.stringify(newCart));
+      if (o.state) sessionStorage.setItem(PENDING_STATE_KEY, String(o.state));
+    } catch (_) {}
+    window.location.href = '/dashboard.html';
+  }
+</script>
+
+</body>
+</html>

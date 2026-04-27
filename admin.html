@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Katayama Creations</title>
+  <meta name="robots" content="noindex,nofollow">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(180deg, #1a0f2e 0%, #2a1745 50%, #1a0f2e 100%);
+      color: #e8e3f0;
+      min-height: 100vh;
+    }
+    header {
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(20, 10, 40, 0.85);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+      border-bottom: 1px solid rgba(192, 192, 210, 0.2);
+    }
+    .who { font-size: 13px; color: #b8b3c8; }
+    .who strong { color: #e8e3f0; }
+    .who .signout {
+      margin-left: 12px;
+      background: transparent;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      color: #c0bcd0;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    nav a {
+      margin-left: 20px;
+      color: #c0bcd0;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    nav a:hover { color: #e8e3f0; }
+    .hero { text-align: center; padding: 40px 20px 10px; }
+    h1 { font-size: 36px; margin-bottom: 8px; color: #e8e3f0; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+    .subtitle { max-width: 700px; margin: 0 auto 20px; color: #b8b3c8; }
+    .section { padding: 16px 20px 60px; max-width: 1100px; margin: auto; }
+    .card {
+      background: linear-gradient(160deg, rgba(45, 27, 70, 0.85) 0%, rgba(30, 18, 50, 0.95) 100%);
+      padding: 24px;
+      border-radius: 18px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+      border: 1px solid rgba(192, 192, 210, 0.15);
+    }
+    .card + .card { margin-top: 16px; }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .stat {
+      background: rgba(20, 10, 40, 0.5);
+      border: 1px solid rgba(192, 192, 210, 0.12);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .stat .label {
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: #8b87a0;
+      font-weight: 700;
+    }
+    .stat .value {
+      font-size: 22px;
+      font-weight: 800;
+      color: #e8e3f0;
+      margin-top: 4px;
+    }
+    .stat.revenue .value { color: #b8e0c2; }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .controls label { font-size: 12px; color: #c0bcd0; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+    .controls select, .controls input {
+      padding: 8px 10px;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      border-radius: 10px;
+      background: rgba(20, 10, 40, 0.6);
+      color: #e8e3f0;
+      font-size: 13px;
+    }
+    .controls .spacer { flex: 1; }
+
+    .button {
+      display: inline-block;
+      padding: 10px 16px;
+      background: linear-gradient(135deg, #4a2d75 0%, #6b48a6 100%);
+      color: #e8e3f0;
+      border: 1px solid rgba(192, 192, 210, 0.3);
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 13px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      text-decoration: none;
+    }
+    .button.secondary { background: rgba(20, 10, 40, 0.6); }
+    .button.small { padding: 6px 10px; font-size: 12px; }
+    .button[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+    .orders-list { list-style: none; padding: 0; margin: 0; }
+    .order-item {
+      padding: 16px;
+      background: rgba(20, 10, 40, 0.5);
+      border: 1px solid rgba(192, 192, 210, 0.12);
+      border-radius: 14px;
+      margin-bottom: 14px;
+    }
+    .order-grid {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      align-items: start;
+    }
+    .order-when { color: #8b87a0; font-size: 12px; }
+    .order-id { color: #8b87a0; font-size: 12px; font-family: monospace; }
+    .order-customer { font-weight: 700; color: #e8e3f0; font-size: 16px; margin-top: 4px; }
+    .order-email { color: #c0bcd0; font-size: 13px; }
+    .order-state {
+      display: inline-block;
+      padding: 3px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      border-radius: 999px;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      color: #c0bcd0;
+      background: rgba(20, 10, 40, 0.6);
+    }
+    .order-state.paid { color: #b8e0c2; border-color: rgba(184, 224, 194, 0.4); }
+    .order-state.shipped { color: #b8c8e0; border-color: rgba(184, 200, 224, 0.4); }
+    .order-state.delivered { color: #d4c0f0; border-color: rgba(212, 192, 240, 0.4); }
+    .order-state.cancelled { color: #f0b8a8; border-color: rgba(230, 115, 92, 0.4); }
+    .order-cart { font-size: 13px; color: #c0bcd0; line-height: 1.6; margin: 8px 0; }
+    .order-meta { font-size: 12px; color: #8b87a0; margin-top: 4px; }
+    .order-total { font-weight: 800; color: #e8e3f0; font-size: 18px; }
+    .order-actions {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 8px;
+      align-items: center;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px dashed rgba(192, 192, 210, 0.15);
+    }
+    .order-actions select, .order-actions input {
+      padding: 8px 10px;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      border-radius: 8px;
+      background: rgba(20, 10, 40, 0.6);
+      color: #e8e3f0;
+      font-size: 13px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .order-actions .label { font-size: 11px; color: #8b87a0; text-transform: uppercase; letter-spacing: 0.4px; font-weight: 700; }
+    .row-msg { font-size: 12px; color: #8b87a0; }
+    .row-msg.ok { color: #b8e0c2; }
+    .row-msg.err { color: #f0b8a8; }
+
+    .gate { display: none; text-align: center; padding: 50px 24px; }
+    .gate h2 { color: #e8e3f0; font-size: 26px; margin: 0 0 12px; }
+    .gate p { color: #b8b3c8; max-width: 520px; margin: 0 auto 24px; line-height: 1.5; }
+    .gate .actions { justify-content: center; display: flex; gap: 10px; }
+
+    .empty {
+      padding: 28px;
+      border-radius: 12px;
+      background: rgba(20, 10, 40, 0.4);
+      color: #b8b3c8;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 16px;
+      padding: 6px;
+      background: rgba(20, 10, 40, 0.6);
+      border: 1px solid rgba(192, 192, 210, 0.15);
+      border-radius: 12px;
+    }
+    .tab {
+      flex: 1 1 auto;
+      min-width: 120px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+      color: #c0bcd0;
+      background: transparent;
+      border: 1px solid transparent;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+    }
+    .tab.active {
+      background: linear-gradient(135deg, #4a2d75 0%, #6b48a6 100%);
+      color: #e8e3f0;
+      border-color: rgba(192, 192, 210, 0.3);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .pane { display: none; }
+    .pane.active { display: block; }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .row.three { grid-template-columns: 1fr 1fr 1fr; }
+    .row.full { grid-template-columns: 1fr; }
+    @media (max-width: 640px) {
+      .row, .row.three { grid-template-columns: 1fr; }
+    }
+    .field label {
+      display: block;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      font-weight: 700;
+      color: #8b87a0;
+      margin-bottom: 4px;
+    }
+    .field input, .field select, .field textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 9px 11px;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      border-radius: 10px;
+      background: rgba(20, 10, 40, 0.6);
+      color: #e8e3f0;
+      font-size: 13px;
+      font-family: inherit;
+    }
+    .field textarea { min-height: 110px; resize: vertical; }
+
+    .users-table, .products-table, .photos-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .users-table th, .users-table td,
+    .products-table th, .products-table td {
+      text-align: left;
+      padding: 10px 8px;
+      border-bottom: 1px solid rgba(192, 192, 210, 0.1);
+    }
+    .users-table th, .products-table th {
+      color: #8b87a0;
+      font-size: 11px;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .users-table td.email { color: #b8e0c2; }
+    .badge {
+      display: inline-block;
+      font-size: 10px;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      color: #c0bcd0;
+      background: rgba(20, 10, 40, 0.6);
+      margin-right: 4px;
+    }
+    .badge.admin { color: #d4c0f0; border-color: rgba(212, 192, 240, 0.4); }
+    .badge.unconfirmed { color: #f0b8a8; border-color: rgba(230, 115, 92, 0.4); }
+
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+    }
+    .photo-tile {
+      background: rgba(20, 10, 40, 0.5);
+      border: 1px solid rgba(192, 192, 210, 0.12);
+      border-radius: 12px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .photo-tile img {
+      width: 100%;
+      height: 130px;
+      object-fit: cover;
+      border-radius: 8px;
+      background: #1a0f2e;
+    }
+    .photo-tile .name {
+      font-size: 12px;
+      color: #c0bcd0;
+      word-break: break-all;
+    }
+    .photo-tile .meta { font-size: 11px; color: #8b87a0; }
+    .photo-tile .actions { display: flex; gap: 6px; justify-content: space-between; align-items: center; }
+    .copy-btn {
+      background: transparent;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      color: #c0bcd0;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .danger {
+      background: rgba(230, 115, 92, 0.15);
+      border-color: rgba(230, 115, 92, 0.4);
+      color: #f0b8a8;
+    }
+    .recipients-summary {
+      font-size: 12px;
+      color: #8b87a0;
+      margin: 4px 0 8px;
+    }
+    .pane h3 {
+      margin: 0 0 12px;
+      color: #e8e3f0;
+      font-size: 18px;
+    }
+    .pane .actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .pane .pane-msg {
+      font-size: 12px;
+      margin-top: 8px;
+      color: #8b87a0;
+    }
+    .pane .pane-msg.ok { color: #b8e0c2; }
+    .pane .pane-msg.err { color: #f0b8a8; }
+    footer {
+      text-align: center;
+      padding: 30px;
+      background: rgba(15, 8, 30, 0.9);
+      margin-top: 40px;
+      color: #8b87a0;
+      border-top: 1px solid rgba(192, 192, 210, 0.15);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/dashboard.html">Custom Order</a>
+    <a href="/orders.html">Orders</a>
+    <a href="/admin.html">Admin</a>
+  </nav>
+  <div class="who" id="whoami" style="display:none;">
+    <strong id="whoEmail">…</strong>
+    <button type="button" class="signout" id="signOutBtn">Sign out</button>
+  </div>
+</header>
+
+<section class="hero">
+  <h1>Order Admin</h1>
+  <p class="subtitle">Track every order, update status, add tracking numbers, and keep customers up to date.</p>
+</section>
+
+<section class="section" id="gateSection">
+  <div class="card gate" id="gateCard">
+    <h2>Admin sign-in required</h2>
+    <p id="gateMsg">This page is only available to administrators. Please log in with the owner account.</p>
+    <div class="actions">
+      <a class="button" href="/signup.html?mode=login&next=/admin.html">Log in</a>
+      <a class="button secondary" href="/">Back home</a>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="adminSection" style="display:none;">
+
+  <div class="card">
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab active" data-pane="orders">Orders</button>
+      <button type="button" class="tab" data-pane="users">Users</button>
+      <button type="button" class="tab" data-pane="email">Mass email</button>
+      <button type="button" class="tab" data-pane="products">Products</button>
+      <button type="button" class="tab" data-pane="photos">Photos</button>
+    </div>
+
+    <div class="pane active" id="pane-orders">
+      <div class="summary" id="summary"></div>
+
+      <div class="controls">
+        <label for="filterStatus">Filter</label>
+        <select id="filterStatus">
+          <option value="">All statuses</option>
+          <option value="pending">Pending</option>
+          <option value="paid">Paid</option>
+          <option value="shipped">Shipped</option>
+          <option value="delivered">Delivered</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+        <label for="filterSearch">Search</label>
+        <input id="filterSearch" type="search" placeholder="customer, email, id…">
+        <div class="spacer"></div>
+        <button type="button" class="button secondary" id="refreshBtn">Refresh</button>
+      </div>
+
+      <div id="adminStatus" style="color:#8b87a0; font-size:14px; margin-bottom:8px;">Loading…</div>
+      <ul class="orders-list" id="adminOrders"></ul>
+    </div>
+
+    <div class="pane" id="pane-users">
+      <h3>Registered users</h3>
+      <div class="controls">
+        <label for="userSearch">Search</label>
+        <input id="userSearch" type="search" placeholder="email or name…">
+        <div class="spacer"></div>
+        <button type="button" class="button secondary" id="usersRefreshBtn">Refresh</button>
+      </div>
+      <div id="usersStatus" class="pane-msg">Click Refresh to load users.</div>
+      <div id="usersTableWrap"></div>
+    </div>
+
+    <div class="pane" id="pane-email">
+      <h3>Send a mass email</h3>
+      <p class="recipients-summary">Pulls confirmed users from Identity. You can deselect anyone in the list before sending.</p>
+      <div class="actions" style="margin:0 0 12px;">
+        <button type="button" class="button secondary" id="emailLoadBtn">Load recipients</button>
+        <button type="button" class="button secondary small" id="emailSelectAllBtn">Select all</button>
+        <button type="button" class="button secondary small" id="emailSelectNoneBtn">Select none</button>
+        <span id="emailRecipientsCount" class="recipients-summary" style="margin:0;"></span>
+      </div>
+      <div id="emailRecipients" style="max-height:180px; overflow:auto; padding:8px; border:1px solid rgba(192,192,210,0.12); border-radius:10px; background:rgba(20,10,40,0.5); font-size:12px;"></div>
+      <div class="row full" style="margin-top:14px;">
+        <div class="field">
+          <label for="emailSubject">Subject</label>
+          <input id="emailSubject" type="text" placeholder="A new bundle just dropped!">
+        </div>
+      </div>
+      <div class="row full">
+        <div class="field">
+          <label for="emailBody">Message</label>
+          <textarea id="emailBody" placeholder="Hi friends — share what's new..."></textarea>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" class="button" id="emailSendBtn">Send email</button>
+        <span id="emailMsg" class="pane-msg" style="margin:0;"></span>
+      </div>
+    </div>
+
+    <div class="pane" id="pane-products">
+      <h3>Products / bundles</h3>
+      <p class="recipients-summary">These appear on the home page and as options in the Custom Order form.</p>
+      <div class="row three">
+        <div class="field">
+          <label for="prodLabel">Label</label>
+          <input id="prodLabel" type="text" placeholder="The Cozy Date">
+        </div>
+        <div class="field">
+          <label for="prodPrice">Price (USD)</label>
+          <input id="prodPrice" type="number" step="0.01" min="0" placeholder="15.00">
+        </div>
+        <div class="field">
+          <label for="prodSuffix">Price suffix</label>
+          <input id="prodSuffix" type="text" placeholder="/mo (optional)">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label for="prodDescription">Description</label>
+          <input id="prodDescription" type="text" placeholder="Short tagline shown on the home page">
+        </div>
+        <div class="field">
+          <label for="prodImage">Cover photo</label>
+          <select id="prodImage"><option value="">— no cover —</option></select>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" class="button" id="prodSaveBtn">Add product</button>
+        <button type="button" class="button secondary" id="prodResetBtn" style="display:none;">Cancel edit</button>
+        <span id="prodMsg" class="pane-msg" style="margin:0;"></span>
+      </div>
+      <div id="prodList" style="margin-top:18px;"></div>
+    </div>
+
+    <div class="pane" id="pane-photos">
+      <h3>Site photos</h3>
+      <p class="recipients-summary">Upload an image to use as a product cover or to feature in the home-page gallery.</p>
+      <div class="row">
+        <div class="field">
+          <label for="photoFile">Choose image</label>
+          <input id="photoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+        </div>
+        <div class="field">
+          <label for="photoCaption">Caption (optional)</label>
+          <input id="photoCaption" type="text" placeholder="Shown under the image in the gallery">
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" class="button" id="photoUploadBtn">Upload</button>
+        <button type="button" class="button secondary" id="photosRefreshBtn">Refresh</button>
+        <span id="photoMsg" class="pane-msg" style="margin:0;"></span>
+      </div>
+      <div id="photoList" style="margin-top:18px;"></div>
+    </div>
+  </div>
+</section>
+
+<footer>© 2026 Katayama Creations — Admin console.</footer>
+
+<script type="module">
+  import {
+    getUser,
+    logout,
+    handleAuthCallback,
+    MissingIdentityError,
+  } from 'https://esm.sh/@netlify/identity@1.0.0?bundle'
+
+  const STATUSES = ['pending', 'paid', 'shipped', 'delivered', 'cancelled'];
+
+  const gateSection = document.getElementById('gateSection');
+  const gateCard = document.getElementById('gateCard');
+  const gateMsg = document.getElementById('gateMsg');
+  const adminSection = document.getElementById('adminSection');
+  const whoami = document.getElementById('whoami');
+  const whoEmail = document.getElementById('whoEmail');
+
+  let allOrders = [];
+  let currentUser = null;
+
+  try { await handleAuthCallback(); } catch (_) {}
+
+  try {
+    currentUser = await getUser();
+  } catch (err) {
+    if (err instanceof MissingIdentityError) {
+      gateCard.style.display = 'block';
+      gateCard.querySelector('h2').textContent = 'Account service unavailable';
+      gateMsg.textContent = 'Authentication is not configured for this site yet.';
+      throw err;
+    }
+  }
+
+  if (!currentUser) {
+    gateCard.style.display = 'block';
+  } else {
+    whoEmail.textContent = currentUser.email || 'admin';
+    whoami.style.display = 'block';
+    document.getElementById('signOutBtn').addEventListener('click', async () => {
+      try { await logout(); } catch (_) {}
+      window.location.href = '/';
+    });
+    await loadOrders();
+  }
+
+  async function getAuthToken() {
+    const match = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : null;
+  }
+
+  async function loadOrders() {
+    const status = document.getElementById('adminStatus');
+    status.textContent = 'Loading…';
+    const token = await getAuthToken();
+    if (!token) {
+      gateCard.style.display = 'block';
+      gateMsg.textContent = 'Your session expired. Please log in again.';
+      return;
+    }
+    let res;
+    try {
+      res = await fetch('/.netlify/functions/admin-list-orders', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+    } catch (err) {
+      status.textContent = "Couldn't reach the server. Please try again.";
+      return;
+    }
+    if (res.status === 401 || res.status === 403) {
+      gateSection.style.display = 'block';
+      adminSection.style.display = 'none';
+      gateCard.style.display = 'block';
+      gateMsg.textContent = res.status === 403
+        ? `Signed in as ${currentUser?.email || 'this account'} — but this account isn't an admin. Sign out and log in with the owner account.`
+        : 'Please log in to continue.';
+      return;
+    }
+    if (!res.ok) {
+      status.textContent = `Couldn't load orders (HTTP ${res.status}).`;
+      return;
+    }
+    const data = await res.json();
+    allOrders = Array.isArray(data.orders) ? data.orders : [];
+    gateSection.style.display = 'none';
+    adminSection.style.display = 'block';
+    renderSummary();
+    renderOrders();
+  }
+
+  function renderSummary() {
+    const summary = document.getElementById('summary');
+    const counts = {};
+    let total = 0;
+    let revenue = 0;
+    for (const o of allOrders) {
+      const s = (o.status || 'pending').toLowerCase();
+      counts[s] = (counts[s] || 0) + 1;
+      total += 1;
+      const t = parseFloat(String(o.total || '0')) || 0;
+      if (s !== 'cancelled') revenue += t;
+    }
+    summary.innerHTML = `
+      <div class="stat"><div class="label">Total</div><div class="value">${total}</div></div>
+      <div class="stat"><div class="label">Pending</div><div class="value">${counts.pending || 0}</div></div>
+      <div class="stat"><div class="label">Paid</div><div class="value">${counts.paid || 0}</div></div>
+      <div class="stat"><div class="label">Shipped</div><div class="value">${counts.shipped || 0}</div></div>
+      <div class="stat"><div class="label">Delivered</div><div class="value">${counts.delivered || 0}</div></div>
+      <div class="stat revenue"><div class="label">Revenue</div><div class="value">$${revenue.toFixed(2)}</div></div>
+    `;
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function renderOrders() {
+    const list = document.getElementById('adminOrders');
+    const status = document.getElementById('adminStatus');
+    list.innerHTML = '';
+
+    const filterStatus = document.getElementById('filterStatus').value.trim().toLowerCase();
+    const search = document.getElementById('filterSearch').value.trim().toLowerCase();
+
+    const filtered = allOrders.filter(o => {
+      if (filterStatus && (o.status || 'pending').toLowerCase() !== filterStatus) return false;
+      if (search) {
+        const hay = [
+          o.id, o.customerName, o.email, o.state, o.shippingMethod, o.trackingNumber, o.orderNotes,
+        ].map(v => String(v || '').toLowerCase()).join(' ');
+        if (!hay.includes(search)) return false;
+      }
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      status.textContent = '';
+      const li = document.createElement('li');
+      li.className = 'empty';
+      li.textContent = allOrders.length === 0
+        ? 'No orders have been placed yet.'
+        : 'No orders match the current filters.';
+      list.appendChild(li);
+      return;
+    }
+
+    status.textContent = `${filtered.length} of ${allOrders.length} order${allOrders.length === 1 ? '' : 's'}`;
+    filtered.forEach(o => list.appendChild(renderOrder(o)));
+  }
+
+  function renderOrder(o) {
+    const li = document.createElement('li');
+    li.className = 'order-item';
+    li.dataset.key = o._key || '';
+
+    const when = o.placedAt ? new Date(o.placedAt).toLocaleString(undefined, {
+      month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
+    }) : '';
+    const items = (o.cart || []).map(it => {
+      const extras = [it.theme, it.color].filter(Boolean).join(' · ');
+      return `${it.qty}× ${escapeHtml(it.bundleLabel || '')}${extras ? ` <span style="color:#8b87a0;">(${escapeHtml(extras)})</span>` : ''}`;
+    }).join('<br>');
+    const stateClass = (o.status || 'pending').toLowerCase();
+    const statusOptions = STATUSES.map(s => `<option value="${s}"${s === stateClass ? ' selected' : ''}>${s}</option>`).join('');
+
+    li.innerHTML = `
+      <div class="order-grid">
+        <div>
+          <div class="order-when">${escapeHtml(when)}</div>
+          <div class="order-id">#${escapeHtml(o.id || '')}</div>
+          <div class="order-customer">${escapeHtml(o.customerName || '—')}</div>
+          <div class="order-email">${escapeHtml(o.email || '')}</div>
+          <div class="order-cart">${items}</div>
+          <div class="order-meta">
+            Ship to ${escapeHtml(o.state || '—')} · ${escapeHtml(o.shippingMethod || '—')}
+          </div>
+          ${o.orderNotes ? `<div class="order-meta">Customer note: ${escapeHtml(o.orderNotes)}</div>` : ''}
+          ${o.adminNotes ? `<div class="order-meta">Admin note: ${escapeHtml(o.adminNotes)}</div>` : ''}
+          ${o.updatedAt ? `<div class="order-meta">Last updated ${escapeHtml(new Date(o.updatedAt).toLocaleString())}${o.updatedBy ? ` by ${escapeHtml(o.updatedBy)}` : ''}</div>` : ''}
+        </div>
+        <div style="text-align:right;">
+          <span class="order-state ${escapeHtml(stateClass)}">${escapeHtml(o.status || 'pending')}</span>
+          <div class="order-total" style="margin-top:8px;">$${escapeHtml(o.total || '0.00')}</div>
+          <div class="order-meta" style="margin-top:4px;">Sub $${escapeHtml(o.subtotal || '0.00')} · Ship $${escapeHtml(o.shippingCost || '0.00')}</div>
+        </div>
+      </div>
+      <div class="order-actions">
+        <div>
+          <div class="label">Status</div>
+          <select data-field="status">${statusOptions}</select>
+        </div>
+        <div>
+          <div class="label">Tracking #</div>
+          <input data-field="trackingNumber" type="text" placeholder="USPS tracking" value="${escapeHtml(o.trackingNumber || '')}">
+        </div>
+        <div style="align-self:end;">
+          <button type="button" class="button" data-act="save">Save</button>
+        </div>
+      </div>
+      <div class="order-actions" style="grid-template-columns: 1fr;">
+        <div>
+          <div class="label">Admin notes (private)</div>
+          <input data-field="adminNotes" type="text" placeholder="Notes for your records" value="${escapeHtml(o.adminNotes || '')}">
+        </div>
+      </div>
+      <div class="row-msg" data-role="msg" style="margin-top:8px;"></div>
+    `;
+
+    li.querySelector('[data-act="save"]').addEventListener('click', () => saveOrder(li, o));
+    return li;
+  }
+
+  async function saveOrder(li, o) {
+    const msg = li.querySelector('[data-role="msg"]');
+    const btn = li.querySelector('[data-act="save"]');
+    msg.textContent = '';
+    msg.className = 'row-msg';
+    btn.disabled = true;
+
+    const status = li.querySelector('[data-field="status"]').value;
+    const trackingNumber = li.querySelector('[data-field="trackingNumber"]').value.trim();
+    const adminNotes = li.querySelector('[data-field="adminNotes"]').value;
+
+    const token = await getAuthToken();
+    if (!token) {
+      msg.textContent = 'Session expired — please log in again.';
+      msg.className = 'row-msg err';
+      btn.disabled = false;
+      return;
+    }
+
+    try {
+      const res = await fetch('/.netlify/functions/admin-update-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          key: o._key,
+          status,
+          trackingNumber,
+          adminNotes,
+        }),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      if (data && data.order) {
+        const idx = allOrders.findIndex(x => x._key === o._key);
+        if (idx >= 0) allOrders[idx] = data.order;
+        renderSummary();
+      }
+      msg.textContent = 'Saved.';
+      msg.className = 'row-msg ok';
+    } catch (err) {
+      console.error(err);
+      msg.textContent = 'Save failed. ' + (err && err.message ? err.message : '');
+      msg.className = 'row-msg err';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  document.getElementById('filterStatus').addEventListener('change', renderOrders);
+  document.getElementById('filterSearch').addEventListener('input', renderOrders);
+  document.getElementById('refreshBtn').addEventListener('click', loadOrders);
+
+  // ------------------------------------------------------------------
+  // Tab switching
+  // ------------------------------------------------------------------
+  document.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.pane;
+      document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b === btn));
+      document.querySelectorAll('.pane').forEach(p => p.classList.toggle('active', p.id === `pane-${target}`));
+      if (target === 'products' || target === 'photos' || target === 'email') {
+        ensurePhotosLoaded();
+      }
+      if (target === 'products') ensureProductsLoaded();
+      if (target === 'users' && !usersLoadedOnce) loadUsers();
+    });
+  });
+
+  // ------------------------------------------------------------------
+  // Users
+  // ------------------------------------------------------------------
+  let allUsers = [];
+  let usersLoadedOnce = false;
+
+  async function loadUsers() {
+    const status = document.getElementById('usersStatus');
+    status.textContent = 'Loading…';
+    status.className = 'pane-msg';
+    const token = await getAuthToken();
+    if (!token) {
+      status.textContent = 'Session expired — please log in again.';
+      status.className = 'pane-msg err';
+      return;
+    }
+    try {
+      const res = await fetch('/.netlify/functions/admin-list-users', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      allUsers = Array.isArray(data.users) ? data.users : [];
+      usersLoadedOnce = true;
+      status.textContent = `${allUsers.length} user${allUsers.length === 1 ? '' : 's'}`;
+      status.className = 'pane-msg ok';
+      renderUsers();
+      // Refresh the email recipients list if it has been opened.
+      if (emailRecipientsLoaded) populateEmailRecipients();
+    } catch (err) {
+      status.textContent = 'Failed to load users. ' + (err && err.message ? err.message : '');
+      status.className = 'pane-msg err';
+    }
+  }
+
+  function renderUsers() {
+    const wrap = document.getElementById('usersTableWrap');
+    const search = (document.getElementById('userSearch').value || '').trim().toLowerCase();
+    const filtered = allUsers.filter(u => {
+      if (!search) return true;
+      const hay = `${u.email || ''} ${u.fullName || ''}`.toLowerCase();
+      return hay.includes(search);
+    });
+    if (filtered.length === 0) {
+      wrap.innerHTML = '<div class="empty">No users to show.</div>';
+      return;
+    }
+    const rows = filtered.map(u => {
+      const created = u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—';
+      const roles = (u.roles || []).map(r => `<span class="badge ${r === 'admin' ? 'admin' : ''}">${escapeHtml(r)}</span>`).join('');
+      const confirmed = u.confirmed ? '' : '<span class="badge unconfirmed">Unconfirmed</span>';
+      return `<tr>
+        <td class="email">${escapeHtml(u.email || '')}</td>
+        <td>${escapeHtml(u.fullName || '—')}</td>
+        <td>${created}</td>
+        <td>${roles}${confirmed}</td>
+      </tr>`;
+    }).join('');
+    wrap.innerHTML = `<table class="users-table">
+      <thead><tr><th>Email</th><th>Name</th><th>Joined</th><th>Roles</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  }
+
+  document.getElementById('usersRefreshBtn').addEventListener('click', loadUsers);
+  document.getElementById('userSearch').addEventListener('input', renderUsers);
+
+  // ------------------------------------------------------------------
+  // Mass email
+  // ------------------------------------------------------------------
+  let emailRecipientsLoaded = false;
+
+  async function ensureUsersForEmail() {
+    if (!usersLoadedOnce) await loadUsers();
+  }
+
+  function populateEmailRecipients() {
+    const box = document.getElementById('emailRecipients');
+    if (!allUsers || allUsers.length === 0) {
+      box.innerHTML = '<div class="empty">No registered users yet.</div>';
+      updateEmailCount();
+      return;
+    }
+    const html = allUsers
+      .filter(u => u.email)
+      .map(u => `
+        <label style="display:flex; align-items:center; gap:8px; padding:4px 0; cursor:pointer;">
+          <input type="checkbox" class="email-recipient" value="${escapeHtml(u.email)}" ${u.confirmed ? 'checked' : ''}>
+          <span style="color:#e8e3f0;">${escapeHtml(u.email)}</span>
+          <span style="color:#8b87a0;">${u.fullName ? '— ' + escapeHtml(u.fullName) : ''}</span>
+          ${u.confirmed ? '' : '<span class="badge unconfirmed">unconfirmed</span>'}
+        </label>
+      `).join('');
+    box.innerHTML = html;
+    box.querySelectorAll('input.email-recipient').forEach(cb => cb.addEventListener('change', updateEmailCount));
+    emailRecipientsLoaded = true;
+    updateEmailCount();
+  }
+
+  function updateEmailCount() {
+    const checked = document.querySelectorAll('.email-recipient:checked').length;
+    document.getElementById('emailRecipientsCount').textContent = `${checked} selected`;
+  }
+
+  document.getElementById('emailLoadBtn').addEventListener('click', async () => {
+    await ensureUsersForEmail();
+    populateEmailRecipients();
+  });
+  document.getElementById('emailSelectAllBtn').addEventListener('click', () => {
+    document.querySelectorAll('.email-recipient').forEach(cb => { cb.checked = true; });
+    updateEmailCount();
+  });
+  document.getElementById('emailSelectNoneBtn').addEventListener('click', () => {
+    document.querySelectorAll('.email-recipient').forEach(cb => { cb.checked = false; });
+    updateEmailCount();
+  });
+
+  document.getElementById('emailSendBtn').addEventListener('click', async () => {
+    const msg = document.getElementById('emailMsg');
+    const btn = document.getElementById('emailSendBtn');
+    msg.textContent = '';
+    msg.className = 'pane-msg';
+
+    const subject = document.getElementById('emailSubject').value.trim();
+    const bodyText = document.getElementById('emailBody').value.trim();
+    const recipients = Array.from(document.querySelectorAll('.email-recipient:checked')).map(cb => cb.value);
+
+    if (!subject) { msg.textContent = 'Subject is required.'; msg.className = 'pane-msg err'; return; }
+    if (!bodyText) { msg.textContent = 'Message body is required.'; msg.className = 'pane-msg err'; return; }
+    if (recipients.length === 0) { msg.textContent = 'Pick at least one recipient.'; msg.className = 'pane-msg err'; return; }
+
+    if (!confirm(`Send "${subject}" to ${recipients.length} ${recipients.length === 1 ? 'person' : 'people'}?`)) return;
+
+    btn.disabled = true;
+    msg.textContent = 'Sending…';
+    const token = await getAuthToken();
+    try {
+      const res = await fetch('/.netlify/functions/admin-mass-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ subject, bodyText, recipients }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        const reason = (data && data.errors && data.errors[0]) || `HTTP ${res.status}`;
+        throw new Error(reason);
+      }
+      msg.textContent = `Sent to ${data.sent} recipient${data.sent === 1 ? '' : 's'}.`;
+      msg.className = 'pane-msg ok';
+    } catch (err) {
+      msg.textContent = 'Send failed. ' + (err && err.message ? err.message : '');
+      msg.className = 'pane-msg err';
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ------------------------------------------------------------------
+  // Products
+  // ------------------------------------------------------------------
+  let allProducts = [];
+  let productsLoadedOnce = false;
+  let editingProductId = null;
+
+  async function ensureProductsLoaded() {
+    if (productsLoadedOnce) return;
+    await loadProducts();
+  }
+
+  async function loadProducts() {
+    const list = document.getElementById('prodList');
+    list.innerHTML = '<div class="empty">Loading…</div>';
+    try {
+      const res = await fetch('/.netlify/functions/admin-products');
+      const data = await res.json();
+      allProducts = Array.isArray(data.products) ? data.products : [];
+      productsLoadedOnce = true;
+      renderProducts();
+    } catch (err) {
+      list.innerHTML = '<div class="empty">Failed to load products.</div>';
+    }
+  }
+
+  function renderProducts() {
+    const list = document.getElementById('prodList');
+    if (allProducts.length === 0) {
+      list.innerHTML = '<div class="empty">No products yet — the home page will fall back to its built-in bundles.</div>';
+      return;
+    }
+    const rows = allProducts.map(p => {
+      const cover = p.imageId ? `<img src="/.netlify/functions/serve-photo?id=${encodeURIComponent(p.imageId)}" alt="" style="width:48px; height:48px; border-radius:6px; object-fit:cover;">` : '';
+      const status = p.active === false ? '<span class="badge">hidden</span>' : '<span class="badge admin">active</span>';
+      return `<tr data-id="${escapeHtml(p.id)}">
+        <td style="width:60px;">${cover}</td>
+        <td><strong style="color:#e8e3f0;">${escapeHtml(p.label)}</strong>${p.description ? `<div style="color:#8b87a0; font-size:12px;">${escapeHtml(p.description)}</div>` : ''}</td>
+        <td>$${Number(p.price).toFixed(2)}${p.suffix ? `<span style="color:#8b87a0;">${escapeHtml(p.suffix)}</span>` : ''}</td>
+        <td>${status}</td>
+        <td style="text-align:right; white-space:nowrap;">
+          <button type="button" class="button small secondary" data-act="edit">Edit</button>
+          <button type="button" class="button small secondary" data-act="toggle">${p.active === false ? 'Show' : 'Hide'}</button>
+          <button type="button" class="button small secondary danger" data-act="delete">Delete</button>
+        </td>
+      </tr>`;
+    }).join('');
+    list.innerHTML = `<table class="products-table">
+      <thead><tr><th></th><th>Product</th><th>Price</th><th>Status</th><th></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+    list.querySelectorAll('tr[data-id]').forEach(tr => {
+      const id = tr.dataset.id;
+      tr.querySelector('[data-act="edit"]').addEventListener('click', () => startEditProduct(id));
+      tr.querySelector('[data-act="toggle"]').addEventListener('click', () => toggleProduct(id));
+      tr.querySelector('[data-act="delete"]').addEventListener('click', () => deleteProduct(id));
+    });
+  }
+
+  function refreshImageOptions() {
+    const sel = document.getElementById('prodImage');
+    const current = sel.value;
+    sel.innerHTML = '<option value="">— no cover —</option>' + allPhotos.map(p =>
+      `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name || p.id)}</option>`,
+    ).join('');
+    sel.value = current;
+  }
+
+  function startEditProduct(id) {
+    const p = allProducts.find(x => x.id === id);
+    if (!p) return;
+    editingProductId = id;
+    document.getElementById('prodLabel').value = p.label || '';
+    document.getElementById('prodPrice').value = p.price != null ? p.price : '';
+    document.getElementById('prodSuffix').value = p.suffix || '';
+    document.getElementById('prodDescription').value = p.description || '';
+    document.getElementById('prodImage').value = p.imageId || '';
+    document.getElementById('prodSaveBtn').textContent = 'Save changes';
+    document.getElementById('prodResetBtn').style.display = '';
+    document.getElementById('prodMsg').textContent = `Editing ${p.label}`;
+    document.getElementById('prodMsg').className = 'pane-msg';
+  }
+
+  function resetProductForm() {
+    editingProductId = null;
+    document.getElementById('prodLabel').value = '';
+    document.getElementById('prodPrice').value = '';
+    document.getElementById('prodSuffix').value = '';
+    document.getElementById('prodDescription').value = '';
+    document.getElementById('prodImage').value = '';
+    document.getElementById('prodSaveBtn').textContent = 'Add product';
+    document.getElementById('prodResetBtn').style.display = 'none';
+    document.getElementById('prodMsg').textContent = '';
+  }
+
+  document.getElementById('prodResetBtn').addEventListener('click', resetProductForm);
+
+  document.getElementById('prodSaveBtn').addEventListener('click', async () => {
+    const msg = document.getElementById('prodMsg');
+    const btn = document.getElementById('prodSaveBtn');
+    msg.textContent = '';
+    msg.className = 'pane-msg';
+
+    const label = document.getElementById('prodLabel').value.trim();
+    const price = parseFloat(document.getElementById('prodPrice').value);
+    const suffix = document.getElementById('prodSuffix').value.trim();
+    const description = document.getElementById('prodDescription').value.trim();
+    const imageId = document.getElementById('prodImage').value;
+
+    if (!label) { msg.textContent = 'Label is required.'; msg.className = 'pane-msg err'; return; }
+    if (!Number.isFinite(price) || price < 0) { msg.textContent = 'Enter a valid price.'; msg.className = 'pane-msg err'; return; }
+
+    btn.disabled = true;
+    const token = await getAuthToken();
+    try {
+      const res = await fetch('/.netlify/functions/admin-products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          id: editingProductId || undefined,
+          label, price, suffix, description, imageId,
+        }),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      allProducts = Array.isArray(data.products) ? data.products : [];
+      renderProducts();
+      resetProductForm();
+      msg.textContent = 'Saved.';
+      msg.className = 'pane-msg ok';
+    } catch (err) {
+      msg.textContent = 'Save failed. ' + (err && err.message ? err.message : '');
+      msg.className = 'pane-msg err';
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  async function toggleProduct(id) {
+    const p = allProducts.find(x => x.id === id);
+    if (!p) return;
+    const token = await getAuthToken();
+    try {
+      const res = await fetch('/.netlify/functions/admin-products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          id: p.id, label: p.label, price: p.price, suffix: p.suffix || '',
+          description: p.description || '', imageId: p.imageId || '',
+          active: p.active === false,
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      allProducts = Array.isArray(data.products) ? data.products : [];
+      renderProducts();
+    } catch (err) {
+      alert('Failed to toggle: ' + (err && err.message ? err.message : ''));
+    }
+  }
+
+  async function deleteProduct(id) {
+    const p = allProducts.find(x => x.id === id);
+    if (!p) return;
+    if (!confirm(`Delete "${p.label}"? This cannot be undone.`)) return;
+    const token = await getAuthToken();
+    try {
+      const res = await fetch(`/.netlify/functions/admin-products?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      allProducts = Array.isArray(data.products) ? data.products : [];
+      if (editingProductId === id) resetProductForm();
+      renderProducts();
+    } catch (err) {
+      alert('Delete failed: ' + (err && err.message ? err.message : ''));
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // Photos
+  // ------------------------------------------------------------------
+  let allPhotos = [];
+  let photosLoadedOnce = false;
+
+  async function ensurePhotosLoaded() {
+    if (photosLoadedOnce) return;
+    await loadPhotos();
+  }
+
+  async function loadPhotos() {
+    const list = document.getElementById('photoList');
+    list.innerHTML = '<div class="empty">Loading…</div>';
+    try {
+      const res = await fetch('/.netlify/functions/admin-photos');
+      const data = await res.json();
+      allPhotos = Array.isArray(data.photos) ? data.photos : [];
+      photosLoadedOnce = true;
+      renderPhotos();
+      refreshImageOptions();
+    } catch (err) {
+      list.innerHTML = '<div class="empty">Failed to load photos.</div>';
+    }
+  }
+
+  function renderPhotos() {
+    const list = document.getElementById('photoList');
+    if (allPhotos.length === 0) {
+      list.innerHTML = '<div class="empty">No photos uploaded yet.</div>';
+      return;
+    }
+    list.innerHTML = `<div class="photo-grid">${allPhotos.map(p => {
+      const url = `/.netlify/functions/serve-photo?id=${encodeURIComponent(p.id)}`;
+      const sizeKb = Math.round((p.size || 0) / 1024);
+      return `<div class="photo-tile" data-id="${escapeHtml(p.id)}">
+        <img src="${url}" alt="${escapeHtml(p.caption || p.name || '')}">
+        <div class="name">${escapeHtml(p.name || p.id)}</div>
+        <div class="meta">${sizeKb} KB · ${escapeHtml((p.contentType || '').replace('image/', ''))}</div>
+        <div class="actions">
+          <button type="button" class="copy-btn" data-act="copy">Copy URL</button>
+          <button type="button" class="copy-btn danger" data-act="delete">Delete</button>
+        </div>
+      </div>`;
+    }).join('')}</div>`;
+    list.querySelectorAll('.photo-tile').forEach(tile => {
+      const id = tile.dataset.id;
+      const url = `/.netlify/functions/serve-photo?id=${encodeURIComponent(id)}`;
+      tile.querySelector('[data-act="copy"]').addEventListener('click', async (e) => {
+        try { await navigator.clipboard.writeText(url); e.target.textContent = 'Copied!'; setTimeout(() => { e.target.textContent = 'Copy URL'; }, 1200); }
+        catch { window.prompt('Copy URL:', url); }
+      });
+      tile.querySelector('[data-act="delete"]').addEventListener('click', () => deletePhoto(id));
+    });
+  }
+
+  function readFileAsBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = String(reader.result || '');
+        const idx = result.indexOf('base64,');
+        resolve(idx >= 0 ? result.slice(idx + 7) : result);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  document.getElementById('photoUploadBtn').addEventListener('click', async () => {
+    const msg = document.getElementById('photoMsg');
+    const btn = document.getElementById('photoUploadBtn');
+    msg.textContent = '';
+    msg.className = 'pane-msg';
+
+    const file = document.getElementById('photoFile').files[0];
+    if (!file) { msg.textContent = 'Choose an image first.'; msg.className = 'pane-msg err'; return; }
+    if (file.size > 5 * 1024 * 1024) { msg.textContent = 'File too large (max 5 MB).'; msg.className = 'pane-msg err'; return; }
+
+    btn.disabled = true;
+    msg.textContent = 'Uploading…';
+    try {
+      const dataBase64 = await readFileAsBase64(file);
+      const token = await getAuthToken();
+      const res = await fetch('/.netlify/functions/admin-photos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          name: file.name,
+          contentType: file.type || 'image/png',
+          caption: document.getElementById('photoCaption').value.trim(),
+          dataBase64,
+        }),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      if (data.photo) allPhotos.unshift(data.photo);
+      renderPhotos();
+      refreshImageOptions();
+      document.getElementById('photoFile').value = '';
+      document.getElementById('photoCaption').value = '';
+      msg.textContent = 'Uploaded.';
+      msg.className = 'pane-msg ok';
+    } catch (err) {
+      msg.textContent = 'Upload failed. ' + (err && err.message ? err.message : '');
+      msg.className = 'pane-msg err';
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById('photosRefreshBtn').addEventListener('click', loadPhotos);
+
+  async function deletePhoto(id) {
+    if (!confirm('Delete this photo? Any product using it as a cover will lose the image.')) return;
+    const token = await getAuthToken();
+    try {
+      const res = await fetch(`/.netlify/functions/admin-photos?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      allPhotos = Array.isArray(data.photos) ? data.photos : [];
+      renderPhotos();
+      refreshImageOptions();
+    } catch (err) {
+      alert('Delete failed: ' + (err && err.message ? err.message : ''));
+    }
+  }
+</script>
+
+</body>
+</html>

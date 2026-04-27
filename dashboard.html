@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Order — Katayama Creations</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(180deg, #1a0f2e 0%, #2a1745 50%, #1a0f2e 100%);
+      color: #e8e3f0;
+      min-height: 100vh;
+    }
+    header {
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(20, 10, 40, 0.85);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+      border-bottom: 1px solid rgba(192, 192, 210, 0.2);
+    }
+    .who { font-size: 13px; color: #b8b3c8; }
+    .who strong { color: #e8e3f0; }
+    .who .signout {
+      margin-left: 12px;
+      background: transparent;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      color: #c0bcd0;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .who .signout:hover { color: #e8e3f0; border-color: #c0bcd0; }
+    .logo { font-size: 24px; font-weight: bold; color: #d4d0e0; }
+    nav a {
+      margin-left: 20px;
+      color: #c0bcd0;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    nav a:hover { color: #e8e3f0; }
+    .hero {
+      text-align: center;
+      padding: 50px 20px 10px;
+    }
+    h1 { font-size: 38px; margin-bottom: 8px; color: #e8e3f0; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+    .subtitle { max-width: 700px; margin: 0 auto 20px; color: #b8b3c8; }
+    .section {
+      padding: 20px 20px 60px;
+      max-width: 720px;
+      margin: auto;
+    }
+    .card {
+      background: linear-gradient(160deg, rgba(45, 27, 70, 0.85) 0%, rgba(30, 18, 50, 0.95) 100%);
+      padding: 28px;
+      border-radius: 20px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+      border: 1px solid rgba(192, 192, 210, 0.15);
+    }
+    .card + .card { margin-top: 20px; }
+    .card h2 {
+      margin: 0 0 16px;
+      color: #e8e3f0;
+      font-size: 22px;
+      letter-spacing: 0.3px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .full { grid-column: 1 / -1; }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+      color: #c0bcd0;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      border-radius: 10px;
+      font-size: 14px;
+      box-sizing: border-box;
+      background: rgba(20, 10, 40, 0.6);
+      color: #e8e3f0;
+      font-family: inherit;
+    }
+    input::placeholder, textarea::placeholder { color: #8b87a0; }
+    select option { background: #2a1745; color: #e8e3f0; }
+    textarea { min-height: 90px; resize: vertical; }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #c0bcd0;
+      background: rgba(30, 18, 50, 0.8);
+    }
+    .button {
+      display: inline-block;
+      padding: 12px 22px;
+      background: linear-gradient(135deg, #4a2d75 0%, #6b48a6 100%);
+      color: #e8e3f0;
+      border: 1px solid rgba(192, 192, 210, 0.3);
+      border-radius: 10px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      text-decoration: none;
+    }
+    .button.secondary {
+      background: rgba(20, 10, 40, 0.6);
+    }
+    .button.venmo {
+      background: linear-gradient(135deg, #2c5f8f 0%, #3d95ce 100%);
+    }
+    .button.venmo::before { content: "💸 "; }
+    .button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .actions { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px; }
+    .cart-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 16px;
+    }
+    .cart-empty {
+      padding: 14px;
+      border-radius: 12px;
+      background: rgba(20, 10, 40, 0.5);
+      color: #8b87a0;
+      text-align: center;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+    .cart-item {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 14px;
+      background: rgba(20, 10, 40, 0.5);
+      border: 1px solid rgba(192, 192, 210, 0.12);
+      border-radius: 12px;
+      margin-bottom: 8px;
+    }
+    .cart-item .meta {
+      font-size: 12px;
+      color: #a8a3b8;
+      margin-top: 2px;
+    }
+    .cart-item .price {
+      font-weight: 700;
+      color: #e8e3f0;
+      white-space: nowrap;
+    }
+    .cart-item .remove {
+      background: transparent;
+      color: #e6735c;
+      border: 1px solid rgba(230, 115, 92, 0.4);
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .qty {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .qty button {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      background: rgba(20, 10, 40, 0.6);
+      color: #e8e3f0;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .qty span { min-width: 18px; text-align: center; font-weight: 700; }
+    .totals {
+      border-top: 1px solid rgba(192, 192, 210, 0.15);
+      padding-top: 14px;
+      margin-top: 6px;
+    }
+    .totals-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      color: #c0bcd0;
+      font-size: 14px;
+    }
+    .totals-row.grand {
+      font-size: 18px;
+      font-weight: 700;
+      color: #e8e3f0;
+      padding-top: 12px;
+      border-top: 1px solid rgba(192, 192, 210, 0.15);
+      margin-top: 6px;
+    }
+    .totals-row .free {
+      color: #b8e0c2;
+      font-weight: 700;
+    }
+    .ship-note {
+      font-size: 12px;
+      color: #8b87a0;
+      margin-top: 6px;
+    }
+    .deadline-note {
+      margin-top: 12px;
+      padding: 12px 14px;
+      background: rgba(230, 115, 92, 0.12);
+      border: 1px solid rgba(230, 115, 92, 0.3);
+      border-radius: 12px;
+      color: #f0b8a8;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .success {
+      display: none;
+      background: rgba(45, 90, 60, 0.4);
+      color: #b8e0c2;
+      border: 1px solid rgba(184, 224, 194, 0.3);
+      padding: 14px 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+    .gate {
+      display: none;
+      text-align: center;
+      padding: 50px 24px;
+    }
+    .gate h2 { color: #e8e3f0; font-size: 26px; margin: 0 0 12px; }
+    .gate p {
+      color: #b8b3c8;
+      max-width: 520px;
+      margin: 0 auto 24px;
+      line-height: 1.5;
+    }
+    .gate .actions { justify-content: center; }
+    .orders-list { list-style: none; padding: 0; margin: 0; }
+    .order-item {
+      padding: 14px;
+      background: rgba(20, 10, 40, 0.5);
+      border: 1px solid rgba(192, 192, 210, 0.12);
+      border-radius: 12px;
+      margin-bottom: 10px;
+    }
+    .order-head {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .order-when { color: #8b87a0; font-size: 12px; }
+    .order-total { font-weight: 700; color: #e8e3f0; }
+    .order-state {
+      display: inline-block;
+      padding: 2px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      border-radius: 999px;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      color: #c0bcd0;
+      background: rgba(20, 10, 40, 0.6);
+    }
+    .order-state.paid { color: #b8e0c2; border-color: rgba(184, 224, 194, 0.4); }
+    .order-state.shipped { color: #b8c8e0; border-color: rgba(184, 200, 224, 0.4); }
+    .order-state.delivered { color: #d4c0f0; border-color: rgba(212, 192, 240, 0.4); }
+    .order-state.cancelled { color: #f0b8a8; border-color: rgba(230, 115, 92, 0.4); }
+    .order-cart {
+      margin: 6px 0 8px;
+      font-size: 13px;
+      color: #c0bcd0;
+      line-height: 1.5;
+    }
+    .order-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .order-actions .button { padding: 8px 14px; font-size: 13px; }
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 5, 20, 0.8);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 100;
+    }
+    .modal-backdrop.show { display: flex; }
+    .modal {
+      max-width: 460px;
+      width: 100%;
+      background: linear-gradient(160deg, #2d1b46 0%, #1e1232 100%);
+      border: 1px solid rgba(192, 192, 210, 0.2);
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+    }
+    .modal h2 { margin: 0 0 10px; color: #e8e3f0; font-size: 22px; }
+    .modal p { color: #c0bcd0; line-height: 1.5; margin: 0 0 12px; }
+    .modal .total-line {
+      font-size: 28px;
+      font-weight: 800;
+      color: #e8e3f0;
+      text-align: center;
+      padding: 14px 0;
+    }
+    .modal .deadline-note { margin-top: 0; margin-bottom: 16px; }
+    .modal .actions { justify-content: center; }
+    footer {
+      text-align: center;
+      padding: 30px;
+      background: rgba(15, 8, 30, 0.9);
+      margin-top: 40px;
+      color: #8b87a0;
+      border-top: 1px solid rgba(192, 192, 210, 0.15);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/shipping.html">Shipping</a>
+    <a href="/dashboard.html">Custom Order</a>
+    <a href="/orders.html">Orders</a>
+    <a href="/signup.html" id="signupNav">Sign Up</a>
+    <a href="/signup.html?mode=login" id="loginNav">Log In</a>
+    <a href="/admin.html" id="adminNav" style="display:none;">Admin</a>
+  </nav>
+  <div class="who" id="whoami" style="display:none;">
+    Signed in as <strong id="whoEmail">…</strong>
+    <button type="button" class="signout" id="signOutBtn">Sign out</button>
+  </div>
+</header>
+
+<section class="hero">
+  <h1>Place a Custom Order</h1>
+  <p class="subtitle">Build your cart, see your shipping in real time, and lock in your order with a Venmo payment.</p>
+</section>
+
+<section class="section" id="gate">
+  <div class="card gate" id="gateCard">
+    <h2>Sign in to place an order</h2>
+    <p>Custom orders are only available to signed-in customers — that way Megan already has your shipping address on file, and you can re-order or check the status of past orders any time.</p>
+    <div class="actions">
+      <a class="button" href="/signup.html?next=/dashboard.html">Create account</a>
+      <a class="button secondary" href="/signup.html?mode=login&next=/dashboard.html">Log in</a>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="orderSection" style="display:none;">
+
+  <div class="card">
+    <h2>Your past orders</h2>
+    <div id="ordersStatus" style="color:#8b87a0; font-size:14px; margin-bottom:12px;">Loading…</div>
+    <ul class="orders-list" id="ordersList"></ul>
+  </div>
+
+  <div class="card">
+    <h2>Add a bundle</h2>
+    <div class="grid">
+      <div>
+        <label for="bundle">Bundle</label>
+        <select id="bundle">
+          <option value="">— select —</option>
+        </select>
+      </div>
+      <div>
+        <label for="theme">Theme</label>
+        <select id="theme">
+          <option value="">— none —</option>
+          <option value="thriller">Thriller</option>
+          <option value="mystery">Mystery</option>
+          <option value="romance">Romance</option>
+          <option value="fantasy">Fantasy</option>
+          <option value="romantasy">Romantasy</option>
+          <option value="sports">Sports</option>
+          <option value="young adult">Young Adult</option>
+          <option value="children's book">Children's Book</option>
+          <option value="dark romance">Dark Romance</option>
+          <option value="small town romance">Small Town Romance</option>
+          <option value="slasher">Slasher</option>
+          <option value="sports romance">Sports Romance</option>
+          <option value="historical romance">Historical Romance</option>
+        </select>
+      </div>
+      <div>
+        <label for="color">Color theme</label>
+        <select id="color">
+          <option value="">— none —</option>
+          <option value="red">Red</option>
+          <option value="black">Black</option>
+          <option value="green">Green</option>
+          <option value="purple">Purple</option>
+          <option value="pink">Pink</option>
+          <option value="teal">Teal</option>
+        </select>
+      </div>
+      <div class="full">
+        <label for="itemNotes">Notes for this item</label>
+        <textarea id="itemNotes" placeholder="Tropes you love, allergies, things to avoid…"></textarea>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="button" type="button" id="addToCart">Add to cart</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Your cart</h2>
+    <ul class="cart-list" id="cartList"></ul>
+    <div class="cart-empty" id="cartEmpty">Your cart is empty. Add a bundle above to get started.</div>
+
+    <div class="grid">
+      <div>
+        <label for="state">Ship to (state)</label>
+        <select id="state">
+          <option value="">— select —</option>
+        </select>
+      </div>
+      <div>
+        <label for="zip">Delivery ZIP</label>
+        <input id="zip" inputmode="numeric" pattern="[0-9-]*" placeholder="12345" autocomplete="postal-code">
+      </div>
+      <div class="full">
+        <label for="shipMethod">Shipping method</label>
+        <select id="shipMethod">
+          <option value="ground">USPS Ground Advantage (2–5 days)</option>
+          <option value="priority">USPS Priority Mail (1–3 days)</option>
+          <option value="express">USPS Priority Mail Express (1–2 days)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="totals">
+      <div class="totals-row"><span>Subtotal</span><span id="subtotal">$0.00</span></div>
+      <div class="totals-row"><span id="shipLabel">Shipping</span><span id="shipping">—</span></div>
+      <div class="totals-row grand"><span>Total</span><span id="total">$0.00</span></div>
+      <div class="ship-note" id="shipNote"></div>
+    </div>
+
+    <div class="deadline-note">
+      ⏳ Heads up: orders must be paid by Venmo within <strong>24 hours</strong> of placing.
+      Unpaid orders are automatically cancelled so Megan can free up the slot.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Your details</h2>
+    <div class="success" id="success">
+      Thanks! Your custom order was sent. A payment prompt is on screen — please complete Venmo to lock in your order.
+    </div>
+    <form id="customOrderForm">
+      <div class="grid">
+        <div>
+          <label for="customerName">Customer name</label>
+          <input id="customerName" name="customerName" required placeholder="Jane Reader">
+        </div>
+        <div>
+          <label for="emailField">Email</label>
+          <input id="emailField" name="email" type="email" required placeholder="jane@example.com" readonly>
+        </div>
+        <div class="full">
+          <label for="orderNotes">Order notes (optional)</label>
+          <textarea id="orderNotes" name="orderNotes" placeholder="Anything Megan should know about the whole order"></textarea>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="button" type="submit" id="placeOrder" disabled>Review &amp; pay with Venmo</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<div class="modal-backdrop" id="payModal" role="dialog" aria-modal="true" aria-labelledby="payTitle">
+  <div class="modal">
+    <h2 id="payTitle">Pay to confirm your order</h2>
+    <p>Your order has been sent to Megan. To lock it in, send your Venmo payment now.</p>
+    <div class="total-line" id="modalTotal">$0.00</div>
+    <div class="deadline-note">
+      ⏳ Pay by <strong id="modalDeadline">—</strong>.
+      Orders not paid within 24 hours are automatically cancelled.
+    </div>
+    <p style="font-size:12px; color:#8b87a0;">Include your name and "Blind Date Order" in the Venmo note so Megan can match it to your order.</p>
+    <div class="actions">
+      <a class="button venmo" id="venmoLink" href="https://venmo.com/u/MeganKatayama1" target="_blank" rel="noopener">Pay with Venmo</a>
+      <button class="button secondary" type="button" id="closeModal">I've paid / close</button>
+    </div>
+  </div>
+</div>
+
+<footer>© 2026 Katayama Creations — Curated reads, hand wrapped.</footer>
+
+<script type="module">
+  import {
+    getUser,
+    logout,
+    handleAuthCallback,
+    AuthError,
+    MissingIdentityError,
+  } from 'https://esm.sh/@netlify/identity@1.0.0?bundle'
+
+  const STATES = [
+    { abbr: 'AL', name: 'Alabama', zone: 2 },
+    { abbr: 'AK', name: 'Alaska', zone: 4 },
+    { abbr: 'AZ', name: 'Arizona', zone: 3 },
+    { abbr: 'AR', name: 'Arkansas', zone: 2 },
+    { abbr: 'CA', name: 'California', zone: 3 },
+    { abbr: 'CO', name: 'Colorado', zone: 3 },
+    { abbr: 'CT', name: 'Connecticut', zone: 1 },
+    { abbr: 'DE', name: 'Delaware', zone: 1 },
+    { abbr: 'FL', name: 'Florida', zone: 2 },
+    { abbr: 'GA', name: 'Georgia', zone: 2 },
+    { abbr: 'HI', name: 'Hawaii', zone: 4 },
+    { abbr: 'ID', name: 'Idaho', zone: 3 },
+    { abbr: 'IL', name: 'Illinois', zone: 2 },
+    { abbr: 'IN', name: 'Indiana', zone: 1 },
+    { abbr: 'IA', name: 'Iowa', zone: 2 },
+    { abbr: 'KS', name: 'Kansas', zone: 2 },
+    { abbr: 'KY', name: 'Kentucky', zone: 1 },
+    { abbr: 'LA', name: 'Louisiana', zone: 2 },
+    { abbr: 'ME', name: 'Maine', zone: 1 },
+    { abbr: 'MD', name: 'Maryland', zone: 1 },
+    { abbr: 'MA', name: 'Massachusetts', zone: 1 },
+    { abbr: 'MI', name: 'Michigan', zone: 1 },
+    { abbr: 'MN', name: 'Minnesota', zone: 2 },
+    { abbr: 'MS', name: 'Mississippi', zone: 2 },
+    { abbr: 'MO', name: 'Missouri', zone: 2 },
+    { abbr: 'MT', name: 'Montana', zone: 3 },
+    { abbr: 'NE', name: 'Nebraska', zone: 2 },
+    { abbr: 'NV', name: 'Nevada', zone: 3 },
+    { abbr: 'NH', name: 'New Hampshire', zone: 1 },
+    { abbr: 'NJ', name: 'New Jersey', zone: 1 },
+    { abbr: 'NM', name: 'New Mexico', zone: 3 },
+    { abbr: 'NY', name: 'New York', zone: 1 },
+    { abbr: 'NC', name: 'North Carolina', zone: 1 },
+    { abbr: 'ND', name: 'North Dakota', zone: 3 },
+    { abbr: 'OH', name: 'Ohio', zone: 1 },
+    { abbr: 'OK', name: 'Oklahoma', zone: 2 },
+    { abbr: 'OR', name: 'Oregon', zone: 3 },
+    { abbr: 'PA', name: 'Pennsylvania', zone: 1 },
+    { abbr: 'RI', name: 'Rhode Island', zone: 1 },
+    { abbr: 'SC', name: 'South Carolina', zone: 1 },
+    { abbr: 'SD', name: 'South Dakota', zone: 2 },
+    { abbr: 'TN', name: 'Tennessee', zone: 1 },
+    { abbr: 'TX', name: 'Texas', zone: 2 },
+    { abbr: 'UT', name: 'Utah', zone: 3 },
+    { abbr: 'VT', name: 'Vermont', zone: 1 },
+    { abbr: 'VA', name: 'Virginia', zone: 1 },
+    { abbr: 'WA', name: 'Washington', zone: 3 },
+    { abbr: 'WV', name: 'West Virginia', zone: 1 },
+    { abbr: 'WI', name: 'Wisconsin', zone: 2 },
+    { abbr: 'WY', name: 'Wyoming', zone: 3 },
+  ];
+
+  const ZONE_INFO = {
+    1: { label: 'Zone 1', uspsZone: 2, days: '2–3', freeAt: 35 },
+    2: { label: 'Zone 2', uspsZone: 4, days: '3–5', freeAt: 50 },
+    3: { label: 'Zone 3', uspsZone: 6, days: '4–7', freeAt: 65 },
+    4: { label: 'Zone 4', uspsZone: 9, days: '5–9', freeAt: 95 },
+  };
+
+  const USPS_RATES = {
+    ground: {
+      2: [9.20, 10.65, 11.10, 11.80, 12.55],
+      4: [9.80, 12.05, 12.70, 13.75, 14.65],
+      6: [10.50, 14.00, 15.25, 16.95, 18.15],
+      9: [11.95, 17.65, 20.75, 22.45, 24.10],
+    },
+    priority: {
+      2: [10.65, 11.70, 12.30, 13.00, 13.85],
+      4: [11.00, 13.30, 14.05, 15.15, 16.20],
+      6: [13.30, 16.80, 19.40, 23.45, 25.00],
+      9: [31.70, 39.25, 49.50, 58.30, 67.60],
+    },
+    express: {
+      2: [33.65, 34.75, 35.85, 36.90, 38.00],
+      4: [40.25, 45.45, 50.60, 55.80, 60.95],
+      6: [51.60, 60.30, 69.10, 77.80, 86.50],
+      9: [77.50, 89.50, 101.50, 113.55, 125.65],
+    },
+  };
+
+  const METHOD_LABELS = {
+    ground:   'USPS Ground Advantage',
+    priority: 'USPS Priority Mail',
+    express:  'USPS Priority Mail Express',
+    local:    'Local Delivery (Tri-Cities)',
+  };
+
+  // ZIP codes within ~20 miles of 99301 (Pasco, WA) — eligible for free local delivery.
+  const LOCAL_DELIVERY_ZIPS = new Set([
+    '99301', '99302', // Pasco
+    '99323',          // Burbank
+    '99336', '99337', '99338', // Kennewick
+    '99352', '99353', '99354', // Richland / West Richland
+  ]);
+  function isLocalZip(zip) {
+    return LOCAL_DELIVERY_ZIPS.has(String(zip || '').trim().slice(0, 5));
+  }
+
+  const BUNDLES = [
+    { id: 'kindle',   label: 'Blind Date with a Kindle Box',        price: 18 },
+    { id: 'original', label: 'Blind Date with a Book Original',     price: 25 },
+    { id: 'ultimate', label: 'Blind Date with a Book Ultimate Box', price: 45 },
+  ];
+
+  try {
+    const res = await fetch('/.netlify/functions/get-site-content');
+    if (res.ok) {
+      const data = await res.json();
+      const remote = (data.products || []).filter(p => p.active !== false);
+      if (remote.length > 0) {
+        BUNDLES.length = 0;
+        for (const p of remote) {
+          BUNDLES.push({
+            id: p.id,
+            label: p.label,
+            price: Number(p.price) || 0,
+            suffix: p.suffix || undefined,
+          });
+        }
+      }
+    }
+  } catch (_) {}
+
+  const CART_KEY = 'kc_cart_v1';
+  const VENMO_URL = 'https://venmo.com/u/MeganKatayama1';
+
+  const gateCard = document.getElementById('gateCard');
+  const orderSection = document.getElementById('orderSection');
+  const whoami = document.getElementById('whoami');
+  const whoEmail = document.getElementById('whoEmail');
+
+  let currentUser = null;
+
+  // ---- auth gate ----
+  try { await handleAuthCallback(); } catch (_) {}
+
+  try {
+    currentUser = await getUser();
+  } catch (err) {
+    if (err instanceof MissingIdentityError) {
+      gateCard.style.display = 'block';
+      gateCard.querySelector('h2').textContent = 'Account service unavailable';
+      gateCard.querySelector('p').textContent = 'Authentication is not configured for this site yet. Please reach out to Megan.';
+    }
+  }
+
+  if (!currentUser) {
+    gateCard.style.display = 'block';
+  } else {
+    orderSection.style.display = 'block';
+    whoami.style.display = 'block';
+    whoEmail.textContent = currentUser.email || 'your account';
+    const signupLink = document.getElementById('signupNav');
+    const loginLink = document.getElementById('loginNav');
+    if (signupLink) signupLink.style.display = 'none';
+    if (loginLink) loginLink.style.display = 'none';
+    if ((currentUser.email || '').toLowerCase() === 'ogmegbeast@gmail.com') {
+      const adminLink = document.getElementById('adminNav');
+      if (adminLink) adminLink.style.display = '';
+    }
+    document.getElementById('signOutBtn').addEventListener('click', async () => {
+      try { await logout(); } catch (_) {}
+      window.location.href = '/';
+    });
+
+    // Prefill from stored profile
+    const meta = currentUser.user_metadata || {};
+    const fullName = meta.full_name || [meta.firstName, meta.lastName].filter(Boolean).join(' ').trim();
+    document.getElementById('customerName').value = fullName;
+    document.getElementById('emailField').value = currentUser.email || '';
+    if (meta.state) {
+      // wait until states are populated, then set
+    }
+  }
+
+  // populate dropdowns
+  const bundleSel = document.getElementById('bundle');
+  BUNDLES.forEach(b => {
+    const o = document.createElement('option');
+    o.value = b.id;
+    o.textContent = `${b.label} — $${b.price}${b.suffix || ''}`;
+    bundleSel.appendChild(o);
+  });
+  const stateSel = document.getElementById('state');
+  STATES.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.name;
+    o.textContent = `${s.name} (${s.abbr})`;
+    stateSel.appendChild(o);
+  });
+
+  // Default-select the user's saved state, if we have one
+  if (currentUser) {
+    const meta = currentUser.user_metadata || {};
+    if (meta.state) stateSel.value = meta.state;
+    if (meta.zip) document.getElementById('zip').value = meta.zip;
+  }
+
+  // cart state
+  let cart = [];
+  try {
+    const raw = sessionStorage.getItem(CART_KEY);
+    if (raw) cart = JSON.parse(raw);
+  } catch (_) {}
+
+  // If we arrived here from a re-order on /orders.html, honor the pending state.
+  try {
+    const pendingState = sessionStorage.getItem('kc_pending_state');
+    if (pendingState) {
+      stateSel.value = pendingState;
+      sessionStorage.removeItem('kc_pending_state');
+    }
+  } catch (_) {}
+
+  function saveCart() {
+    try { sessionStorage.setItem(CART_KEY, JSON.stringify(cart)); } catch (_) {}
+  }
+  function findBundle(id) { return BUNDLES.find(b => b.id === id); }
+
+  function addToCart() {
+    const id = bundleSel.value;
+    const b = findBundle(id);
+    if (!b) { alert('Pick a bundle first.'); return; }
+    cart.push({
+      bundleId: b.id,
+      bundleLabel: b.label,
+      price: b.price,
+      qty: 1,
+      theme: document.getElementById('theme').value || '',
+      color: document.getElementById('color').value || '',
+      notes: document.getElementById('itemNotes').value || '',
+    });
+    saveCart();
+    render();
+    bundleSel.value = '';
+    document.getElementById('theme').value = '';
+    document.getElementById('color').value = '';
+    document.getElementById('itemNotes').value = '';
+  }
+
+  function changeQty(idx, delta) {
+    cart[idx].qty = Math.max(1, (cart[idx].qty || 1) + delta);
+    saveCart();
+    render();
+  }
+  function removeItem(idx) {
+    cart.splice(idx, 1);
+    saveCart();
+    render();
+  }
+
+  const zipInput = document.getElementById('zip');
+  const shipMethodSel = document.getElementById('shipMethod');
+  const LOCAL_OPT_VALUE = 'local';
+
+  function syncLocalOption() {
+    const local = isLocalZip(zipInput.value);
+    const existing = shipMethodSel.querySelector(`option[value="${LOCAL_OPT_VALUE}"]`);
+    if (local && !existing) {
+      const o = document.createElement('option');
+      o.value = LOCAL_OPT_VALUE;
+      o.textContent = 'Local Delivery — Tri-Cities (free)';
+      shipMethodSel.insertBefore(o, shipMethodSel.firstChild);
+      shipMethodSel.value = LOCAL_OPT_VALUE;
+    } else if (!local && existing) {
+      if (shipMethodSel.value === LOCAL_OPT_VALUE) shipMethodSel.value = 'ground';
+      existing.remove();
+    }
+  }
+
+  function computeShipping(subtotal) {
+    const method = shipMethodSel.value;
+    if (method === LOCAL_OPT_VALUE && isLocalZip(zipInput.value)) {
+      return {
+        cost: 0,
+        info: { label: 'Local', days: 'same-week', freeAt: 0 },
+        free: true,
+        method,
+        methodLabel: METHOD_LABELS.local,
+        lb: cart.reduce((sum, it) => sum + (it.qty || 1), 0) || 1,
+        stateName: stateSel.value || 'Washington',
+        local: true,
+      };
+    }
+    const stateName = stateSel.value;
+    if (!stateName) return { cost: null, info: null, free: false };
+    const state = STATES.find(s => s.name === stateName);
+    const zone = ZONE_INFO[state.zone];
+    const totalQty = cart.reduce((sum, it) => sum + (it.qty || 1), 0);
+    const lb = Math.min(5, Math.max(1, totalQty));
+    const base = USPS_RATES[method][zone.uspsZone][lb - 1];
+    const free = method === 'ground' && subtotal >= zone.freeAt;
+    return {
+      cost: free ? 0 : base,
+      info: zone, free, method,
+      methodLabel: METHOD_LABELS[method],
+      lb, stateName,
+    };
+  }
+
+  function fmt(n) { return `$${n.toFixed(2)}`; }
+
+  function render() {
+    const list = document.getElementById('cartList');
+    const empty = document.getElementById('cartEmpty');
+    list.innerHTML = '';
+    if (cart.length === 0) {
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      cart.forEach((item, idx) => {
+        const li = document.createElement('li');
+        li.className = 'cart-item';
+        const meta = [item.theme, item.color].filter(Boolean).join(' · ');
+        li.innerHTML = `
+          <div>
+            <div><strong>${escapeHtml(item.bundleLabel)}</strong> — ${fmt(item.price)}</div>
+            ${meta ? `<div class="meta">${escapeHtml(meta)}</div>` : ''}
+            ${item.notes ? `<div class="meta">Note: ${escapeHtml(item.notes)}</div>` : ''}
+            <div class="qty">
+              <button type="button" data-act="dec" data-idx="${idx}">−</button>
+              <span>${item.qty}</span>
+              <button type="button" data-act="inc" data-idx="${idx}">+</button>
+            </div>
+          </div>
+          <div class="price">${fmt(item.price * item.qty)}</div>
+          <button type="button" class="remove" data-act="rm" data-idx="${idx}">Remove</button>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    const subtotal = cart.reduce((sum, it) => sum + it.price * it.qty, 0);
+    document.getElementById('subtotal').textContent = fmt(subtotal);
+
+    const ship = computeShipping(subtotal);
+    const shipEl = document.getElementById('shipping');
+    const noteEl = document.getElementById('shipNote');
+    const labelEl = document.getElementById('shipLabel');
+    if (ship.cost === null) {
+      shipEl.textContent = '—';
+      noteEl.textContent = 'Pick a state to see shipping.';
+      labelEl.textContent = 'Shipping';
+    } else if (ship.local) {
+      shipEl.innerHTML = '<span class="free">FREE</span>';
+      labelEl.textContent = `Shipping (${ship.methodLabel})`;
+      noteEl.textContent = 'Free local delivery within ~20 miles of Pasco, WA (99301). Megan will reach out to schedule a drop-off window.';
+    } else if (ship.free) {
+      shipEl.innerHTML = '<span class="free">FREE</span>';
+      labelEl.textContent = `Shipping (${ship.methodLabel}, ${ship.info.label}, ${ship.lb} lb)`;
+      noteEl.textContent = `Free Ground Advantage shipping unlocked at $${ship.info.freeAt.toFixed(2)}+. Estimated transit: ${ship.info.days} business days.`;
+    } else {
+      shipEl.textContent = fmt(ship.cost);
+      labelEl.textContent = `Shipping (${ship.methodLabel}, ${ship.info.label}, ${ship.lb} lb)`;
+      const toFree = ship.method === 'ground' ? ship.info.freeAt - subtotal : null;
+      noteEl.textContent = toFree && toFree > 0
+        ? `Add ${fmt(toFree)} more for free Ground Advantage shipping. Estimated transit: ${ship.info.days} business days.`
+        : `Estimated transit: ${ship.info.days} business days.`;
+    }
+
+    const total = subtotal + (ship.cost || 0);
+    document.getElementById('total').textContent = fmt(total);
+
+    const placeBtn = document.getElementById('placeOrder');
+    placeBtn.disabled = cart.length === 0 || ship.cost === null;
+  }
+
+  document.getElementById('addToCart').addEventListener('click', addToCart);
+  document.getElementById('cartList').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    const idx = Number(btn.dataset.idx);
+    if (btn.dataset.act === 'inc') changeQty(idx, +1);
+    else if (btn.dataset.act === 'dec') changeQty(idx, -1);
+    else if (btn.dataset.act === 'rm') removeItem(idx);
+  });
+  stateSel.addEventListener('change', render);
+  document.getElementById('shipMethod').addEventListener('change', render);
+  zipInput.addEventListener('input', () => { syncLocalOption(); render(); });
+  syncLocalOption();
+
+  const form = document.getElementById('customOrderForm');
+  const success = document.getElementById('success');
+  const modal = document.getElementById('payModal');
+
+  async function getAuthToken() {
+    const match = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : null;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const subtotal = cart.reduce((sum, it) => sum + it.price * it.qty, 0);
+    const ship = computeShipping(subtotal);
+    if (cart.length === 0 || ship.cost === null) return;
+    const total = subtotal + ship.cost;
+    const deadline = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const customerName = document.getElementById('customerName').value.trim();
+    const orderNotes = document.getElementById('orderNotes').value;
+
+    const token = await getAuthToken();
+    if (!token) {
+      alert('Your session expired. Please log in again.');
+      window.location.href = '/signup.html?mode=login&next=/dashboard.html';
+      return;
+    }
+
+    const placeBtn = document.getElementById('placeOrder');
+    placeBtn.disabled = true;
+
+    try {
+      const res = await fetch('/.netlify/functions/place-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          customerName,
+          orderNotes,
+          cart,
+          subtotal: subtotal.toFixed(2),
+          shippingCost: ship.cost.toFixed(2),
+          shippingMethod: ship.local
+            ? ship.methodLabel
+            : `${ship.methodLabel} (${ship.info.label}, ${ship.lb} lb)`,
+          state: ship.stateName,
+          zip: zipInput.value.trim(),
+          total: total.toFixed(2),
+          paymentDeadline: deadline.toISOString(),
+        }),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(text || `Request failed (${res.status})`);
+      }
+
+      document.getElementById('modalTotal').textContent = fmt(total);
+      document.getElementById('modalDeadline').textContent = deadline.toLocaleString(undefined, {
+        weekday: 'short', month: 'short', day: 'numeric',
+        hour: 'numeric', minute: '2-digit',
+      });
+      const note = encodeURIComponent(`Blind Date Order ${fmt(total)}`);
+      document.getElementById('venmoLink').href = `${VENMO_URL}?txn=pay&note=${note}&amount=${total.toFixed(2)}`;
+      modal.classList.add('show');
+      success.style.display = 'block';
+
+      cart = [];
+      saveCart();
+      render();
+      // refresh past orders
+      loadOrders();
+    } catch (err) {
+      console.error(err);
+      alert('Sorry, something went wrong sending your order. Please try again or email ogmegbeast@gmail.com.');
+      placeBtn.disabled = false;
+    }
+  });
+
+  document.getElementById('closeModal').addEventListener('click', () => modal.classList.remove('show'));
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('show'); });
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  // ---- past orders ----
+  async function loadOrders() {
+    const status = document.getElementById('ordersStatus');
+    const list = document.getElementById('ordersList');
+    if (!currentUser) return;
+    status.textContent = 'Loading…';
+    list.innerHTML = '';
+    const token = await getAuthToken();
+    if (!token) { status.textContent = 'Please log in again to see your orders.'; return; }
+    try {
+      const res = await fetch('/.netlify/functions/list-orders', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const { orders } = await res.json();
+      if (!orders || orders.length === 0) {
+        status.textContent = 'No past orders yet — your first order will show up here.';
+        return;
+      }
+      status.textContent = '';
+      orders.forEach(o => list.appendChild(renderOrder(o)));
+    } catch (err) {
+      console.error(err);
+      status.textContent = "Couldn't load past orders right now. Please refresh and try again.";
+    }
+  }
+
+  function renderOrder(o) {
+    const li = document.createElement('li');
+    li.className = 'order-item';
+    const when = o.placedAt ? new Date(o.placedAt).toLocaleString(undefined, {
+      month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
+    }) : '';
+    const items = (o.cart || []).map(it => `${it.qty}× ${it.bundleLabel}`).join(', ');
+    const stateClass = (o.status || 'pending').toLowerCase();
+    li.innerHTML = `
+      <div class="order-head">
+        <div>
+          <div class="order-when">${escapeHtml(when)}</div>
+          <span class="order-state ${escapeHtml(stateClass)}">${escapeHtml(o.status || 'pending')}</span>
+        </div>
+        <div class="order-total">${escapeHtml('$' + (o.total || '0.00'))}</div>
+      </div>
+      <div class="order-cart">${escapeHtml(items)}</div>
+      <div class="order-actions">
+        <button type="button" class="button secondary" data-act="reorder" data-id="${escapeHtml(o.id)}">Re-order this</button>
+      </div>
+    `;
+    li.querySelector('[data-act="reorder"]').addEventListener('click', () => reorder(o));
+    return li;
+  }
+
+  function reorder(o) {
+    if (!o || !Array.isArray(o.cart)) return;
+    cart = o.cart.map(it => ({
+      bundleId: it.bundleId,
+      bundleLabel: it.bundleLabel,
+      price: it.price,
+      qty: it.qty || 1,
+      theme: it.theme || '',
+      color: it.color || '',
+      notes: it.notes || '',
+    }));
+    saveCart();
+    if (o.state) stateSel.value = o.state;
+    render();
+    document.getElementById('cartList').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  if (currentUser) loadOrders();
+  render();
+</script>
+
+</body>
+</html>
