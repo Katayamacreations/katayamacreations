@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Books — Katayama Creations</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(180deg, #1a0f2e 0%, #2a1745 50%, #1a0f2e 100%);
+      color: #e8e3f0;
+      min-height: 100vh;
+    }
+    header {
+      padding: 20px 40px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      background: rgba(20, 10, 40, 0.85);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+      border-bottom: 1px solid rgba(192, 192, 210, 0.2);
+    }
+    nav a {
+      margin-left: 20px;
+      color: #c0bcd0;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+    nav a:hover {
+      color: #e8e3f0;
+    }
+    .hero {
+      text-align: center;
+      padding: 60px 20px 40px;
+      background: linear-gradient(180deg, rgba(26, 15, 46, 0.0) 0%, rgba(26, 15, 46, 0.6) 100%);
+    }
+    h1 {
+      font-size: 44px;
+      margin-bottom: 16px;
+      color: #e8e3f0;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      letter-spacing: 1px;
+    }
+    .subtitle {
+      font-size: 20px;
+      max-width: 700px;
+      margin: 0 auto;
+      color: #b8b3c8;
+      line-height: 1.6;
+    }
+    .section {
+      padding: 40px 20px 60px;
+      max-width: 900px;
+      margin: auto;
+    }
+    .book-card {
+      display: flex;
+      gap: 32px;
+      align-items: flex-start;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+      border: 1px solid rgba(192, 192, 210, 0.15);
+      background: linear-gradient(135deg, #2d1b46 0%, #1a0f2e 100%);
+      padding: 32px;
+      margin-bottom: 32px;
+    }
+    .book-cover {
+      flex-shrink: 0;
+      width: 180px;
+      height: 260px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #3a2460 0%, #5a3a8a 50%, #3a2460 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      border: 1px solid rgba(192, 192, 210, 0.2);
+      overflow: hidden;
+      position: relative;
+    }
+    .book-cover-inner {
+      text-align: center;
+      padding: 20px;
+    }
+    .book-cover-inner .book-emoji {
+      font-size: 48px;
+      display: block;
+      margin-bottom: 12px;
+    }
+    .book-cover-inner .cover-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #e8e3f0;
+      line-height: 1.4;
+    }
+    .book-cover-inner .cover-author {
+      font-size: 11px;
+      color: #c0bcd0;
+      margin-top: 8px;
+    }
+    .book-details {
+      flex: 1;
+    }
+    .book-details h2 {
+      font-size: 26px;
+      margin: 0 0 6px;
+      color: #e8e3f0;
+      letter-spacing: 0.3px;
+    }
+    .book-series {
+      font-size: 14px;
+      color: #8b87a0;
+      margin-bottom: 16px;
+    }
+    .book-details p {
+      color: #c0bcd0;
+      font-size: 16px;
+      line-height: 1.7;
+      margin: 0 0 24px;
+    }
+    .button {
+      display: inline-block;
+      padding: 14px 28px;
+      background: linear-gradient(135deg, #4a2d75 0%, #6b48a6 100%);
+      color: #e8e3f0;
+      text-decoration: none;
+      border-radius: 12px;
+      font-weight: bold;
+      border: 1px solid rgba(192, 192, 210, 0.3);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+    }
+    .button.amazon {
+      background: linear-gradient(135deg, #c47a20 0%, #e89b3a 100%);
+      color: #1a0f2e;
+    }
+    footer {
+      text-align: center;
+      padding: 30px;
+      background: rgba(15, 8, 30, 0.9);
+      margin-top: 40px;
+      color: #8b87a0;
+      border-top: 1px solid rgba(192, 192, 210, 0.15);
+    }
+    @media (max-width: 640px) {
+      .book-card {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 24px;
+      }
+      .book-cover {
+        width: 160px;
+        height: 230px;
+      }
+      .book-details h2 {
+        font-size: 22px;
+      }
+      h1 {
+        font-size: 32px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/books.html">Books</a>
+    <a href="/shipping.html">Shipping</a>
+    <a href="/dashboard.html">Custom Order</a>
+    <a href="/orders.html">Orders</a>
+    <a href="/signup.html" id="signupNav">Sign Up</a>
+    <a href="/signup.html?mode=login" id="loginNav">Log In</a>
+    <a href="/admin.html" id="adminNav" style="display:none;">Admin</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <h1>Books by Megan Katayama</h1>
+  <p class="subtitle">
+    Follow a little grey kitten on a heartwarming adventure — a children's picture book series about finding home, family, and where you belong.
+  </p>
+</section>
+
+<section class="section">
+
+  <div class="book-card">
+    <div class="book-cover">
+      <div class="book-cover-inner">
+        <span class="book-emoji">🐱</span>
+        <span class="cover-title">The Little Grey Kitten</span>
+        <span class="cover-author">Megan Katayama</span>
+      </div>
+    </div>
+    <div class="book-details">
+      <h2>The Little Grey Kitten</h2>
+      <div class="book-series">The Little Grey Kitten Series — Book 1</div>
+      <p>A little grey kitten finds himself lost on the outskirts of a big city and sets off on a quest to find his forever home. A heartwarming story about adventure, kindness, and never giving up — perfect for young readers who love cats.</p>
+      <a href="https://www.amazon.com/dp/B08MB8263M" class="button amazon" target="_blank" rel="noopener">View on Amazon</a>
+    </div>
+  </div>
+
+  <div class="book-card">
+    <div class="book-cover">
+      <div class="book-cover-inner">
+        <span class="book-emoji">🐾</span>
+        <span class="cover-title">The Little Grey Kitten Meets His New Family!</span>
+        <span class="cover-author">Megan Katayama</span>
+      </div>
+    </div>
+    <div class="book-details">
+      <h2>The Little Grey Kitten Meets His New Family!</h2>
+      <div class="book-series">The Little Grey Kitten Series — Book 2</div>
+      <p>The adventure continues as our little grey kitten finally meets his new family! Join him as he discovers what it means to be loved and to have a place to call home. The perfect follow-up for fans of Book 1.</p>
+      <a href="https://www.amazon.com/dp/B09PLG5SNZ" class="button amazon" target="_blank" rel="noopener">View on Amazon</a>
+    </div>
+  </div>
+
+</section>
+
+<footer>
+  © 2026 Katayama Creations — Blind dates with books, not people.
+</footer>
+
+<script type="module">
+  import { getUser } from 'https://esm.sh/@netlify/identity@1.0.0?bundle';
+  const ADMIN_EMAIL = 'ogmegbeast@gmail.com';
+  try {
+    const u = await getUser();
+    if (u) {
+      const signupLink = document.getElementById('signupNav');
+      const loginLink = document.getElementById('loginNav');
+      if (signupLink) signupLink.style.display = 'none';
+      if (loginLink) loginLink.style.display = 'none';
+      if ((u.email || '').toLowerCase() === ADMIN_EMAIL) {
+        const link = document.getElementById('adminNav');
+        if (link) link.style.display = '';
+      }
+    }
+  } catch (_) {}
+</script>
+
+</body>
+</html>
