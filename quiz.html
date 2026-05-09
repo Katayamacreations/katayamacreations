@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Katayama Creations — Book Quiz</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(180deg, #1a0f2e 0%, #2a1745 50%, #1a0f2e 100%);
+      color: #e8e3f0;
+      min-height: 100vh;
+    }
+    header {
+      padding: 20px 40px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      background: rgba(20, 10, 40, 0.85);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+      border-bottom: 1px solid rgba(192, 192, 210, 0.2);
+    }
+    nav a {
+      margin-left: 20px;
+      color: #c0bcd0;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+    nav a:hover { color: #e8e3f0; }
+
+    .section {
+      padding: 60px 20px;
+      max-width: 800px;
+      margin: auto;
+    }
+
+    h1 {
+      font-size: 42px;
+      text-align: center;
+      color: #e8e3f0;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    .intro {
+      text-align: center;
+      color: #b8b3c8;
+      font-size: 18px;
+      line-height: 1.6;
+      max-width: 600px;
+      margin: 0 auto 40px;
+    }
+
+    /* Progress bar */
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(74, 45, 117, 0.3);
+      border-radius: 4px;
+      margin-bottom: 40px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #7b4fbf, #b87fe8);
+      border-radius: 4px;
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+
+    /* Question card */
+    .question-card {
+      background: linear-gradient(135deg, rgba(40, 24, 70, 0.8) 0%, rgba(30, 18, 55, 0.9) 100%);
+      border: 1px solid rgba(192, 192, 210, 0.15);
+      border-radius: 20px;
+      padding: 36px 32px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      display: none;
+    }
+    .question-card.active { display: block; }
+
+    .question-number {
+      font-size: 13px;
+      color: #8b87a0;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+    }
+    .question-text {
+      font-size: 24px;
+      font-weight: bold;
+      color: #e8e3f0;
+      margin-bottom: 28px;
+      line-height: 1.3;
+    }
+
+    .options {
+      display: grid;
+      gap: 12px;
+    }
+    .option {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 20px;
+      background: rgba(74, 45, 117, 0.25);
+      border: 2px solid rgba(192, 192, 210, 0.12);
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 16px;
+      color: #c0bcd0;
+    }
+    .option:hover {
+      background: rgba(74, 45, 117, 0.45);
+      border-color: rgba(192, 192, 210, 0.3);
+      color: #e8e3f0;
+      transform: translateX(4px);
+    }
+    .option.selected {
+      background: linear-gradient(135deg, #4a2d75 0%, #6b48a6 100%);
+      border-color: #9b7fd4;
+      color: #f0ecf8;
+      box-shadow: 0 4px 16px rgba(107, 72, 166, 0.35);
+    }
+    .option-icon {
+      font-size: 22px;
+      flex-shrink: 0;
+      width: 32px;
+      text-align: center;
+    }
+    .option-label { flex: 1; }
+
+    /* Navigation buttons */
+    .nav-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 28px;
+      gap: 12px;
+    }
+    .btn {
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 15px;
+      border: 1px solid rgba(192, 192, 210, 0.3);
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+    }
+    .btn-back {
+      background: rgba(74, 45, 117, 0.4);
+      color: #c0bcd0;
+    }
+    .btn-next {
+      background: linear-gradient(135deg, #4a2d75 0%, #6b48a6 100%);
+      color: #e8e3f0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      margin-left: auto;
+    }
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Results */
+    #results {
+      display: none;
+      text-align: center;
+    }
+    .result-card {
+      background: linear-gradient(135deg, rgba(40, 24, 70, 0.9) 0%, rgba(30, 18, 55, 0.95) 100%);
+      border: 1px solid rgba(192, 192, 210, 0.2);
+      border-radius: 24px;
+      padding: 48px 36px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+    }
+    .result-emoji {
+      font-size: 72px;
+      margin-bottom: 16px;
+    }
+    .result-title {
+      font-size: 32px;
+      font-weight: bold;
+      color: #e8e3f0;
+      margin-bottom: 8px;
+    }
+    .result-tagline {
+      font-size: 16px;
+      color: #b87fe8;
+      font-style: italic;
+      margin-bottom: 24px;
+    }
+    .result-description {
+      font-size: 16px;
+      color: #c0bcd0;
+      line-height: 1.7;
+      max-width: 560px;
+      margin: 0 auto 32px;
+    }
+    .result-traits {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 32px;
+    }
+    .trait-tag {
+      padding: 8px 16px;
+      background: rgba(74, 45, 117, 0.4);
+      border: 1px solid rgba(155, 127, 212, 0.3);
+      border-radius: 20px;
+      font-size: 13px;
+      color: #d4c8e8;
+    }
+    .result-recs {
+      text-align: left;
+      background: rgba(74, 45, 117, 0.2);
+      border-radius: 16px;
+      padding: 24px 28px;
+      margin-bottom: 32px;
+    }
+    .result-recs h3 {
+      color: #d4d0e0;
+      font-size: 18px;
+      margin-bottom: 14px;
+    }
+    .result-recs ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .result-recs li {
+      padding: 8px 0;
+      color: #c0bcd0;
+      font-size: 15px;
+      border-bottom: 1px solid rgba(192, 192, 210, 0.08);
+    }
+    .result-recs li:last-child { border-bottom: none; }
+    .result-recs li strong { color: #e8e3f0; }
+    .rec-author { color: #8b87a0; font-size: 13px; }
+
+    .button {
+      display: inline-block;
+      padding: 14px 28px;
+      background: linear-gradient(135deg, #4a2d75 0%, #6b48a6 100%);
+      color: #e8e3f0;
+      text-decoration: none;
+      border-radius: 12px;
+      font-weight: bold;
+      margin: 8px;
+      border: 1px solid rgba(192, 192, 210, 0.3);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      cursor: pointer;
+    }
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+    }
+    .btn-retake {
+      background: rgba(74, 45, 117, 0.4);
+      color: #c0bcd0;
+      border: 1px solid rgba(192, 192, 210, 0.3);
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 15px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      margin: 8px;
+      transition: transform 0.15s ease;
+    }
+    .btn-retake:hover { transform: translateY(-2px); }
+
+    footer {
+      text-align: center;
+      padding: 30px;
+      background: rgba(15, 8, 30, 0.9);
+      margin-top: 40px;
+      color: #8b87a0;
+      border-top: 1px solid rgba(192, 192, 210, 0.15);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/quiz.html">Book Quiz</a>
+    <a href="/shipping.html">Shipping</a>
+    <a href="/dashboard.html">Custom Order</a>
+    <a href="/orders.html">Orders</a>
+    <a href="/signup.html" id="signupNav">Sign Up</a>
+    <a href="/signup.html?mode=login" id="loginNav">Log In</a>
+    <a href="/admin.html" id="adminNav" style="display:none;">Admin</a>
+  </nav>
+</header>
+
+<section class="section">
+  <h1>Find Your Perfect Book Match</h1>
+  <p class="intro">Answer 10 quick questions about your reading vibes, favorite tropes, genre cravings, and spice tolerance — and we'll match you with your ideal blind date book.</p>
+
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div id="quizContainer">
+    <!-- Q1: Genre -->
+    <div class="question-card active" data-q="0">
+      <div class="question-number">Question 1 of 10</div>
+      <div class="question-text">What genre makes your heart race?</div>
+      <div class="options">
+        <div class="option" data-value="romance"><span class="option-icon">💕</span><span class="option-label">Romance — give me all the butterflies</span></div>
+        <div class="option" data-value="fantasy"><span class="option-icon">🏰</span><span class="option-label">Fantasy — magic, kingdoms, and epic quests</span></div>
+        <div class="option" data-value="thriller"><span class="option-icon">🔪</span><span class="option-label">Thriller / Mystery — keep me on the edge</span></div>
+        <div class="option" data-value="scifi"><span class="option-icon">🚀</span><span class="option-label">Sci-Fi — futuristic worlds and big ideas</span></div>
+        <div class="option" data-value="contemporary"><span class="option-icon">☕</span><span class="option-label">Contemporary / Literary — real life, real feelings</span></div>
+        <div class="option" data-value="horror"><span class="option-icon">👻</span><span class="option-label">Horror / Dark Fiction — the creepier the better</span></div>
+      </div>
+    </div>
+
+    <!-- Q2: Tropes (romantic) -->
+    <div class="question-card" data-q="1">
+      <div class="question-number">Question 2 of 10</div>
+      <div class="question-text">Pick the trope that makes you swoon:</div>
+      <div class="options">
+        <div class="option" data-value="enemies"><span class="option-icon">⚔️</span><span class="option-label">Enemies to Lovers — tension? Yes please</span></div>
+        <div class="option" data-value="fakedate"><span class="option-icon">💍</span><span class="option-label">Fake Dating / Marriage of Convenience</span></div>
+        <div class="option" data-value="forbidden"><span class="option-icon">🚫</span><span class="option-label">Forbidden Love — we shouldn't, but we will</span></div>
+        <div class="option" data-value="foundfamily"><span class="option-icon">🏡</span><span class="option-label">Found Family — belonging and bonds</span></div>
+        <div class="option" data-value="secondchance"><span class="option-icon">🔄</span><span class="option-label">Second Chance Romance — love deserves a redo</span></div>
+        <div class="option" data-value="grumpy"><span class="option-icon">😤</span><span class="option-label">Grumpy x Sunshine — opposites attract</span></div>
+      </div>
+    </div>
+
+    <!-- Q3: Spice Level -->
+    <div class="question-card" data-q="2">
+      <div class="question-number">Question 3 of 10</div>
+      <div class="question-text">What's your spice level preference?</div>
+      <div class="options">
+        <div class="option" data-value="clean"><span class="option-icon">🌸</span><span class="option-label">Clean & Sweet — closed door, all heart</span></div>
+        <div class="option" data-value="mild"><span class="option-icon">🌶️</span><span class="option-label">Mild Spice — a little heat, tastefully done</span></div>
+        <div class="option" data-value="medium"><span class="option-icon">🔥</span><span class="option-label">Medium Heat — steamy scenes, bring it on</span></div>
+        <div class="option" data-value="hot"><span class="option-icon">🌋</span><span class="option-label">Extra Spicy — fan me down, I love the heat</span></div>
+        <div class="option" data-value="inferno"><span class="option-icon">😈</span><span class="option-label">Five-Alarm Fire — the spicier the better</span></div>
+      </div>
+    </div>
+
+    <!-- Q4: Setting -->
+    <div class="question-card" data-q="3">
+      <div class="question-number">Question 4 of 10</div>
+      <div class="question-text">Where do you want your story to take you?</div>
+      <div class="options">
+        <div class="option" data-value="smalltown"><span class="option-icon">🌻</span><span class="option-label">Cozy small town — everyone knows everyone</span></div>
+        <div class="option" data-value="kingdom"><span class="option-icon">👑</span><span class="option-label">A magical kingdom with courts and crowns</span></div>
+        <div class="option" data-value="city"><span class="option-icon">🌃</span><span class="option-label">Big city lights — fast-paced urban life</span></div>
+        <div class="option" data-value="gothic"><span class="option-icon">🏚️</span><span class="option-label">A dark gothic manor — secrets in every room</span></div>
+        <div class="option" data-value="nature"><span class="option-icon">🌲</span><span class="option-label">Wild outdoors — cabins, mountains, adventure</span></div>
+        <div class="option" data-value="space"><span class="option-icon">✨</span><span class="option-label">Another world entirely — alien planets or portals</span></div>
+      </div>
+    </div>
+
+    <!-- Q5: Character preference -->
+    <div class="question-card" data-q="4">
+      <div class="question-number">Question 5 of 10</div>
+      <div class="question-text">What kind of main character do you gravitate toward?</div>
+      <div class="options">
+        <div class="option" data-value="morallygray"><span class="option-icon">🐺</span><span class="option-label">Morally gray — complex, messy, and fascinating</span></div>
+        <div class="option" data-value="softcinnamon"><span class="option-icon">🧸</span><span class="option-label">Soft cinnamon roll — must be protected at all costs</span></div>
+        <div class="option" data-value="fierce"><span class="option-icon">⚡</span><span class="option-label">Fierce and fearless — takes no nonsense</span></div>
+        <div class="option" data-value="witty"><span class="option-icon">😏</span><span class="option-label">Witty and sarcastic — banter is everything</span></div>
+        <div class="option" data-value="brooding"><span class="option-icon">🖤</span><span class="option-label">Dark and brooding — mysterious with hidden depths</span></div>
+        <div class="option" data-value="underdog"><span class="option-icon">🌱</span><span class="option-label">The underdog — loves a good growth arc</span></div>
+      </div>
+    </div>
+
+    <!-- Q6: Pacing -->
+    <div class="question-card" data-q="5">
+      <div class="question-number">Question 6 of 10</div>
+      <div class="question-text">How do you like your pacing?</div>
+      <div class="options">
+        <div class="option" data-value="fastpaced"><span class="option-icon">💨</span><span class="option-label">Fast and unputdownable — page-turner energy</span></div>
+        <div class="option" data-value="slowburn"><span class="option-icon">🕯️</span><span class="option-label">Slow burn — let the tension build deliciously</span></div>
+        <div class="option" data-value="balanced"><span class="option-icon">⚖️</span><span class="option-label">Balanced — a steady rhythm with great payoff</span></div>
+        <div class="option" data-value="twisty"><span class="option-icon">🌀</span><span class="option-label">Full of twists — surprise me every chapter</span></div>
+      </div>
+    </div>
+
+    <!-- Q7: More tropes -->
+    <div class="question-card" data-q="6">
+      <div class="question-number">Question 7 of 10</div>
+      <div class="question-text">Pick another trope you can't resist:</div>
+      <div class="options">
+        <div class="option" data-value="darkacademia"><span class="option-icon">📚</span><span class="option-label">Dark Academia — secret societies and old libraries</span></div>
+        <div class="option" data-value="chosenone"><span class="option-icon">⭐</span><span class="option-label">Chosen One / Prophecy — destined for greatness</span></div>
+        <div class="option" data-value="villain"><span class="option-icon">🃏</span><span class="option-label">Villain Romance — love the one you shouldn't</span></div>
+        <div class="option" data-value="onlyone"><span class="option-icon">🛏️</span><span class="option-label">Only One Bed — the classic, undefeated</span></div>
+        <div class="option" data-value="secret"><span class="option-icon">🎭</span><span class="option-label">Secret Identity / Hidden Royalty</span></div>
+        <div class="option" data-value="heist"><span class="option-icon">💎</span><span class="option-label">Heist / Con Artist — clever plans and double-crosses</span></div>
+      </div>
+    </div>
+
+    <!-- Q8: Ending preference -->
+    <div class="question-card" data-q="7">
+      <div class="question-number">Question 8 of 10</div>
+      <div class="question-text">How do you like your endings?</div>
+      <div class="options">
+        <div class="option" data-value="hea"><span class="option-icon">🌈</span><span class="option-label">Happily Ever After — always and forever</span></div>
+        <div class="option" data-value="bittersweet"><span class="option-icon">🥀</span><span class="option-label">Bittersweet — beautiful but it'll make me ache</span></div>
+        <div class="option" data-value="plottwist"><span class="option-icon">🤯</span><span class="option-label">Plot twist ending — jaw on the floor</span></div>
+        <div class="option" data-value="openended"><span class="option-icon">🌙</span><span class="option-label">Open-ended — let me imagine what happens next</span></div>
+        <div class="option" data-value="anything"><span class="option-icon">🎲</span><span class="option-label">Surprise me — I can handle anything</span></div>
+      </div>
+    </div>
+
+    <!-- Q9: Reading mood -->
+    <div class="question-card" data-q="8">
+      <div class="question-number">Question 9 of 10</div>
+      <div class="question-text">What's the mood you're chasing right now?</div>
+      <div class="options">
+        <div class="option" data-value="comfort"><span class="option-icon">🧣</span><span class="option-label">Cozy comfort read — warm and fuzzy vibes</span></div>
+        <div class="option" data-value="crying"><span class="option-icon">😭</span><span class="option-label">Ugly crying — wreck me emotionally</span></div>
+        <div class="option" data-value="thrilling"><span class="option-icon">😱</span><span class="option-label">Heart-pounding suspense — edge of my seat</span></div>
+        <div class="option" data-value="swoon"><span class="option-icon">🦋</span><span class="option-label">Swoon-worthy romance — butterflies only</span></div>
+        <div class="option" data-value="mindbending"><span class="option-icon">🧠</span><span class="option-label">Mind-bending — make me think and question everything</span></div>
+        <div class="option" data-value="laughing"><span class="option-icon">😂</span><span class="option-label">Laugh out loud — witty and fun</span></div>
+      </div>
+    </div>
+
+    <!-- Q10: Book companion -->
+    <div class="question-card" data-q="9">
+      <div class="question-number">Question 10 of 10</div>
+      <div class="question-text">Last one! What's your ideal reading companion?</div>
+      <div class="options">
+        <div class="option" data-value="tea"><span class="option-icon">🍵</span><span class="option-label">A warm cup of tea — classic and cozy</span></div>
+        <div class="option" data-value="wine"><span class="option-icon">🍷</span><span class="option-label">A glass of wine — sophisticated vibes</span></div>
+        <div class="option" data-value="coffee"><span class="option-icon">☕</span><span class="option-label">Iced coffee — bookish and caffeinated</span></div>
+        <div class="option" data-value="snacks"><span class="option-icon">🍫</span><span class="option-label">All the snacks — reading is a full experience</span></div>
+        <div class="option" data-value="candle"><span class="option-icon">🕯️</span><span class="option-label">A scented candle — set the whole mood</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-buttons" id="navButtons">
+    <button class="btn btn-back" id="btnBack" disabled>Back</button>
+    <button class="btn btn-next" id="btnNext" disabled>Next</button>
+  </div>
+
+  <!-- Results Section -->
+  <div id="results">
+    <div class="result-card">
+      <div class="result-emoji" id="resultEmoji"></div>
+      <div class="result-title" id="resultTitle"></div>
+      <div class="result-tagline" id="resultTagline"></div>
+      <div class="result-description" id="resultDesc"></div>
+      <div class="result-traits" id="resultTraits"></div>
+      <div class="result-recs" id="resultRecs"></div>
+      <div style="margin-top:12px;">
+        <button class="btn-retake" onclick="retakeQuiz()">Retake Quiz</button>
+        <a href="/dashboard.html" class="button">Order Your Blind Date Book</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  &copy; 2026 Katayama Creations — Blind dates with books, not people.
+</footer>
+
+<script>
+(function () {
+  var answers = [];
+  var current = 0;
+  var total = 10;
+  var cards = document.querySelectorAll('.question-card');
+  var progressFill = document.getElementById('progressFill');
+  var btnNext = document.getElementById('btnNext');
+  var btnBack = document.getElementById('btnBack');
+  var navButtons = document.getElementById('navButtons');
+
+  cards.forEach(function (card, qi) {
+    card.querySelectorAll('.option').forEach(function (opt) {
+      opt.addEventListener('click', function () {
+        card.querySelectorAll('.option').forEach(function (o) { o.classList.remove('selected'); });
+        opt.classList.add('selected');
+        answers[qi] = opt.getAttribute('data-value');
+        btnNext.disabled = false;
+      });
+    });
+  });
+
+  function showQuestion(index) {
+    cards.forEach(function (c, i) { c.classList.toggle('active', i === index); });
+    current = index;
+    progressFill.style.width = ((index + 1) / total * 100) + '%';
+    btnBack.disabled = (index === 0);
+    btnNext.disabled = !answers[index];
+    btnNext.textContent = (index === total - 1) ? 'See My Results' : 'Next';
+  }
+
+  btnNext.addEventListener('click', function () {
+    if (!answers[current]) return;
+    if (current < total - 1) {
+      showQuestion(current + 1);
+    } else {
+      showResults();
+    }
+  });
+
+  btnBack.addEventListener('click', function () {
+    if (current > 0) showQuestion(current - 1);
+  });
+
+  var resultProfiles = {
+    romantasy: {
+      emoji: '👑💕',
+      title: 'The Romantasy Royal',
+      tagline: '"Give me a crown, a curse, and a slow-burn love story."',
+      description: 'You live for the intoxicating blend of fantasy world-building and heart-stopping romance. Courts, crowns, magic systems, and love interests who would burn kingdoms for you — that\'s your sweet spot. You love when the stakes are sky-high and the tension between characters is even higher.',
+      traits: ['Fantasy Romance', 'Slow Burn', 'Court Intrigue', 'Fated Mates', 'Morally Complex Love'],
+      recs: [
+        { title: 'A Court of Thorns and Roses', author: 'Sarah J. Maas', note: 'The OG romantasy gateway' },
+        { title: 'From Blood and Ash', author: 'Jennifer L. Armentrout', note: 'Spicy, action-packed, and addictive' },
+        { title: 'The Cruel Prince', author: 'Holly Black', note: 'Enemies-to-lovers in the fae courts' },
+        { title: 'Daughter of the Moon Goddess', author: 'Sue Lynn Tan', note: 'Lush mythology and slow-burn love' }
+      ]
+    },
+    spicereader: {
+      emoji: '🔥📖',
+      title: 'The Spice Connoisseur',
+      tagline: '"If the pages aren\'t steaming, I\'m not reading."',
+      description: 'You know what you want and you\'re not shy about it — stories with sizzling chemistry and scenes that make you fan yourself. But you also love great characters, witty banter, and a plot that keeps you invested beyond the spice. You appreciate authors who write heat AND heart.',
+      traits: ['Steamy Romance', 'Tension & Chemistry', 'Bold Heroines', 'Banter', 'Open Door Scenes'],
+      recs: [
+        { title: 'Twisted Love', author: 'Ana Huang', note: 'Forbidden romance with serious heat' },
+        { title: 'The Deal', author: 'Elle Kennedy', note: 'College romance, witty, and swoony' },
+        { title: 'Haunting Adeline', author: 'H.D. Carlton', note: 'Dark romance — not for the faint of heart' },
+        { title: 'Things We Never Got Over', author: 'Lucy Score', note: 'Small town spice with a grumpy hero' }
+      ]
+    },
+    cozybiblio: {
+      emoji: '🧸📚',
+      title: 'The Cozy Bibliophile',
+      tagline: '"Wrap me in a blanket and hand me a feel-good book."',
+      description: 'You read to feel warm, safe, and happy. You love sweet romances, charming small-town settings, and characters who feel like friends. A cup of tea, a soft blanket, and a guaranteed happy ending — that\'s your idea of a perfect reading night. Life is hard enough; your books should be a hug.',
+      traits: ['Sweet Romance', 'Small Town', 'Comfort Reads', 'Happy Endings', 'Found Family'],
+      recs: [
+        { title: 'The Bromance Book Club', author: 'Lyssa Kay Adams', note: 'Heartfelt and genuinely funny' },
+        { title: 'Beach Read', author: 'Emily Henry', note: 'Banter-heavy with real emotional depth' },
+        { title: 'The House in the Cerulean Sea', author: 'TJ Klune', note: 'Found family perfection — pure joy' },
+        { title: 'Legends & Lattes', author: 'Travis Baldree', note: 'Low-stakes cozy fantasy, pure comfort' }
+      ]
+    },
+    thrillseeker: {
+      emoji: '🔍🗡️',
+      title: 'The Thrill Seeker',
+      tagline: '"I read like I\'m solving a crime — don\'t interrupt me."',
+      description: 'You crave the rush of a story that keeps you guessing. Plot twists, unreliable narrators, ticking clocks, and that electric feeling of piecing clues together — that\'s your fuel. You love suspense that makes you distrust every character and endings that leave you staring at the wall.',
+      traits: ['Suspense & Thriller', 'Plot Twists', 'Unreliable Narrators', 'Fast-Paced', 'Dark Atmosphere'],
+      recs: [
+        { title: 'The Maid', author: 'Nita Prose', note: 'Quirky protagonist, gripping mystery' },
+        { title: 'Verity', author: 'Colleen Hoover', note: 'Psychological thriller you won\'t see coming' },
+        { title: 'The Silent Patient', author: 'Alex Michaelides', note: 'The twist ending to end all twists' },
+        { title: 'One of Us Is Lying', author: 'Karen M. McManus', note: 'YA thriller — fast and addictive' }
+      ]
+    },
+    darkenchanted: {
+      emoji: '🖤🌙',
+      title: 'The Dark Enchanted',
+      tagline: '"Give me morally gray characters and gothic atmospheres or give me nothing."',
+      description: 'You\'re drawn to the shadows. Gothic settings, morally complex characters, dark academia vibes, and stories that explore the beautiful and terrible sides of human nature. You don\'t need your characters to be good — you need them to be interesting. And if there\'s a villain romance? Even better.',
+      traits: ['Dark Romance', 'Gothic Vibes', 'Morally Gray', 'Dark Academia', 'Villain Love Interest'],
+      recs: [
+        { title: 'Ninth House', author: 'Leigh Bardugo', note: 'Dark academia meets supernatural mystery' },
+        { title: 'Mexican Gothic', author: 'Silvia Moreno-Garcia', note: 'Gothic horror, atmospheric and eerie' },
+        { title: 'The Atlas Six', author: 'Olivia Blake', note: 'Dark academia with morally complex magic users' },
+        { title: 'Kingdom of the Wicked', author: 'Kerri Maniscalco', note: 'Devil romance meets murder mystery' }
+      ]
+    },
+    epicadventurer: {
+      emoji: '🗺️⚡',
+      title: 'The Epic Adventurer',
+      tagline: '"I don\'t just read books — I go on quests."',
+      description: 'You want to be transported to another world entirely. Sprawling adventures, richly built universes, brave heroes on impossible missions, and that feeling of being swept up in something bigger than yourself. Whether it\'s spaceships or sword fights, you want an epic journey from page one to the very last word.',
+      traits: ['Epic Fantasy', 'Sci-Fi', 'World-Building', 'Quest Narratives', 'Big Adventures'],
+      recs: [
+        { title: 'The Name of the Wind', author: 'Patrick Rothfuss', note: 'Beautiful prose, legendary world-building' },
+        { title: 'Six of Crows', author: 'Leigh Bardugo', note: 'Heist fantasy with unforgettable characters' },
+        { title: 'Red Rising', author: 'Pierce Brown', note: 'Sci-fi rebellion — brutal and brilliant' },
+        { title: 'The Priory of the Orange Tree', author: 'Samantha Shannon', note: 'Epic standalone fantasy with dragons' }
+      ]
+    }
+  };
+
+  function calculateResult() {
+    var scores = { romantasy: 0, spicereader: 0, cozybiblio: 0, thrillseeker: 0, darkenchanted: 0, epicadventurer: 0 };
+
+    // Q1: Genre
+    var genre = answers[0];
+    if (genre === 'romance') { scores.spicereader += 3; scores.cozybiblio += 2; scores.romantasy += 1; }
+    if (genre === 'fantasy') { scores.romantasy += 3; scores.epicadventurer += 3; scores.darkenchanted += 1; }
+    if (genre === 'thriller') { scores.thrillseeker += 4; scores.darkenchanted += 1; }
+    if (genre === 'scifi') { scores.epicadventurer += 4; scores.thrillseeker += 1; }
+    if (genre === 'contemporary') { scores.cozybiblio += 3; scores.spicereader += 1; }
+    if (genre === 'horror') { scores.darkenchanted += 4; scores.thrillseeker += 2; }
+
+    // Q2: Romantic tropes
+    var trope1 = answers[1];
+    if (trope1 === 'enemies') { scores.romantasy += 2; scores.spicereader += 2; scores.darkenchanted += 1; }
+    if (trope1 === 'fakedate') { scores.cozybiblio += 2; scores.spicereader += 2; }
+    if (trope1 === 'forbidden') { scores.spicereader += 2; scores.darkenchanted += 2; scores.romantasy += 1; }
+    if (trope1 === 'foundfamily') { scores.cozybiblio += 3; scores.epicadventurer += 2; }
+    if (trope1 === 'secondchance') { scores.cozybiblio += 2; scores.spicereader += 1; }
+    if (trope1 === 'grumpy') { scores.cozybiblio += 2; scores.spicereader += 2; }
+
+    // Q3: Spice level
+    var spice = answers[2];
+    if (spice === 'clean') { scores.cozybiblio += 4; scores.epicadventurer += 1; }
+    if (spice === 'mild') { scores.cozybiblio += 2; scores.romantasy += 2; }
+    if (spice === 'medium') { scores.romantasy += 3; scores.spicereader += 2; }
+    if (spice === 'hot') { scores.spicereader += 4; scores.romantasy += 1; scores.darkenchanted += 1; }
+    if (spice === 'inferno') { scores.spicereader += 5; scores.darkenchanted += 2; }
+
+    // Q4: Setting
+    var setting = answers[3];
+    if (setting === 'smalltown') { scores.cozybiblio += 4; }
+    if (setting === 'kingdom') { scores.romantasy += 4; scores.epicadventurer += 2; }
+    if (setting === 'city') { scores.thrillseeker += 2; scores.spicereader += 1; scores.cozybiblio += 1; }
+    if (setting === 'gothic') { scores.darkenchanted += 4; scores.thrillseeker += 1; }
+    if (setting === 'nature') { scores.cozybiblio += 2; scores.epicadventurer += 2; }
+    if (setting === 'space') { scores.epicadventurer += 4; scores.darkenchanted += 1; }
+
+    // Q5: Character type
+    var character = answers[4];
+    if (character === 'morallygray') { scores.darkenchanted += 4; scores.romantasy += 1; scores.thrillseeker += 1; }
+    if (character === 'softcinnamon') { scores.cozybiblio += 4; }
+    if (character === 'fierce') { scores.epicadventurer += 2; scores.romantasy += 2; scores.thrillseeker += 1; }
+    if (character === 'witty') { scores.cozybiblio += 2; scores.spicereader += 2; }
+    if (character === 'brooding') { scores.darkenchanted += 3; scores.romantasy += 2; }
+    if (character === 'underdog') { scores.epicadventurer += 3; scores.cozybiblio += 1; }
+
+    // Q6: Pacing
+    var pacing = answers[5];
+    if (pacing === 'fastpaced') { scores.thrillseeker += 3; scores.epicadventurer += 1; }
+    if (pacing === 'slowburn') { scores.romantasy += 3; scores.spicereader += 2; scores.cozybiblio += 1; }
+    if (pacing === 'balanced') { scores.cozybiblio += 2; scores.epicadventurer += 2; }
+    if (pacing === 'twisty') { scores.thrillseeker += 4; scores.darkenchanted += 2; }
+
+    // Q7: More tropes
+    var trope2 = answers[6];
+    if (trope2 === 'darkacademia') { scores.darkenchanted += 4; scores.thrillseeker += 1; }
+    if (trope2 === 'chosenone') { scores.epicadventurer += 4; scores.romantasy += 1; }
+    if (trope2 === 'villain') { scores.darkenchanted += 3; scores.spicereader += 2; }
+    if (trope2 === 'onlyone') { scores.spicereader += 3; scores.cozybiblio += 2; }
+    if (trope2 === 'secret') { scores.romantasy += 3; scores.epicadventurer += 1; }
+    if (trope2 === 'heist') { scores.epicadventurer += 3; scores.thrillseeker += 2; }
+
+    // Q8: Ending preference
+    var ending = answers[7];
+    if (ending === 'hea') { scores.cozybiblio += 3; scores.romantasy += 2; scores.spicereader += 1; }
+    if (ending === 'bittersweet') { scores.darkenchanted += 2; scores.epicadventurer += 1; }
+    if (ending === 'plottwist') { scores.thrillseeker += 4; scores.darkenchanted += 1; }
+    if (ending === 'openended') { scores.darkenchanted += 2; scores.epicadventurer += 1; }
+    if (ending === 'anything') { scores.thrillseeker += 1; scores.darkenchanted += 1; scores.epicadventurer += 1; }
+
+    // Q9: Reading mood
+    var mood = answers[8];
+    if (mood === 'comfort') { scores.cozybiblio += 4; }
+    if (mood === 'crying') { scores.romantasy += 2; scores.darkenchanted += 1; scores.cozybiblio += 1; }
+    if (mood === 'thrilling') { scores.thrillseeker += 4; }
+    if (mood === 'swoon') { scores.spicereader += 3; scores.romantasy += 2; }
+    if (mood === 'mindbending') { scores.epicadventurer += 2; scores.thrillseeker += 2; scores.darkenchanted += 1; }
+    if (mood === 'laughing') { scores.cozybiblio += 3; scores.spicereader += 1; }
+
+    // Q10: Companion
+    var companion = answers[9];
+    if (companion === 'tea') { scores.cozybiblio += 2; scores.romantasy += 1; }
+    if (companion === 'wine') { scores.spicereader += 2; scores.darkenchanted += 1; }
+    if (companion === 'coffee') { scores.thrillseeker += 1; scores.epicadventurer += 1; }
+    if (companion === 'snacks') { scores.cozybiblio += 1; scores.spicereader += 1; }
+    if (companion === 'candle') { scores.darkenchanted += 2; scores.romantasy += 1; }
+
+    var best = 'cozybiblio';
+    var bestScore = 0;
+    for (var key in scores) {
+      if (scores[key] > bestScore) { bestScore = scores[key]; best = key; }
+    }
+    return best;
+  }
+
+  function showResults() {
+    var key = calculateResult();
+    var profile = resultProfiles[key];
+    document.getElementById('resultEmoji').textContent = profile.emoji;
+    document.getElementById('resultTitle').textContent = profile.title;
+    document.getElementById('resultTagline').textContent = profile.tagline;
+    document.getElementById('resultDesc').textContent = profile.description;
+
+    var traitsHtml = profile.traits.map(function (t) { return '<span class="trait-tag">' + t + '</span>'; }).join('');
+    document.getElementById('resultTraits').innerHTML = traitsHtml;
+
+    var recsHtml = '<h3>Books We Think You\'ll Love:</h3><ul>';
+    profile.recs.forEach(function (r) {
+      recsHtml += '<li><strong>' + r.title + '</strong> <span class="rec-author">by ' + r.author + '</span><br><span style="color:#8b87a0; font-size:13px;">' + r.note + '</span></li>';
+    });
+    recsHtml += '</ul>';
+    document.getElementById('resultRecs').innerHTML = recsHtml;
+
+    document.getElementById('quizContainer').style.display = 'none';
+    navButtons.style.display = 'none';
+    document.getElementById('results').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  window.retakeQuiz = function () {
+    answers = [];
+    current = 0;
+    document.querySelectorAll('.option.selected').forEach(function (o) { o.classList.remove('selected'); });
+    document.getElementById('quizContainer').style.display = '';
+    navButtons.style.display = 'flex';
+    document.getElementById('results').style.display = 'none';
+    showQuestion(0);
+  };
+
+  showQuestion(0);
+})();
+</script>
+
+<script type="module">
+  import { getUser } from 'https://esm.sh/@netlify/identity@1.0.0?bundle';
+  var ADMIN_EMAIL = 'ogmegbeast@gmail.com';
+  try {
+    var u = await getUser();
+    if (u) {
+      var signupLink = document.getElementById('signupNav');
+      var loginLink = document.getElementById('loginNav');
+      if (signupLink) signupLink.style.display = 'none';
+      if (loginLink) loginLink.style.display = 'none';
+      if ((u.email || '').toLowerCase() === ADMIN_EMAIL) {
+        var link = document.getElementById('adminNav');
+        if (link) link.style.display = '';
+      }
+    }
+  } catch (_) {}
+</script>
+
+</body>
+</html>
