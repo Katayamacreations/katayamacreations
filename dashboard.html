@@ -238,6 +238,14 @@
       border-radius: 12px;
       margin-bottom: 16px;
     }
+    .email-notice {
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.07);
+      border-radius: 8px;
+      font-size: 13px;
+      color: #c8c4d4;
+    }
     .gate {
       display: none;
       text-align: center;
@@ -470,6 +478,9 @@
     <h2>Your details</h2>
     <div class="success" id="success">
       Thanks! Your custom order was sent. A payment prompt is on screen — please complete Venmo to lock in your order.
+      <div class="email-notice">
+        📬 A confirmation email is on its way. If you don't see it, check your spam or junk folder.
+      </div>
     </div>
     <form id="customOrderForm">
       <div class="grid">
@@ -504,6 +515,7 @@
       Orders not paid within 24 hours are automatically cancelled.
     </div>
     <p style="font-size:12px; color:#8b87a0;">Include your name and "Blind Date Order" in the Venmo note so Megan can match it to your order.</p>
+    <p class="email-notice" style="margin:12px 0 0;">📬 Check your email for an order confirmation. If you don't see it, check your spam or junk folder.</p>
     <div class="actions">
       <a class="button venmo" id="venmoLink" href="https://venmo.com/u/MeganKatayama1" target="_blank" rel="noopener">Pay with Venmo</a>
       <button class="button secondary" type="button" id="closeModal">I've paid / close</button>
