@@ -127,6 +127,95 @@
       color: #8b87a0;
       border-top: 1px solid rgba(192, 192, 210, 0.15);
     }
+
+    /* Review modal */
+    .review-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(10, 5, 20, 0.85);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .review-overlay.open { display: flex; }
+    .review-modal {
+      background: linear-gradient(160deg, #2d1b46 0%, #1e1232 100%);
+      border: 1px solid rgba(192, 192, 210, 0.2);
+      border-radius: 20px;
+      padding: 32px;
+      width: 100%;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+    }
+    .review-modal h2 { margin: 0 0 6px; color: #e8e3f0; font-size: 22px; }
+    .review-modal .modal-sub { color: #8b87a0; font-size: 13px; margin-bottom: 20px; }
+    .review-modal label { display: block; color: #c0bcd0; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    .review-modal textarea {
+      width: 100%; min-height: 90px; padding: 12px;
+      background: rgba(20, 10, 40, 0.6);
+      border: 1px solid rgba(192, 192, 210, 0.2);
+      border-radius: 10px; color: #e8e3f0; font-family: inherit; font-size: 14px;
+      resize: vertical; box-sizing: border-box;
+    }
+    .review-modal textarea:focus { outline: none; border-color: #6b48a6; }
+    .review-modal input[type="text"] {
+      width: 100%; padding: 10px 12px;
+      background: rgba(20, 10, 40, 0.6);
+      border: 1px solid rgba(192, 192, 210, 0.2);
+      border-radius: 10px; color: #e8e3f0; font-family: inherit; font-size: 14px;
+      box-sizing: border-box;
+    }
+    .review-modal input[type="text"]:focus { outline: none; border-color: #6b48a6; }
+    .review-field { margin-bottom: 16px; }
+    .review-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .review-actions .button { flex: 1; text-align: center; }
+    .star-rating { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+    .star-rating .star-btn {
+      background: none; border: none; cursor: pointer; padding: 0;
+      font-size: 32px; line-height: 1; color: rgba(192, 192, 210, 0.25);
+      transition: color 0.15s;
+      position: relative; display: inline-block; width: 32px; height: 32px;
+    }
+    .star-rating .star-btn svg { width: 32px; height: 32px; }
+    .star-rating .star-label { margin-left: 8px; color: #b8b3c8; font-size: 14px; font-weight: 600; }
+    .photo-upload-area {
+      border: 2px dashed rgba(192, 192, 210, 0.2);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .photo-upload-area:hover { border-color: #6b48a6; }
+    .photo-upload-area p { color: #8b87a0; font-size: 13px; margin: 0; }
+    .photo-previews { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .photo-previews .thumb {
+      width: 64px; height: 64px; border-radius: 8px; object-fit: cover;
+      border: 1px solid rgba(192, 192, 210, 0.2);
+    }
+    .photo-previews .thumb-wrap {
+      position: relative; display: inline-block;
+    }
+    .photo-previews .thumb-remove {
+      position: absolute; top: -6px; right: -6px;
+      background: #e63c5c; color: #fff; border: none; border-radius: 50%;
+      width: 20px; height: 20px; font-size: 12px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      line-height: 1;
+    }
+    .review-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 12px; color: #b8b3c8;
+      background: rgba(107, 72, 166, 0.2);
+      border: 1px solid rgba(107, 72, 166, 0.3);
+      padding: 3px 10px; border-radius: 999px; margin-top: 6px;
+    }
+    .review-badge svg { width: 14px; height: 14px; }
+    .review-stars-inline { display: inline-flex; gap: 1px; }
+    .review-stars-inline svg { width: 16px; height: 16px; }
   </style>
 </head>
 <body>
@@ -139,6 +228,7 @@
     <a href="/quiz.html">Book Quiz</a>
     <a href="/dashboard.html">Custom Order</a>
     <a href="/orders.html">Orders</a>
+    <a href="/reviews.html">Reviews</a>
     <a href="/signup.html" id="signupNav">Sign Up</a>
     <a href="/signup.html?mode=login" id="loginNav">Log In</a>
     <a href="/admin.html" id="adminNav" style="display:none;">Admin</a>
@@ -175,6 +265,37 @@
 
 <footer>© 2026 Katayama Creations — Curated reads, hand wrapped.</footer>
 
+<div class="review-overlay" id="reviewOverlay">
+  <div class="review-modal">
+    <h2>Write a Review</h2>
+    <p class="modal-sub" id="reviewOrderLabel"></p>
+    <div class="review-field">
+      <label>Your Rating</label>
+      <div class="star-rating" id="starRating"></div>
+    </div>
+    <div class="review-field">
+      <label for="reviewName">Display Name</label>
+      <input type="text" id="reviewName" placeholder="Your name (shown publicly)">
+    </div>
+    <div class="review-field">
+      <label for="reviewText">Your Review</label>
+      <textarea id="reviewText" placeholder="Tell others about your experience…"></textarea>
+    </div>
+    <div class="review-field">
+      <label>Photos (optional, up to 5)</label>
+      <div class="photo-upload-area" id="photoUploadArea">
+        <p>Click or drag to add photos</p>
+        <input type="file" id="photoInput" accept="image/png,image/jpeg,image/webp,image/gif" multiple style="display:none;">
+      </div>
+      <div class="photo-previews" id="photoPreviews"></div>
+    </div>
+    <div class="review-actions">
+      <button type="button" class="button secondary" id="reviewCancel">Cancel</button>
+      <button type="button" class="button" id="reviewSubmit">Submit Review</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import {
     getUser,
@@ -192,6 +313,203 @@
   const whoEmail = document.getElementById('whoEmail');
 
   let currentUser = null;
+  let userReviews = [];
+
+  function starSVG(fill) {
+    if (fill === 'full') return `<svg viewBox="0 0 24 24"><path fill="#8b5cf6" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>`;
+    if (fill === 'half') return `<svg viewBox="0 0 24 24"><defs><linearGradient id="hg"><stop offset="50%" stop-color="#8b5cf6"/><stop offset="50%" stop-color="rgba(192,192,210,0.25)"/></linearGradient></defs><path fill="url(#hg)" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>`;
+    return `<svg viewBox="0 0 24 24"><path fill="rgba(192,192,210,0.25)" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>`;
+  }
+
+  function renderStaticStars(rating) {
+    let html = '';
+    for (let i = 1; i <= 5; i++) {
+      if (rating >= i) html += starSVG('full');
+      else if (rating >= i - 0.5) html += starSVG('half');
+      else html += starSVG('empty');
+    }
+    return html;
+  }
+
+  // Star rating widget
+  let selectedRating = 0;
+  const starContainer = document.getElementById('starRating');
+  const ratingLabel = document.createElement('span');
+  ratingLabel.className = 'star-label';
+  function buildStars() {
+    starContainer.innerHTML = '';
+    for (let i = 1; i <= 10; i++) {
+      const val = i * 0.5;
+      const starIndex = Math.ceil(val);
+      const isLeft = (i % 2 === 1);
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'star-btn';
+      btn.dataset.val = String(val);
+      btn.style.width = '16px';
+      btn.style.height = '32px';
+      btn.style.overflow = 'hidden';
+      btn.style.position = 'relative';
+      if (isLeft) {
+        btn.style.marginLeft = '2px';
+        btn.style.clipPath = 'inset(0 50% 0 0)';
+      } else {
+        btn.style.marginLeft = '-16px';
+        btn.style.clipPath = 'inset(0 0 0 50%)';
+        btn.style.marginRight = '2px';
+      }
+      btn.innerHTML = starSVG(val <= selectedRating ? 'full' : 'empty');
+      btn.addEventListener('mouseenter', () => previewRating(val));
+      btn.addEventListener('click', () => { selectedRating = val; updateStars(); });
+      starContainer.appendChild(btn);
+    }
+    ratingLabel.textContent = selectedRating ? `${selectedRating} / 5` : '';
+    starContainer.appendChild(ratingLabel);
+  }
+
+  function previewRating(val) {
+    starContainer.querySelectorAll('.star-btn').forEach(b => {
+      const v = parseFloat(b.dataset.val);
+      b.innerHTML = starSVG(v <= val ? 'full' : 'empty');
+    });
+    ratingLabel.textContent = `${val} / 5`;
+  }
+
+  function updateStars() {
+    starContainer.querySelectorAll('.star-btn').forEach(b => {
+      const v = parseFloat(b.dataset.val);
+      b.innerHTML = starSVG(v <= selectedRating ? 'full' : 'empty');
+    });
+    ratingLabel.textContent = selectedRating ? `${selectedRating} / 5` : '';
+  }
+
+  starContainer.addEventListener('mouseleave', () => updateStars());
+  buildStars();
+
+  // Photo upload
+  let pendingPhotos = [];
+  const photoInput = document.getElementById('photoInput');
+  const photoArea = document.getElementById('photoUploadArea');
+  const photoPreviews = document.getElementById('photoPreviews');
+  photoArea.addEventListener('click', () => photoInput.click());
+  photoArea.addEventListener('dragover', e => { e.preventDefault(); photoArea.style.borderColor = '#6b48a6'; });
+  photoArea.addEventListener('dragleave', () => { photoArea.style.borderColor = ''; });
+  photoArea.addEventListener('drop', e => {
+    e.preventDefault();
+    photoArea.style.borderColor = '';
+    addFiles(e.dataTransfer.files);
+  });
+  photoInput.addEventListener('change', () => { addFiles(photoInput.files); photoInput.value = ''; });
+
+  function addFiles(files) {
+    for (const f of Array.from(files)) {
+      if (pendingPhotos.length >= 5) break;
+      if (!f.type.match(/^image\/(png|jpeg|jpg|webp|gif)$/)) continue;
+      if (f.size > 5 * 1024 * 1024) continue;
+      const reader = new FileReader();
+      reader.onload = () => {
+        pendingPhotos.push({ dataBase64: reader.result, fileName: f.name, contentType: f.type });
+        renderPhotoThumbs();
+      };
+      reader.readAsDataURL(f);
+    }
+  }
+
+  function renderPhotoThumbs() {
+    photoPreviews.innerHTML = '';
+    pendingPhotos.forEach((p, idx) => {
+      const wrap = document.createElement('span');
+      wrap.className = 'thumb-wrap';
+      const img = document.createElement('img');
+      img.className = 'thumb';
+      img.src = p.dataBase64;
+      const rm = document.createElement('button');
+      rm.className = 'thumb-remove';
+      rm.textContent = '×';
+      rm.addEventListener('click', () => { pendingPhotos.splice(idx, 1); renderPhotoThumbs(); });
+      wrap.appendChild(img);
+      wrap.appendChild(rm);
+      photoPreviews.appendChild(wrap);
+    });
+  }
+
+  // Review modal
+  let reviewingOrderId = null;
+  const overlay = document.getElementById('reviewOverlay');
+  document.getElementById('reviewCancel').addEventListener('click', closeReviewModal);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeReviewModal(); });
+
+  function openReviewModal(order) {
+    reviewingOrderId = order.id;
+    document.getElementById('reviewOrderLabel').textContent = `Order #${order.id}`;
+    const existing = userReviews.find(r => r.orderId === order.id || r.order_id === order.id);
+    if (existing) {
+      selectedRating = parseFloat(existing.rating) || 0;
+      document.getElementById('reviewText').value = existing.reviewText || existing.review_text || '';
+      document.getElementById('reviewName').value = existing.userName || existing.user_name || '';
+    } else {
+      selectedRating = 0;
+      document.getElementById('reviewText').value = '';
+      document.getElementById('reviewName').value = currentUser?.user_metadata?.full_name || '';
+    }
+    pendingPhotos = [];
+    renderPhotoThumbs();
+    updateStars();
+    overlay.classList.add('open');
+  }
+
+  function closeReviewModal() {
+    overlay.classList.remove('open');
+    reviewingOrderId = null;
+  }
+
+  document.getElementById('reviewSubmit').addEventListener('click', async () => {
+    if (!selectedRating) { alert('Please select a star rating.'); return; }
+    const btn = document.getElementById('reviewSubmit');
+    btn.disabled = true;
+    btn.textContent = 'Submitting…';
+    const token = await getAuthToken();
+    try {
+      const payload = {
+        orderId: reviewingOrderId,
+        rating: selectedRating,
+        reviewText: document.getElementById('reviewText').value.trim(),
+        userName: document.getElementById('reviewName').value.trim(),
+        images: pendingPhotos.map(p => ({
+          dataBase64: p.dataBase64,
+          fileName: p.fileName,
+          contentType: p.contentType,
+        })),
+      };
+      const res = await fetch('/.netlify/functions/submit-review', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      closeReviewModal();
+      await loadUserReviews(token);
+      await loadOrders();
+    } catch (err) {
+      console.error(err);
+      alert('Could not submit review. Please try again.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Submit Review';
+    }
+  });
+
+  async function loadUserReviews(token) {
+    try {
+      const res = await fetch('/.netlify/functions/user-reviews', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        userReviews = data.reviews || [];
+      }
+    } catch {}
+  }
 
   try { await handleAuthCallback(); } catch (_) {}
 
@@ -223,6 +541,8 @@
       try { await logout(); } catch (_) {}
       window.location.href = '/';
     });
+    const token = await getAuthToken();
+    await loadUserReviews(token);
     loadOrders();
   }
 
@@ -269,6 +589,8 @@
   function renderOrder(o) {
     const li = document.createElement('li');
     li.className = 'order-item';
+    const existingReview = userReviews.find(r => (r.orderId || r.order_id) === o.id);
+    const hasReview = !!existingReview;
     const when = o.placedAt ? new Date(o.placedAt).toLocaleString(undefined, {
       month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
     }) : '';
@@ -300,9 +622,14 @@
       </div>
       <div class="order-actions">
         <button type="button" class="button secondary" data-act="reorder">Re-order this</button>
+        <button type="button" class="button" data-act="review" style="background:linear-gradient(135deg,#6b48a6 0%,#8b5cf6 100%);">
+          ${hasReview ? '✏ Edit Review' : '⭐ Write Review'}
+        </button>
       </div>
+      ${hasReview ? `<div class="review-badge"><span class="review-stars-inline">${renderStaticStars(parseFloat(existingReview.rating))}</span> You reviewed this order</div>` : ''}
     `;
     li.querySelector('[data-act="reorder"]').addEventListener('click', () => reorder(o));
+    li.querySelector('[data-act="review"]').addEventListener('click', () => openReviewModal(o));
     return li;
   }
 
