@@ -1,8 +1,8 @@
 import { getUser } from '@netlify/identity'
 import type { Context } from '@netlify/functions'
 
-const FROM_EMAIL = process.env.WELCOME_FROM_EMAIL || 'Katayama Creations <onboarding@resend.dev>'
-const OWNER_EMAIL = process.env.OWNER_EMAIL || 'ogmegbeast@gmail.com'
+const FROM_EMAIL = Netlify.env.get('WELCOME_FROM_EMAIL') || 'Katayama Creations <onboarding@resend.dev>'
+const OWNER_EMAIL = Netlify.env.get('OWNER_EMAIL') || 'ogmegbeast@gmail.com'
 
 export default async (req: Request, _context: Context) => {
   if (req.method !== 'POST') {
@@ -14,19 +14,19 @@ export default async (req: Request, _context: Context) => {
     return new Response('Unauthorized', { status: 401 })
   }
 
-  const apiKey = process.env.RESEND_API_KEY
+  const apiKey = Netlify.env.get('RESEND_API_KEY')
   if (!apiKey) {
     return Response.json({ ok: true, sent: false })
   }
 
   const name =
     user.name ||
-    (user.user_metadata as Record<string, string> | undefined)?.full_name ||
+    (user.userMetadata as Record<string, string> | undefined)?.full_name ||
     'there'
   const safeName = escapeHtml(name)
 
   try {
-    await fetch('https://api.resend.com/emails', {
+    const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -41,8 +41,14 @@ export default async (req: Request, _context: Context) => {
         text: renderText(name),
       }),
     })
+    if (!res.ok) {
+      const body = await res.text().catch(() => '')
+      console.error(`Resend API error ${res.status}:`, body)
+      return Response.json({ ok: false, sent: false, error: 'Email service error' }, { status: 502 })
+    }
   } catch (err) {
     console.error('Password-changed email failed', err)
+    return Response.json({ ok: false, sent: false, error: 'Email send failed' }, { status: 502 })
   }
 
   return Response.json({ ok: true, sent: true })

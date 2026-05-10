@@ -324,7 +324,16 @@
     btn.textContent = 'Saving…';
     try {
       await updateUser({ password: pw });
-      try { await fetch('/.netlify/functions/password-changed-email', { method: 'POST' }); } catch (_) {}
+      const nfJwt = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
+      const token = nfJwt ? decodeURIComponent(nfJwt[1]) : null;
+      if (token) {
+        fetch('/.netlify/functions/password-changed-email', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+        })
+          .then(r => { if (!r.ok) console.warn('Confirmation email request failed', r.status); })
+          .catch(() => {});
+      }
       show('success');
       document.getElementById('successMsg').textContent = 'Password updated! Redirecting to your dashboard…';
       setTimeout(() => { window.location.href = '/dashboard.html'; }, 1200);

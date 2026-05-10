@@ -6,8 +6,8 @@ interface IdentityUser {
   app_metadata?: Record<string, unknown>
 }
 
-const FROM_EMAIL = process.env.WELCOME_FROM_EMAIL || 'Katayama Creations <onboarding@resend.dev>'
-const OWNER_EMAIL = process.env.OWNER_EMAIL || 'ogmegbeast@gmail.com'
+const FROM_EMAIL = Netlify.env.get('WELCOME_FROM_EMAIL') || 'Katayama Creations <onboarding@resend.dev>'
+const OWNER_EMAIL = Netlify.env.get('OWNER_EMAIL') || 'ogmegbeast@gmail.com'
 
 const handler: Handler = async (event: HandlerEvent) => {
   let payload: { user?: IdentityUser } = {}
@@ -18,7 +18,7 @@ const handler: Handler = async (event: HandlerEvent) => {
   }
 
   const user = payload.user
-  const apiKey = process.env.RESEND_API_KEY
+  const apiKey = Netlify.env.get('RESEND_API_KEY')
   if (apiKey && user?.email) {
     const meta = user.user_metadata || {}
     const name =
