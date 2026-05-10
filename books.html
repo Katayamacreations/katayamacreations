@@ -15,12 +15,26 @@
     header {
       padding: 20px 40px;
       display: flex;
-      justify-content: flex-end;
+      justify-content: space-between;
       align-items: center;
       background: rgba(20, 10, 40, 0.85);
       box-shadow: 0 2px 10px rgba(0,0,0,0.4);
       border-bottom: 1px solid rgba(192, 192, 210, 0.2);
     }
+    .who { font-size: 13px; color: #b8b3c8; white-space: nowrap; }
+    .who strong { color: #e8e3f0; }
+    .who .signout {
+      margin-left: 12px;
+      background: transparent;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      color: #c0bcd0;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .who .signout:hover { color: #e8e3f0; border-color: #c0bcd0; }
     nav a {
       margin-left: 20px;
       color: #c0bcd0;
@@ -181,9 +195,12 @@
     <a href="/orders.html">Orders</a>
     <a href="/signup.html" id="signupNav">Sign Up</a>
     <a href="/signup.html?mode=login" id="loginNav">Log In</a>
-    <a href="/account.html" id="accountNav" style="display:none;color:#b8e0c2;"></a>
     <a href="/admin.html" id="adminNav" style="display:none;">Admin</a>
   </nav>
+  <div class="who" id="whoami" style="display:none;">
+    Signed in as <a href="/account.html" style="color:#b8e0c2;text-decoration:none;"><strong id="whoEmail">…</strong></a>
+    <button type="button" class="signout" id="signOutBtn">Sign out</button>
+  </div>
 </header>
 
 <section class="hero">
@@ -234,7 +251,7 @@
 </footer>
 
 <script type="module">
-  import { getUser } from 'https://esm.sh/@netlify/identity@1.0.0?bundle';
+  import { getUser, logout } from 'https://esm.sh/@netlify/identity@1.0.0?bundle';
   const ADMIN_EMAIL = 'ogmegbeast@gmail.com';
   try {
     const u = await getUser();
@@ -243,8 +260,16 @@
       const loginLink = document.getElementById('loginNav');
       if (signupLink) signupLink.style.display = 'none';
       if (loginLink) loginLink.style.display = 'none';
-      const accountLink = document.getElementById('accountNav');
-      if (accountLink) { accountLink.textContent = u.email; accountLink.style.display = ''; }
+      const whoami = document.getElementById('whoami');
+      const whoEmail = document.getElementById('whoEmail');
+      if (whoami) {
+        whoami.style.display = 'block';
+        if (whoEmail) whoEmail.textContent = u.email || 'your account';
+      }
+      document.getElementById('signOutBtn').addEventListener('click', async () => {
+        try { await logout(); } catch (_) {}
+        window.location.href = '/';
+      });
       if ((u.email || '').toLowerCase() === ADMIN_EMAIL) {
         const link = document.getElementById('adminNav');
         if (link) link.style.display = '';
