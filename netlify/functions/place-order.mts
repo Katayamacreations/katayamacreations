@@ -72,7 +72,7 @@ export default async (req: Request, _context: Context) => {
   const apiKey = Netlify.env.get('RESEND_API_KEY')
   if (apiKey) {
     try {
-      await fetch('https://api.resend.com/emails', {
+      const emailRes = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${apiKey}`,
@@ -87,9 +87,15 @@ export default async (req: Request, _context: Context) => {
           text: renderOrderEmailText(order),
         }),
       })
+      if (!emailRes.ok) {
+        const errBody = await emailRes.text().catch(() => '')
+        console.error(`Resend API error ${emailRes.status}: ${errBody}`)
+      }
     } catch (err) {
       console.error('Resend send failed', err)
     }
+  } else {
+    console.warn('RESEND_API_KEY is not set — order email notification was not sent')
   }
 
   return Response.json({ ok: true, id, placedAt })
