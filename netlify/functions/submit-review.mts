@@ -1,0 +1,132 @@
+import type { Context } from "@netlify/functions";
+import { getUser } from "@netlify/identity";
+import { getStore } from "@netlify/blobs";
+import { db } from "../../db/index.js";
+import { reviews, reviewImages } from "../../db/schema.js";
+import { eq, and } from "drizzle-orm";
+
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+const ALLOWED_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/webp",
+  "image/gif",
+]);
+
+function newBlobKey() {
+  return `rv-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function decodeBase64(b64: string): Uint8Array {
+  const clean = b64.replace(/^data:[^;]+;base64,/, "");
+  const buf = Buffer.from(clean, "base64");
+  return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+}
+
+export default async (req: Request, _context: Context) => {
+  if (req.method !== "POST") {
+    return new Response("Method not allowed", { status: 405 });
+  }
+
+  const user = await getUser().catch(() => null);
+  if (!user) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  let body: {
+    orderId?: string;
+    rating?: number;
+    reviewText?: string;
+    userName?: string;
+    images?: { dataBase64: string; fileName: string; contentType: string }[];
+  };
+  try {
+    body = await req.json();
+  } catch {
+    return new Response("Invalid JSON", { status: 400 });
+  }
+
+  const orderId = String(body.orderId || "").trim();
+  const rating = Number(body.rating);
+  const reviewText = String(body.reviewText || "").trim();
+  const userName = String(body.userName || user.email || "").trim();
+
+  if (!orderId) return new Response("orderId is required", { status: 400 });
+  if (isNaN(rating) || rating < 0.5 || rating > 5) {
+    return new Response("rating must be between 0.5 and 5", { status: 400 });
+  }
+  const roundedRating = Math.round(rating * 2) / 2;
+
+  const existing = await db
+    .select()
+    .from(reviews)
+    .where(
+      and(eq(reviews.orderId, orderId), eq(reviews.userId, user.id))
+    );
+
+  let reviewId: number;
+
+  if (existing.length > 0) {
+    await db
+      .update(reviews)
+      .set({
+        rating: String(roundedRating),
+        reviewText,
+        userName,
+        updatedAt: new Date(),
+      })
+      .where(eq(reviews.id, existing[0].id));
+    reviewId = existing[0].id;
+  } else {
+    const [inserted] = await db
+      .insert(reviews)
+      .values({
+        orderId,
+        userId: user.id,
+        userEmail: user.email || "",
+        userName,
+        rating: String(roundedRating),
+        reviewText,
+      })
+      .returning();
+    reviewId = inserted.id;
+  }
+
+  const imageStore = getStore("review-photos");
+  const uploadedImages: { id: number; blobKey: string; fileName: string }[] = [];
+
+  if (Array.isArray(body.images)) {
+    for (const img of body.images.slice(0, 5)) {
+      const ct = String(img.contentType || "").toLowerCase();
+      if (!ALLOWED_TYPES.has(ct)) continue;
+      if (!img.dataBase64) continue;
+
+      let bytes: Uint8Array;
+      try {
+        bytes = decodeBase64(img.dataBase64);
+      } catch {
+        continue;
+      }
+      if (bytes.byteLength === 0 || bytes.byteLength > MAX_IMAGE_SIZE) continue;
+
+      const blobKey = newBlobKey();
+      await imageStore.set(blobKey, bytes, {
+        metadata: { contentType: ct, fileName: img.fileName || "photo" },
+      });
+
+      const [row] = await db
+        .insert(reviewImages)
+        .values({
+          reviewId,
+          blobKey,
+          fileName: String(img.fileName || "photo").slice(0, 255),
+          contentType: ct,
+        })
+        .returning();
+      uploadedImages.push({ id: row.id, blobKey, fileName: row.fileName });
+    }
+  }
+
+  return Response.json({ ok: true, reviewId, images: uploadedImages });
+};

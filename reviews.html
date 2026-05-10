@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Reviews — Katayama Creations</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(180deg, #1a0f2e 0%, #2a1745 50%, #1a0f2e 100%);
+      color: #e8e3f0;
+      min-height: 100vh;
+    }
+    header {
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(20, 10, 40, 0.85);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+      border-bottom: 1px solid rgba(192, 192, 210, 0.2);
+    }
+    .who { font-size: 13px; color: #b8b3c8; }
+    .who strong { color: #e8e3f0; }
+    .who .signout {
+      margin-left: 12px;
+      background: transparent;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      color: #c0bcd0;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .who .signout:hover { color: #e8e3f0; border-color: #c0bcd0; }
+    nav a {
+      margin-left: 20px;
+      color: #c0bcd0;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    nav a:hover { color: #e8e3f0; }
+    .hero { text-align: center; padding: 50px 20px 10px; }
+    h1 { font-size: 38px; margin-bottom: 8px; color: #e8e3f0; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+    .subtitle { max-width: 700px; margin: 0 auto 20px; color: #b8b3c8; }
+    .section { padding: 20px 20px 60px; max-width: 820px; margin: auto; }
+
+    .stats-row {
+      display: flex; gap: 24px; justify-content: center; flex-wrap: wrap;
+      margin-bottom: 30px;
+    }
+    .stat-box {
+      background: linear-gradient(160deg, rgba(45, 27, 70, 0.85) 0%, rgba(30, 18, 50, 0.95) 100%);
+      border: 1px solid rgba(192, 192, 210, 0.15);
+      border-radius: 16px; padding: 20px 28px; text-align: center;
+      min-width: 140px;
+    }
+    .stat-big { font-size: 32px; font-weight: 700; color: #e8e3f0; }
+    .stat-label { font-size: 13px; color: #8b87a0; margin-top: 4px; }
+    .stat-stars { display: flex; justify-content: center; gap: 2px; margin-top: 6px; }
+    .stat-stars svg { width: 22px; height: 22px; }
+
+    .review-card {
+      background: linear-gradient(160deg, rgba(45, 27, 70, 0.85) 0%, rgba(30, 18, 50, 0.95) 100%);
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+      border: 1px solid rgba(192, 192, 210, 0.15);
+      margin-bottom: 16px;
+    }
+    .review-header {
+      display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;
+      margin-bottom: 12px;
+    }
+    .reviewer-name { font-weight: 700; font-size: 16px; color: #e8e3f0; }
+    .review-date { font-size: 12px; color: #8b87a0; }
+    .review-stars { display: flex; gap: 2px; margin: 4px 0 8px; }
+    .review-stars svg { width: 20px; height: 20px; }
+    .review-text { color: #c0bcd0; font-size: 14px; line-height: 1.6; margin-bottom: 12px; }
+    .review-photos { display: flex; gap: 8px; flex-wrap: wrap; }
+    .review-photos img {
+      width: 80px; height: 80px; object-fit: cover; border-radius: 10px;
+      border: 1px solid rgba(192, 192, 210, 0.2);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .review-photos img:hover { transform: scale(1.05); }
+
+    .empty-state {
+      padding: 40px;
+      border-radius: 16px;
+      background: rgba(20, 10, 40, 0.4);
+      color: #b8b3c8;
+      text-align: center;
+      font-size: 15px;
+    }
+    .empty-state a { color: #d4c0f0; }
+
+    .load-more-wrap { text-align: center; margin-top: 20px; }
+    .button {
+      display: inline-block;
+      padding: 12px 22px;
+      background: linear-gradient(135deg, #4a2d75 0%, #6b48a6 100%);
+      color: #e8e3f0;
+      border: 1px solid rgba(192, 192, 210, 0.3);
+      border-radius: 10px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      text-decoration: none;
+    }
+    .button.secondary { background: rgba(20, 10, 40, 0.6); }
+
+    .lightbox {
+      display: none; position: fixed; inset: 0;
+      background: rgba(10, 5, 20, 0.92);
+      z-index: 1000; justify-content: center; align-items: center;
+      cursor: pointer;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox img {
+      max-width: 90vw; max-height: 90vh;
+      border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+    }
+
+    footer {
+      text-align: center;
+      padding: 30px;
+      background: rgba(15, 8, 30, 0.9);
+      margin-top: 40px;
+      color: #8b87a0;
+      border-top: 1px solid rgba(192, 192, 210, 0.15);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/books.html">MK Published Works</a>
+    <a href="/shipping.html">Shipping</a>
+    <a href="/quiz.html">Book Quiz</a>
+    <a href="/dashboard.html">Custom Order</a>
+    <a href="/orders.html">Orders</a>
+    <a href="/reviews.html">Reviews</a>
+    <a href="/signup.html" id="signupNav">Sign Up</a>
+    <a href="/signup.html?mode=login" id="loginNav">Log In</a>
+    <a href="/admin.html" id="adminNav" style="display:none;">Admin</a>
+  </nav>
+  <div class="who" id="whoami" style="display:none;">
+    Signed in as <a href="/account.html" style="color:#b8e0c2;text-decoration:none;"><strong id="whoEmail">…</strong></a>
+    <button type="button" class="signout" id="signOutBtn">Sign out</button>
+  </div>
+</header>
+
+<section class="hero">
+  <h1>Customer Reviews</h1>
+  <p class="subtitle">See what our customers are saying about their Katayama Creations experience.</p>
+</section>
+
+<section class="section">
+  <div class="stats-row" id="statsRow" style="display:none;">
+    <div class="stat-box">
+      <div class="stat-big" id="statAvg">—</div>
+      <div class="stat-stars" id="statStars"></div>
+      <div class="stat-label">Average Rating</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-big" id="statCount">0</div>
+      <div class="stat-label">Total Reviews</div>
+    </div>
+  </div>
+
+  <div id="reviewsList"></div>
+  <div class="load-more-wrap" id="loadMoreWrap" style="display:none;">
+    <button type="button" class="button secondary" id="loadMoreBtn">Load More Reviews</button>
+  </div>
+</section>
+
+<div class="lightbox" id="lightbox">
+  <img id="lightboxImg" src="" alt="Review photo">
+</div>
+
+<footer>© 2026 Katayama Creations — Curated reads, hand wrapped.</footer>
+
+<script type="module">
+  import {
+    getUser,
+    logout,
+    handleAuthCallback,
+    MissingIdentityError,
+  } from 'https://esm.sh/@netlify/identity@1.0.0?bundle'
+
+  try { await handleAuthCallback(); } catch (_) {}
+
+  let currentUser = null;
+  try {
+    currentUser = await getUser();
+  } catch (_) {}
+
+  if (currentUser) {
+    const whoami = document.getElementById('whoami');
+    const whoEmail = document.getElementById('whoEmail');
+    whoami.style.display = 'block';
+    whoEmail.textContent = currentUser.email || 'your account';
+    const signupLink = document.getElementById('signupNav');
+    const loginLink = document.getElementById('loginNav');
+    if (signupLink) signupLink.style.display = 'none';
+    if (loginLink) loginLink.style.display = 'none';
+    if ((currentUser.email || '').toLowerCase() === 'ogmegbeast@gmail.com') {
+      const adminLink = document.getElementById('adminNav');
+      if (adminLink) adminLink.style.display = '';
+    }
+    document.getElementById('signOutBtn').addEventListener('click', async () => {
+      try { await logout(); } catch (_) {}
+      window.location.href = '/';
+    });
+  }
+
+  function starSVG(fill) {
+    if (fill === 'full') return `<svg viewBox="0 0 24 24"><path fill="#8b5cf6" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>`;
+    if (fill === 'half') return `<svg viewBox="0 0 24 24"><defs><linearGradient id="hg"><stop offset="50%" stop-color="#8b5cf6"/><stop offset="50%" stop-color="rgba(192,192,210,0.25)"/></linearGradient></defs><path fill="url(#hg)" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>`;
+    return `<svg viewBox="0 0 24 24"><path fill="rgba(192,192,210,0.25)" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>`;
+  }
+
+  function renderStars(rating) {
+    let html = '';
+    for (let i = 1; i <= 5; i++) {
+      if (rating >= i) html += starSVG('full');
+      else if (rating >= i - 0.5) html += starSVG('half');
+      else html += starSVG('empty');
+    }
+    return html;
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  // Lightbox
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightboxImg');
+  lightbox.addEventListener('click', () => lightbox.classList.remove('open'));
+
+  function openLightbox(src) {
+    lightboxImg.src = src;
+    lightbox.classList.add('open');
+  }
+
+  const reviewsList = document.getElementById('reviewsList');
+  const loadMoreWrap = document.getElementById('loadMoreWrap');
+  const loadMoreBtn = document.getElementById('loadMoreBtn');
+  let offset = 0;
+  const PAGE_SIZE = 20;
+
+  async function loadReviews(append) {
+    try {
+      const res = await fetch(`/.netlify/functions/list-reviews?limit=${PAGE_SIZE}&offset=${offset}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const { reviews } = await res.json();
+
+      if (!append && reviews.length === 0) {
+        reviewsList.innerHTML = `<div class="empty-state">No reviews yet. Be the first to share your experience! <a href="/orders.html">View your orders →</a></div>`;
+        return;
+      }
+
+      if (!append) {
+        let totalRating = 0;
+        const allRes = await fetch(`/.netlify/functions/list-reviews?limit=100&offset=0`);
+        if (allRes.ok) {
+          const allData = await allRes.json();
+          const allRevs = allData.reviews || [];
+          if (allRevs.length > 0) {
+            totalRating = allRevs.reduce((s, r) => s + parseFloat(r.rating), 0) / allRevs.length;
+            document.getElementById('statAvg').textContent = totalRating.toFixed(1);
+            document.getElementById('statStars').innerHTML = renderStars(totalRating);
+            document.getElementById('statCount').textContent = allRevs.length;
+            document.getElementById('statsRow').style.display = '';
+          }
+        }
+      }
+
+      reviews.forEach(r => {
+        const card = document.createElement('div');
+        card.className = 'review-card';
+        const when = r.createdAt || r.created_at;
+        const dateStr = when ? new Date(when).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+        const rating = parseFloat(r.rating) || 0;
+        const name = r.userName || r.user_name || 'Anonymous';
+        const text = r.reviewText || r.review_text || '';
+        const images = r.images || [];
+
+        let photosHtml = '';
+        if (images.length > 0) {
+          photosHtml = `<div class="review-photos">${images.map(img =>
+            `<img src="/.netlify/functions/serve-review-photo?key=${encodeURIComponent(img.blobKey || img.blob_key)}" alt="Review photo" data-full="/.netlify/functions/serve-review-photo?key=${encodeURIComponent(img.blobKey || img.blob_key)}">`
+          ).join('')}</div>`;
+        }
+
+        card.innerHTML = `
+          <div class="review-header">
+            <div>
+              <div class="reviewer-name">${escapeHtml(name)}</div>
+              <div class="review-stars">${renderStars(rating)}</div>
+            </div>
+            <div class="review-date">${escapeHtml(dateStr)}</div>
+          </div>
+          ${text ? `<div class="review-text">${escapeHtml(text)}</div>` : ''}
+          ${photosHtml}
+        `;
+
+        card.querySelectorAll('.review-photos img').forEach(img => {
+          img.addEventListener('click', () => openLightbox(img.dataset.full));
+        });
+
+        reviewsList.appendChild(card);
+      });
+
+      offset += reviews.length;
+      loadMoreWrap.style.display = reviews.length >= PAGE_SIZE ? '' : 'none';
+    } catch (err) {
+      console.error(err);
+      if (!append) {
+        reviewsList.innerHTML = `<div class="empty-state">Could not load reviews right now. Please try again later.</div>`;
+      }
+    }
+  }
+
+  loadMoreBtn.addEventListener('click', () => loadReviews(true));
+
+  loadReviews(false);
+</script>
+
+</body>
+</html>
