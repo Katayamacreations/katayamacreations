@@ -8,6 +8,9 @@ interface IdentityUser {
 
 const FROM_EMAIL = Netlify.env.get('WELCOME_FROM_EMAIL') || 'Katayama Creations <onboarding@resend.dev>'
 const OWNER_EMAIL = Netlify.env.get('OWNER_EMAIL') || 'ogmegbeast@gmail.com'
+const ADMIN_EMAILS: Set<string> = new Set(
+  [OWNER_EMAIL, 'nichole_avery@yahoo.com'].map((e) => e.toLowerCase()),
+)
 
 const handler: Handler = async (event: HandlerEvent) => {
   let payload: { user?: IdentityUser } = {}
@@ -50,9 +53,9 @@ const handler: Handler = async (event: HandlerEvent) => {
   const existingRoles = Array.isArray((user?.app_metadata as Record<string, unknown> | undefined)?.roles)
     ? ((user?.app_metadata as Record<string, unknown>).roles as string[])
     : []
-  const isOwner = (user?.email || '').toLowerCase() === OWNER_EMAIL.toLowerCase()
-  const baseRoles = isOwner ? existingRoles : existingRoles.filter((r) => r !== 'admin')
-  const roles = Array.from(new Set([...baseRoles, 'customer', ...(isOwner ? ['admin'] : [])]))
+  const isAdmin = ADMIN_EMAILS.has((user?.email || '').toLowerCase())
+  const baseRoles = isAdmin ? existingRoles : existingRoles.filter((r) => r !== 'admin')
+  const roles = Array.from(new Set([...baseRoles, 'customer', ...(isAdmin ? ['admin'] : [])]))
 
   return {
     statusCode: 200,
