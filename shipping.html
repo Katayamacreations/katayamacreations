@@ -44,6 +44,9 @@
       font-weight: 600;
     }
     nav a:hover { color: #e8e3f0; }
+    .auth-buttons { display: flex; gap: 8px; white-space: nowrap; }
+    .auth-buttons a { color: #c0bcd0; text-decoration: none; font-weight: 600; transition: color 0.2s ease; padding: 6px 14px; border: 1px solid rgba(192, 192, 210, 0.25); border-radius: 8px; font-size: 14px; }
+    .auth-buttons a:hover { color: #e8e3f0; border-color: #c0bcd0; }
     .hero {
       text-align: center;
       padding: 50px 20px 20px;
@@ -206,10 +209,12 @@
     <a href="/dashboard.html">Custom Order</a>
     <a href="/orders.html">Orders</a>
     <a href="/reviews.html">Reviews</a>
-    <a href="/signup.html" id="signupNav">Sign Up</a>
-    <a href="/signup.html?mode=login" id="loginNav">Log In</a>
     <a href="/admin.html" id="adminNav" style="display:none;">Admin</a>
   </nav>
+  <div class="auth-buttons" id="authButtons">
+    <a href="/signup.html" id="signupNav">Sign Up</a>
+    <a href="/signup.html?mode=login" id="loginNav">Log In</a>
+  </div>
   <div class="who" id="whoami" style="display:none;">
     Signed in as <a href="/account.html" style="color:#b8e0c2;text-decoration:none;"><strong id="whoEmail">…</strong></a>
     <button type="button" class="signout" id="signOutBtn">Sign out</button>
@@ -244,10 +249,8 @@
   try {
     const u = await getUser();
     if (u) {
-      const signupLink = document.getElementById('signupNav');
-      const loginLink = document.getElementById('loginNav');
-      if (signupLink) signupLink.style.display = 'none';
-      if (loginLink) loginLink.style.display = 'none';
+      const authBtns = document.getElementById('authButtons');
+      if (authBtns) authBtns.style.display = 'none';
       const whoami = document.getElementById('whoami');
       const whoEmail = document.getElementById('whoEmail');
       if (whoami) {
