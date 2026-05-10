@@ -178,6 +178,7 @@
     <a href="/orders.html">Orders</a>
     <a href="/signup.html" id="signupNav">Sign Up</a>
     <a href="/signup.html?mode=login" id="loginNav">Log In</a>
+    <a href="/account.html" id="accountNav" style="display:none;color:#b8e0c2;"></a>
     <a href="/admin.html" id="adminNav" style="display:none;">Admin</a>
   </nav>
 </header>
@@ -375,7 +376,7 @@
           setTimeout(() => { window.location.href = nextSafe; }, 800);
           break;
         case 'recovery':
-          showAlert('info', 'Recovery link accepted. Please update your password from your account.');
+          window.location.href = '/account.html';
           break;
         case 'invite':
           showAlert('info', 'You were invited! Set a password below to finish creating your account.');
@@ -396,6 +397,8 @@
       const loginLink = document.getElementById('loginNav');
       if (signupLink) signupLink.style.display = 'none';
       if (loginLink) loginLink.style.display = 'none';
+      const accountLink = document.getElementById('accountNav');
+      if (accountLink) { accountLink.textContent = user.email; accountLink.style.display = ''; }
       if ((user.email || '').toLowerCase() === 'ogmegbeast@gmail.com') {
         const adminLink = document.getElementById('adminNav');
         if (adminLink) adminLink.style.display = '';

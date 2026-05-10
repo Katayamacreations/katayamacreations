@@ -102,6 +102,7 @@
     <a href="/orders.html">Orders</a>
     <a href="/signup.html" id="signupNav">Sign Up</a>
     <a href="/signup.html?mode=login" id="loginNav">Log In</a>
+    <a href="/account.html" id="accountNav" style="display:none;color:#b8e0c2;"></a>
   </nav>
 </header>
 
@@ -121,8 +122,21 @@
 
     <div id="stateRecovery" class="state">
       <h1>Reset your password</h1>
-      <p>Your reset link has been accepted. Head to your account to set a new password.</p>
-      <a class="button" href="/signup.html?mode=login">Continue</a>
+      <p>Enter a new password for your account below.</p>
+      <form id="recoveryForm" style="text-align:left;margin-top:18px;">
+        <div style="margin-bottom:14px;">
+          <label for="recNewPw" style="display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;color:#c0bcd0;">New password</label>
+          <input id="recNewPw" type="password" required minlength="8" placeholder="At least 8 characters" autocomplete="new-password"
+            style="width:100%;padding:10px 12px;border:1px solid rgba(192,192,210,0.25);border-radius:10px;font-size:14px;box-sizing:border-box;background:rgba(20,10,40,0.6);color:#e8e3f0;">
+        </div>
+        <div style="margin-bottom:14px;">
+          <label for="recConfirmPw" style="display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;color:#c0bcd0;">Confirm password</label>
+          <input id="recConfirmPw" type="password" required minlength="8" placeholder="Re-enter your new password" autocomplete="new-password"
+            style="width:100%;padding:10px 12px;border:1px solid rgba(192,192,210,0.25);border-radius:10px;font-size:14px;box-sizing:border-box;background:rgba(20,10,40,0.6);color:#e8e3f0;">
+        </div>
+        <p id="recError" style="display:none;color:#f0b8a8;font-size:14px;margin:0 0 10px;"></p>
+        <button class="button" type="submit" id="recSubmitBtn" style="cursor:pointer;border:1px solid rgba(192,192,210,0.3);">Set new password</button>
+      </form>
     </div>
 
     <div id="stateInvite" class="state">
@@ -153,6 +167,7 @@
   import {
     handleAuthCallback,
     getUser,
+    updateUser,
     AuthError,
     MissingIdentityError,
   } from 'https://esm.sh/@netlify/identity@1.0.0?bundle'
@@ -182,6 +197,8 @@
     const loginLink = document.getElementById('loginNav');
     if (signupLink) signupLink.style.display = 'none';
     if (loginLink) loginLink.style.display = 'none';
+    const accountLink = document.getElementById('accountNav');
+    if (accountLink) { accountLink.textContent = u.email; accountLink.style.display = ''; }
   }).catch(() => {});
 
   function describeAuthError(error) {
@@ -260,6 +277,34 @@
       document.getElementById('errorMsg').textContent = describeAuthError(error);
     }
   })();
+
+  document.getElementById('recoveryForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const recError = document.getElementById('recError');
+    recError.style.display = 'none';
+    const pw = document.getElementById('recNewPw').value;
+    const confirm = document.getElementById('recConfirmPw').value;
+    if (pw !== confirm) {
+      recError.textContent = 'Passwords do not match.';
+      recError.style.display = 'block';
+      return;
+    }
+    const btn = document.getElementById('recSubmitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    try {
+      await updateUser({ password: pw });
+      try { await fetch('/.netlify/functions/password-changed-email', { method: 'POST' }); } catch (_) {}
+      show('success');
+      document.getElementById('successMsg').textContent = 'Password updated! Redirecting to your dashboard…';
+      setTimeout(() => { window.location.href = '/dashboard.html'; }, 1200);
+    } catch (error) {
+      recError.textContent = error instanceof AuthError ? error.message : 'Something went wrong. Please try again.';
+      recError.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Set new password';
+    }
+  });
 </script>
 
 </body>

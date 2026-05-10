@@ -193,6 +193,7 @@
     <a href="/orders.html">Orders</a>
     <a href="/signup.html" id="signupNav">Sign Up</a>
     <a href="/signup.html?mode=login" id="loginNav">Log In</a>
+    <a href="/account.html" id="accountNav" style="display:none;color:#b8e0c2;"></a>
     <a href="/admin.html" id="adminNav" style="display:none;">Admin</a>
   </nav>
 </header>
@@ -229,6 +230,8 @@
       const loginLink = document.getElementById('loginNav');
       if (signupLink) signupLink.style.display = 'none';
       if (loginLink) loginLink.style.display = 'none';
+      const accountLink = document.getElementById('accountNav');
+      if (accountLink) { accountLink.textContent = u.email; accountLink.style.display = ''; }
       if ((u.email || '').toLowerCase() === 'ogmegbeast@gmail.com') {
         const adminLink = document.getElementById('adminNav');
         if (adminLink) adminLink.style.display = '';
