@@ -268,6 +268,7 @@
       text-align: left;
       padding: 10px 8px;
       border-bottom: 1px solid rgba(192, 192, 210, 0.1);
+      vertical-align: middle;
     }
     .users-table th, .products-table th {
       color: #8b87a0;
@@ -878,21 +879,68 @@
       const created = u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—';
       const roles = (u.roles || []).map(r => `<span class="badge ${r === 'admin' ? 'admin' : ''}">${escapeHtml(r)}</span>`).join('');
       const confirmed = u.confirmed ? '' : '<span class="badge unconfirmed">Unconfirmed</span>';
+      const isAdmin = (u.roles || []).includes('admin');
+      const isSelf = currentUser && u.email && currentUser.email && u.email.toLowerCase() === currentUser.email.toLowerCase();
+      const actionBtn = isSelf ? '<span style="color:#8b87a0; font-size:11px;">You</span>' : isAdmin
+        ? `<button type="button" class="button small secondary danger" data-act="revoke" data-uid="${escapeHtml(u.id)}">Remove admin</button>`
+        : `<button type="button" class="button small secondary" data-act="grant" data-uid="${escapeHtml(u.id)}">Make admin</button>`;
       return `<tr>
         <td class="email">${escapeHtml(u.email || '')}</td>
         <td>${escapeHtml(u.fullName || '—')}</td>
         <td>${created}</td>
         <td>${roles}${confirmed}</td>
+        <td style="text-align:right; white-space:nowrap;">${actionBtn}<span class="role-msg" data-uid="${escapeHtml(u.id)}" style="display:none; font-size:11px; margin-left:6px;"></span></td>
       </tr>`;
     }).join('');
     wrap.innerHTML = `<table class="users-table">
-      <thead><tr><th>Email</th><th>Name</th><th>Joined</th><th>Roles</th></tr></thead>
+      <thead><tr><th>Email</th><th>Name</th><th>Joined</th><th>Roles</th><th>Actions</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
+    wrap.querySelectorAll('[data-act]').forEach(btn => {
+      btn.addEventListener('click', () => toggleAdminRole(btn.dataset.uid, btn.dataset.act));
+    });
   }
 
   document.getElementById('usersRefreshBtn').addEventListener('click', loadUsers);
   document.getElementById('userSearch').addEventListener('input', renderUsers);
+
+  async function toggleAdminRole(userId, action) {
+    const msg = document.querySelector(`.role-msg[data-uid="${userId}"]`);
+    const btn = document.querySelector(`[data-act][data-uid="${userId}"]`);
+    if (!btn) return;
+
+    const targetUser = allUsers.find(u => u.id === userId);
+    const label = action === 'grant' ? 'grant admin to' : 'remove admin from';
+    if (!confirm(`Are you sure you want to ${label} ${targetUser?.email || 'this user'}?`)) return;
+
+    btn.disabled = true;
+    if (msg) { msg.style.display = 'inline'; msg.textContent = 'Saving…'; msg.style.color = '#8b87a0'; }
+
+    const token = await getAuthToken();
+    if (!token) {
+      if (msg) { msg.textContent = 'Session expired'; msg.style.color = '#f0b8a8'; }
+      btn.disabled = false;
+      return;
+    }
+
+    try {
+      const res = await fetch('/.netlify/functions/admin-set-role', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ userId, action }),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      if (targetUser) targetUser.roles = data.roles || [];
+      renderUsers();
+    } catch (err) {
+      if (msg) { msg.textContent = err && err.message ? err.message : 'Failed'; msg.style.color = '#f0b8a8'; }
+      btn.disabled = false;
+    }
+  }
 
   // ------------------------------------------------------------------
   // Mass email
