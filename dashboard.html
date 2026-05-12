@@ -404,7 +404,7 @@
 
 <section class="hero">
   <h1>Place a Custom Order</h1>
-  <p class="subtitle">Build your cart, see your shipping in real time, and lock in your order with a Venmo payment.</p>
+  <p class="subtitle">Build your cart, see your shipping in real time, and lock in your order with PayPal or Venmo.</p>
 </section>
 
 <section class="book-date-section">
@@ -525,7 +525,7 @@
     </div>
 
     <div class="deadline-note">
-      ⏳ Heads up: orders must be paid by Venmo within <strong>24 hours</strong> of placing.
+      ⏳ Heads up: orders must be paid within <strong>24 hours</strong> of placing.
       Unpaid orders are automatically cancelled so Megan can free up the slot.
     </div>
   </div>
@@ -533,7 +533,7 @@
   <div class="card">
     <h2>Your details</h2>
     <div class="success" id="success">
-      Thanks! Your custom order was sent. A payment prompt is on screen — please complete Venmo to lock in your order.
+      Thanks! Your custom order was sent. A payment prompt is on screen — please complete payment to lock in your order.
       <div class="email-notice">
         📬 A confirmation email is on its way. If you don't see it, check your spam or junk folder.
       </div>
@@ -559,7 +559,7 @@
       </div>
 
       <div class="actions">
-        <button class="button" type="submit" id="placeOrder" disabled>Review &amp; pay with Venmo</button>
+        <button class="button" type="submit" id="placeOrder" disabled>Review &amp; pay</button>
       </div>
     </form>
   </div>
@@ -568,18 +568,16 @@
 <div class="modal-backdrop" id="payModal" role="dialog" aria-modal="true" aria-labelledby="payTitle">
   <div class="modal">
     <h2 id="payTitle">Pay to confirm your order</h2>
-    <p>Your order has been sent to Megan. To lock it in, send your Venmo payment now.</p>
+    <p>Your order has been sent to Megan. Complete payment below to lock it in.</p>
     <div class="total-line" id="modalTotal">$0.00</div>
-    <div class="deadline-note">
-      ⏳ Pay by <strong id="modalDeadline">—</strong>.
-      Orders not paid within 24 hours are automatically cancelled.
-    </div>
-    <p style="font-size:12px; color:#8b87a0;">Include your name and "Blind Date Order" in the Venmo note so Megan can match it to your order.</p>
-    <p class="email-notice" style="margin:12px 0 0;">📬 Check your email for an order confirmation. If you don't see it, check your spam or junk folder.</p>
-    <div class="actions">
+    <div id="paypal-button-container" style="margin: 16px 0;"></div>
+    <p id="paypal-divider" style="text-align:center; color:#8b87a0; font-size:12px; margin: 8px 0;">— or pay manually —</p>
+    <div class="actions" style="justify-content:center;">
       <a class="button venmo" id="venmoLink" href="https://venmo.com/u/MeganKatayama1" target="_blank" rel="noopener">Pay with Venmo</a>
-      <button class="button secondary" type="button" id="closeModal">I've paid / close</button>
+      <button class="button secondary" type="button" id="closeModal">Cancel</button>
     </div>
+    <p style="font-size:12px; color:#8b87a0; margin-top:12px;">Include your name and "Blind Date Order" in any manual payment note.</p>
+    <p class="email-notice" style="margin:12px 0 0;">📬 Check your email for an order confirmation. If you don't see it, check your spam or junk folder.</p>
   </div>
 </div>
 
@@ -593,6 +591,24 @@
     AuthError,
     MissingIdentityError,
   } from 'https://esm.sh/@netlify/identity@1.0.0?bundle'
+
+  const paypalReady = (async () => {
+    try {
+      const res = await fetch('/.netlify/functions/get-paypal-config');
+      if (!res.ok) return false;
+      const { clientId } = await res.json();
+      if (!clientId) return false;
+      return new Promise((resolve) => {
+        const s = document.createElement('script');
+        s.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=USD`;
+        s.onload = () => resolve(true);
+        s.onerror = () => resolve(false);
+        document.head.appendChild(s);
+      });
+    } catch {
+      return false;
+    }
+  })();
 
   const STATES = [
     { abbr: 'AL', name: 'Alabama', zone: 2 },
@@ -983,6 +999,8 @@
     return match ? decodeURIComponent(match[1]) : null;
   }
 
+  let pendingOrderPayload = null;
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const subtotal = cart.reduce((sum, it) => sum + it.price * it.qty, 0);
@@ -992,66 +1010,85 @@
     const deadline = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const customerName = document.getElementById('customerName').value.trim();
     const orderNotes = document.getElementById('orderNotes').value;
-    const goodreadsUrl = document.getElementById('goodreadsUrl').value.trim();
-
     const token = await getAuthToken();
+
     if (!token) {
       alert('Your session expired. Please log in again.');
       window.location.href = '/signup.html?mode=login&next=/dashboard.html';
       return;
     }
 
-    const placeBtn = document.getElementById('placeOrder');
-    placeBtn.disabled = true;
+    pendingOrderPayload = {
+      customerName,
+      orderNotes,
+      cart,
+      subtotal: subtotal.toFixed(2),
+      shippingCost: ship.cost.toFixed(2),
+      shippingMethod: ship.local
+        ? ship.methodLabel
+        : `${ship.methodLabel} (${ship.info.label}, ${ship.lb} lb)`,
+      state: ship.stateName,
+      zip: zipInput.value.trim(),
+      total: total.toFixed(2),
+      paymentDeadline: deadline.toISOString(),
+    };
 
-    try {
-      const res = await fetch('/.netlify/functions/place-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          customerName,
-          orderNotes,
-          goodreadsUrl,
-          cart,
-          subtotal: subtotal.toFixed(2),
-          shippingCost: ship.cost.toFixed(2),
-          shippingMethod: ship.local
-            ? ship.methodLabel
-            : `${ship.methodLabel} (${ship.info.label}, ${ship.lb} lb)`,
-          state: ship.stateName,
-          zip: zipInput.value.trim(),
-          total: total.toFixed(2),
-          paymentDeadline: deadline.toISOString(),
-        }),
-      });
-      if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        throw new Error(text || `Request failed (${res.status})`);
+    document.getElementById('modalTotal').textContent = fmt(total);
+    const note = encodeURIComponent(`Blind Date Order ${fmt(total)}`);
+    document.getElementById('venmoLink').href =
+      `https://venmo.com/u/MeganKatayama1?txn=pay&note=${note}&amount=${total.toFixed(2)}`;
+
+    document.getElementById('paypal-button-container').innerHTML = '';
+    const sdkLoaded = await paypalReady;
+    if (sdkLoaded && typeof paypal !== 'undefined') {
+      paypal.Buttons({
+      createOrder: async () => {
+        const res = await fetch('/.netlify/functions/create-paypal-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ total: total.toFixed(2) }),
+        });
+        const data = await res.json();
+        return data.id;
+      },
+      onApprove: async (data) => {
+        const placeBtn = document.getElementById('placeOrder');
+        placeBtn.disabled = true;
+        try {
+          const captureRes = await fetch('/.netlify/functions/capture-paypal-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ orderID: data.orderID }),
+          });
+          if (!captureRes.ok) throw new Error('PayPal capture failed');
+
+          const orderRes = await fetch('/.netlify/functions/place-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ ...pendingOrderPayload, paymentMethod: 'paypal', paymentStatus: 'paid' }),
+          });
+          if (!orderRes.ok) throw new Error('Order placement failed');
+
+          modal.classList.remove('show');
+          success.style.display = 'block';
+          cart = []; saveCart(); render(); loadOrders();
+        } catch (err) {
+          console.error(err);
+          alert('Payment went through but order confirmation failed. Please email ogmegbeast@gmail.com with your PayPal receipt.');
+          placeBtn.disabled = false;
+        }
+      },
+      onError: (err) => {
+        console.error('PayPal error:', err);
+        alert('PayPal encountered an error. You can still pay via Venmo below.');
       }
-
-      document.getElementById('modalTotal').textContent = fmt(total);
-      document.getElementById('modalDeadline').textContent = deadline.toLocaleString(undefined, {
-        weekday: 'short', month: 'short', day: 'numeric',
-        hour: 'numeric', minute: '2-digit',
-      });
-      const note = encodeURIComponent(`Blind Date Order ${fmt(total)}`);
-      document.getElementById('venmoLink').href = `${VENMO_URL}?txn=pay&note=${note}&amount=${total.toFixed(2)}`;
-      modal.classList.add('show');
-      success.style.display = 'block';
-
-      cart = [];
-      saveCart();
-      render();
-      // refresh past orders
-      loadOrders();
-    } catch (err) {
-      console.error(err);
-      alert('Sorry, something went wrong sending your order. Please try again or email ogmegbeast@gmail.com.');
-      placeBtn.disabled = false;
+    }).render('#paypal-button-container');
+    } else {
+      document.getElementById('paypal-button-container').style.display = 'none';
+      document.getElementById('paypal-divider').style.display = 'none';
     }
+
+    modal.classList.add('show');
   });
 
   document.getElementById('closeModal').addEventListener('click', () => modal.classList.remove('show'));
