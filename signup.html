@@ -429,7 +429,7 @@
         try { await logout(); } catch (_) {}
         window.location.href = '/';
       });
-      if ((user.email || '').toLowerCase() === 'ogmegbeast@gmail.com') {
+      if (['ogmegbeast@gmail.com', 'nichole_avery@yahoo.com'].includes((user.email || '').toLowerCase()) || (Array.isArray(user.roles) && user.roles.includes('admin'))) {
         const adminLink = document.getElementById('adminNav');
         if (adminLink) adminLink.style.display = '';
       }

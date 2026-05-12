@@ -842,7 +842,7 @@ window.retakeQuiz = retakeQuiz;
         try { await logout(); } catch (_) {}
         window.location.href = '/';
       });
-      if ((u.email || '').toLowerCase() === 'ogmegbeast@gmail.com') {
+      if (['ogmegbeast@gmail.com', 'nichole_avery@yahoo.com'].includes((u.email || '').toLowerCase()) || (Array.isArray(u.roles) && u.roles.includes('admin'))) {
         var link = document.getElementById('adminNav');
         if (link) link.style.display = '';
       }

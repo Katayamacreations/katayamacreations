@@ -235,7 +235,7 @@
     MissingIdentityError,
   } from 'https://esm.sh/@netlify/identity@1.0.0?bundle'
 
-  const ADMIN_EMAIL = 'ogmegbeast@gmail.com';
+  const ADMIN_EMAILS = ['ogmegbeast@gmail.com', 'nichole_avery@yahoo.com'];
   const gateCard = document.getElementById('gateCard');
   const accountContent = document.getElementById('accountContent');
 
@@ -267,7 +267,7 @@
       try { await logout(); } catch (_) {}
       window.location.href = '/';
     });
-    if ((currentUser.email || '').toLowerCase() === ADMIN_EMAIL) {
+    if (ADMIN_EMAILS.includes((currentUser.email || '').toLowerCase()) || (Array.isArray(currentUser.roles) && currentUser.roles.includes('admin'))) {
       const adminLink = document.getElementById('adminNav');
       if (adminLink) adminLink.style.display = '';
     }
