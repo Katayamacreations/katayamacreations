@@ -667,7 +667,7 @@
       if (filterStatus && (o.status || 'pending').toLowerCase() !== filterStatus) return false;
       if (search) {
         const hay = [
-          o.id, o.customerName, o.email, o.state, o.shippingMethod, o.trackingNumber, o.orderNotes,
+          o.id, o.customerName, o.email, o.state, o.shippingMethod, o.trackingNumber, o.orderNotes, o.goodreadsUrl,
         ].map(v => String(v || '').toLowerCase()).join(' ');
         if (!hay.includes(search)) return false;
       }
@@ -716,6 +716,7 @@
             Ship to ${escapeHtml(o.state || '—')} · ${escapeHtml(o.shippingMethod || '—')}
           </div>
           ${o.orderNotes ? `<div class="order-meta">Customer note: ${escapeHtml(o.orderNotes)}</div>` : ''}
+          ${o.goodreadsUrl ? `<div class="order-meta">Goodreads: <a href="${escapeHtml(o.goodreadsUrl)}" target="_blank" rel="noopener" style="color:#b8e0c2;">${escapeHtml(o.goodreadsUrl)}</a></div>` : ''}
           ${o.adminNotes ? `<div class="order-meta">Admin note: ${escapeHtml(o.adminNotes)}</div>` : ''}
           ${o.updatedAt ? `<div class="order-meta">Last updated ${escapeHtml(new Date(o.updatedAt).toLocaleString())}${o.updatedBy ? ` by ${escapeHtml(o.updatedBy)}` : ''}</div>` : ''}
         </div>

@@ -9,6 +9,7 @@ const OWNER_EMAIL = Netlify.env.get('OWNER_EMAIL') || 'ogmegbeast@gmail.com'
 interface IncomingOrder {
   customerName?: string
   orderNotes?: string
+  goodreadsUrl?: string
   cart?: CartItem[]
   subtotal?: string
   shippingCost?: string
@@ -63,6 +64,7 @@ export default async (req: Request, _context: Context) => {
     total: String(body.total || '0.00'),
     paymentDeadline: String(body.paymentDeadline || ''),
     orderNotes: String(body.orderNotes || ''),
+    goodreadsUrl: String(body.goodreadsUrl || ''),
     cart: (body.cart || []).map(sanitizeCartItem),
   }
 

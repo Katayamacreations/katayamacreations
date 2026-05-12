@@ -552,6 +552,10 @@
           <label for="orderNotes">Order notes (optional)</label>
           <textarea id="orderNotes" name="orderNotes" placeholder="Anything Megan should know about the whole order"></textarea>
         </div>
+        <div class="full">
+          <label for="goodreadsUrl">Goodreads profile link (optional)</label>
+          <input id="goodreadsUrl" name="goodreadsUrl" type="url" placeholder="https://www.goodreads.com/user/show/…">
+        </div>
       </div>
 
       <div class="actions">
@@ -988,6 +992,7 @@
     const deadline = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const customerName = document.getElementById('customerName').value.trim();
     const orderNotes = document.getElementById('orderNotes').value;
+    const goodreadsUrl = document.getElementById('goodreadsUrl').value.trim();
 
     const token = await getAuthToken();
     if (!token) {
@@ -1009,6 +1014,7 @@
         body: JSON.stringify({
           customerName,
           orderNotes,
+          goodreadsUrl,
           cart,
           subtotal: subtotal.toFixed(2),
           shippingCost: ship.cost.toFixed(2),
