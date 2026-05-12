@@ -19,6 +19,7 @@ export interface OrderData {
   total: string
   paymentDeadline: string
   orderNotes: string
+  goodreadsUrl?: string
   cart: CartItem[]
 }
 
@@ -69,6 +70,10 @@ export function renderOrderEmailHtml(o: OrderData): string {
     ? `<p style="margin:16px 0 0;line-height:1.5;color:#c0bcd0;"><strong>Notes:</strong> ${escapeHtml(o.orderNotes)}</p>`
     : ''
 
+  const goodreadsBlock = o.goodreadsUrl
+    ? `<p style="margin:8px 0 0;line-height:1.5;color:#c0bcd0;font-size:14px;"><strong>Goodreads:</strong> <a href="${escapeHtml(o.goodreadsUrl)}" style="color:#b8e0c2;">${escapeHtml(o.goodreadsUrl)}</a></p>`
+    : ''
+
   return `<!doctype html>
 <html>
   <body style="margin:0;padding:0;background:#1a0f2e;font-family:Arial,sans-serif;color:#e8e3f0;">
@@ -94,6 +99,7 @@ export function renderOrderEmailHtml(o: OrderData): string {
             </div>
 
             <p style="margin:18px 0 0;line-height:1.5;color:#c0bcd0;font-size:14px;"><strong>Ship to:</strong> ${escapeHtml(o.state || '—')}${o.zip ? ` ${escapeHtml(o.zip)}` : ''}</p>
+            ${goodreadsBlock}
             ${orderNotesBlock}
           </td></tr>
         </table>
@@ -123,6 +129,9 @@ export function renderOrderEmailText(o: OrderData): string {
   lines.push('')
   lines.push(`Ship to: ${o.state || '—'}${o.zip ? ` ${o.zip}` : ''}`)
   lines.push(`Venmo deadline: ${fmtDeadline(o.paymentDeadline)}`)
+  if (o.goodreadsUrl) {
+    lines.push(`Goodreads: ${o.goodreadsUrl}`)
+  }
   if (o.orderNotes) {
     lines.push('')
     lines.push(`Notes: ${o.orderNotes}`)
