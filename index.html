@@ -267,7 +267,7 @@
 
 <script type="module">
   import { getUser, logout } from 'https://esm.sh/@netlify/identity@1.0.0?bundle';
-  const ADMIN_EMAIL = 'ogmegbeast@gmail.com';
+  const ADMIN_EMAILS = ['ogmegbeast@gmail.com', 'nichole_avery@yahoo.com'];
   try {
     const u = await getUser();
     if (u) {
@@ -283,7 +283,7 @@
         try { await logout(); } catch (_) {}
         window.location.href = '/';
       });
-      if ((u.email || '').toLowerCase() === ADMIN_EMAIL) {
+      if (ADMIN_EMAILS.includes((u.email || '').toLowerCase()) || (Array.isArray(u.roles) && u.roles.includes('admin'))) {
         const link = document.getElementById('adminNav');
         if (link) link.style.display = '';
       }

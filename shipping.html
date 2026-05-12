@@ -261,7 +261,7 @@
         try { await logout(); } catch (_) {}
         window.location.href = '/';
       });
-      if ((u.email || '').toLowerCase() === 'ogmegbeast@gmail.com') {
+      if (['ogmegbeast@gmail.com', 'nichole_avery@yahoo.com'].includes((u.email || '').toLowerCase()) || (Array.isArray(u.roles) && u.roles.includes('admin'))) {
         const adminLink = document.getElementById('adminNav');
         if (adminLink) adminLink.style.display = '';
       }
@@ -401,7 +401,7 @@
   import { getUser } from 'https://esm.sh/@netlify/identity@1.0.0?bundle';
   try {
     const u = await getUser();
-    if (u && (u.email || '').toLowerCase() === 'ogmegbeast@gmail.com') {
+    if (u && (['ogmegbeast@gmail.com', 'nichole_avery@yahoo.com'].includes((u.email || '').toLowerCase()) || (Array.isArray(u.roles) && u.roles.includes('admin')))) {
       const link = document.getElementById('adminNav');
       if (link) link.style.display = '';
     }
