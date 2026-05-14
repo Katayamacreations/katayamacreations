@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bookish Merch — Katayama Creations</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(180deg, #1a0f2e 0%, #2a1745 50%, #1a0f2e 100%);
+      color: #e8e3f0;
+      min-height: 100vh;
+    }
+    header {
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(20, 10, 40, 0.85);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+      border-bottom: 1px solid rgba(192, 192, 210, 0.2);
+    }
+    .who { font-size: 13px; color: #b8b3c8; white-space: nowrap; }
+    .who strong { color: #e8e3f0; }
+    .who .signout {
+      margin-left: 12px;
+      background: transparent;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      color: #c0bcd0;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .who .signout:hover { color: #e8e3f0; border-color: #c0bcd0; }
+    nav a {
+      margin-left: 20px;
+      color: #c0bcd0;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+    nav a:hover { color: #e8e3f0; }
+    .auth-buttons { display: flex; gap: 8px; white-space: nowrap; }
+    .auth-buttons a {
+      color: #c0bcd0;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s ease;
+      padding: 6px 14px;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .auth-buttons a:hover { color: #e8e3f0; border-color: #c0bcd0; }
+
+    .hero {
+      text-align: center;
+      padding: 60px 20px 20px;
+    }
+    h1 {
+      font-size: 44px;
+      margin-bottom: 12px;
+      color: #e8e3f0;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      letter-spacing: 1px;
+    }
+    .subtitle {
+      font-size: 18px;
+      max-width: 600px;
+      margin: 0 auto;
+      color: #b8b3c8;
+      line-height: 1.6;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 32px;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 50px 24px 60px;
+    }
+
+    .product-card {
+      background: linear-gradient(160deg, rgba(45, 27, 70, 0.85) 0%, rgba(30, 18, 50, 0.95) 100%);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+      border: 1px solid rgba(192, 192, 210, 0.15);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .product-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.5);
+    }
+
+    .product-image {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(20, 10, 40, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+    .product-image svg {
+      width: 60%;
+      height: 60%;
+      opacity: 0.85;
+    }
+
+    .product-info {
+      padding: 24px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .product-name {
+      font-size: 22px;
+      font-weight: 700;
+      color: #e8e3f0;
+      margin: 0 0 8px;
+    }
+    .product-desc {
+      font-size: 14px;
+      color: #b8b3c8;
+      line-height: 1.5;
+      margin: 0 0 16px;
+      flex: 1;
+    }
+    .product-price {
+      font-size: 28px;
+      font-weight: 800;
+      color: #d4c0f0;
+      margin: 0 0 20px;
+    }
+    .product-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border: 1px solid rgba(184, 224, 194, 0.35);
+      color: #b8e0c2;
+      background: rgba(45, 90, 60, 0.25);
+      margin-bottom: 14px;
+      width: fit-content;
+    }
+
+    .order-btn {
+      display: inline-block;
+      padding: 12px 22px;
+      background: linear-gradient(135deg, #4a2d75 0%, #6b48a6 100%);
+      color: #e8e3f0;
+      border: 1px solid rgba(192, 192, 210, 0.3);
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 14px;
+      text-decoration: none;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .order-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+    }
+
+    .coming-soon-section {
+      text-align: center;
+      padding: 40px 20px 80px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .coming-soon-section h2 {
+      color: #d4d0e0;
+      font-size: 26px;
+      margin-bottom: 12px;
+    }
+    .coming-soon-section p {
+      color: #8b87a0;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 12px 24px;
+      background: rgba(20, 10, 40, 0.6);
+      color: #c0bcd0;
+      text-decoration: none;
+      border-radius: 12px;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      font-weight: 600;
+      font-size: 14px;
+      transition: color 0.2s ease, border-color 0.2s ease;
+    }
+    .back-link:hover { color: #e8e3f0; border-color: #c0bcd0; }
+
+    footer {
+      text-align: center;
+      padding: 30px;
+      background: rgba(15, 8, 30, 0.9);
+      margin-top: 40px;
+      color: #8b87a0;
+      border-top: 1px solid rgba(192, 192, 210, 0.15);
+    }
+
+    @media (max-width: 640px) {
+      header { padding: 14px 16px; flex-wrap: wrap; gap: 10px; }
+      h1 { font-size: 32px; }
+      .product-grid { padding: 30px 16px 40px; gap: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/books.html">MK Published Works</a>
+    <a href="/shipping.html">Shipping</a>
+    <a href="/quiz.html">Book Quiz</a>
+    <a href="/dashboard.html">Custom Order</a>
+    <a href="/orders.html">Orders</a>
+    <a href="/reviews.html">Reviews</a>
+    <a href="/admin.html" id="adminNav" style="display:none;">Admin</a>
+  </nav>
+  <div class="auth-buttons" id="authButtons">
+    <a href="/signup.html" id="signupNav">Sign Up</a>
+    <a href="/signup.html?mode=login" id="loginNav">Log In</a>
+  </div>
+  <div class="who" id="whoami" style="display:none;">
+    Signed in as <a href="/account.html" style="color:#b8e0c2;text-decoration:none;"><strong id="whoEmail">…</strong></a>
+    <button type="button" class="signout" id="signOutBtn">Sign out</button>
+  </div>
+</header>
+
+<section class="hero">
+  <h1>Bookish Merch</h1>
+  <p class="subtitle">Cozy accessories for the reader in your life. More items coming soon!</p>
+</section>
+
+<div class="product-grid">
+
+  <div class="product-card">
+    <div class="product-image">
+      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="12" y="48" width="96" height="40" rx="8" stroke="#c0bcd0" stroke-width="2.5" fill="rgba(74,45,117,0.3)"/>
+        <rect x="34" y="42" width="24" height="52" rx="12" stroke="#c0bcd0" stroke-width="2.5" fill="rgba(74,45,117,0.2)"/>
+        <rect x="62" y="42" width="24" height="52" rx="12" stroke="#c0bcd0" stroke-width="2.5" fill="rgba(74,45,117,0.2)"/>
+        <line x1="12" y1="68" x2="34" y2="58" stroke="#c0bcd0" stroke-width="2"/>
+        <line x1="86" y1="58" x2="108" y2="68" stroke="#c0bcd0" stroke-width="2"/>
+        <circle cx="46" cy="66" r="8" stroke="#d4c0f0" stroke-width="2" fill="rgba(107,72,166,0.15)"/>
+        <circle cx="74" cy="66" r="8" stroke="#d4c0f0" stroke-width="2" fill="rgba(107,72,166,0.15)"/>
+        <path d="M42 34 C42 28, 50 24, 50 24 C50 24, 58 28, 58 34" stroke="#c0bcd0" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        <text x="46" y="70" text-anchor="middle" font-size="6" fill="#d4c0f0" font-family="serif">KC</text>
+        <text x="74" y="70" text-anchor="middle" font-size="6" fill="#d4c0f0" font-family="serif">KC</text>
+      </svg>
+    </div>
+    <div class="product-info">
+      <div class="product-badge">Available Now</div>
+      <h2 class="product-name">Bookish Glasses</h2>
+      <p class="product-desc">Stylish glasses for the literary soul. Perfect for curling up with your latest blind date read.</p>
+      <div class="product-price">$15</div>
+      <a href="/dashboard.html" class="order-btn">Order Now</a>
+    </div>
+  </div>
+
+  <div class="product-card">
+    <div class="product-image">
+      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M30 40 L60 28 L90 40 L90 95 C90 95, 75 100, 60 100 C45 100, 30 95, 30 95 Z" stroke="#c0bcd0" stroke-width="2.5" fill="rgba(74,45,117,0.3)"/>
+        <path d="M40 38 L60 30 L80 38" stroke="#c0bcd0" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <line x1="44" y1="36" x2="44" y2="24" stroke="#c0bcd0" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="76" y1="36" x2="76" y2="24" stroke="#c0bcd0" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M44 24 C44 20, 60 16, 76 24" stroke="#c0bcd0" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <rect x="48" y="55" width="24" height="30" rx="3" stroke="#d4c0f0" stroke-width="1.5" fill="rgba(107,72,166,0.15)"/>
+        <line x1="52" y1="62" x2="68" y2="62" stroke="#d4c0f0" stroke-width="1" stroke-linecap="round"/>
+        <line x1="52" y1="67" x2="68" y2="67" stroke="#d4c0f0" stroke-width="1" stroke-linecap="round"/>
+        <line x1="52" y1="72" x2="62" y2="72" stroke="#d4c0f0" stroke-width="1" stroke-linecap="round"/>
+        <text x="60" y="82" text-anchor="middle" font-size="7" fill="#d4c0f0" font-family="serif">KC</text>
+      </svg>
+    </div>
+    <div class="product-info">
+      <div class="product-badge">Available Now</div>
+      <h2 class="product-name">Totes</h2>
+      <p class="product-desc">Carry your book haul in style. A sturdy, bookish tote for the library, the shop, or wherever the story takes you.</p>
+      <div class="product-price">$10</div>
+      <a href="/dashboard.html" class="order-btn">Order Now</a>
+    </div>
+  </div>
+
+</div>
+
+<div class="coming-soon-section">
+  <h2>More Coming Soon</h2>
+  <p>New bookish products are always in the works. Check back for the latest additions to the collection.</p>
+  <a href="/" class="back-link">Back to Home</a>
+</div>
+
+<footer>
+  © 2026 Katayama Creations — Blind dates with books, not people.
+</footer>
+
+<script type="module">
+  import { getUser, logout } from 'https://esm.sh/@netlify/identity@1.0.0?bundle';
+  const ADMIN_EMAILS = ['ogmegbeast@gmail.com', 'nichole_avery@yahoo.com'];
+  try {
+    const u = await getUser();
+    if (u) {
+      const authBtns = document.getElementById('authButtons');
+      if (authBtns) authBtns.style.display = 'none';
+      const whoami = document.getElementById('whoami');
+      const whoEmail = document.getElementById('whoEmail');
+      if (whoami) {
+        whoami.style.display = 'block';
+        if (whoEmail) whoEmail.textContent = u.email || 'your account';
+      }
+      document.getElementById('signOutBtn').addEventListener('click', async () => {
+        try { await logout(); } catch (_) {}
+        window.location.href = '/';
+      });
+      if (ADMIN_EMAILS.includes((u.email || '').toLowerCase()) || (Array.isArray(u.roles) && u.roles.includes('admin'))) {
+        const link = document.getElementById('adminNav');
+        if (link) link.style.display = '';
+      }
+    }
+  } catch (_) {}
+</script>
+
+</body>
+</html>
