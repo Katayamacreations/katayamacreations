@@ -1,7 +1,8 @@
 import type { Context } from '@netlify/functions'
 import { requireAdmin } from './_admin.mjs'
-import { wrapEmail, escapeHtml, SITE_NAME, OWNER_EMAIL } from './_email-brand.mjs'
+import { wrapEmail, escapeHtml, SITE_NAME } from './_email-brand.mjs'
 
+const OWNER_EMAIL = Netlify.env.get('OWNER_EMAIL') || 'ogmegbeast@gmail.com'
 const FROM_EMAIL = Netlify.env.get('WELCOME_FROM_EMAIL') || `${SITE_NAME} <onboarding@resend.dev>`
 
 interface MassEmailBody {
@@ -24,7 +25,7 @@ function isValidEmail(s: string) {
 
 export default async (req: Request, _context: Context) => {
   if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 })
+    return Response.json({ ok: false, errors: ['Method not allowed'] }, { status: 405 })
   }
 
   const guard = await requireAdmin()
@@ -34,31 +35,36 @@ export default async (req: Request, _context: Context) => {
   try {
     body = (await req.json()) as MassEmailBody
   } catch {
-    return new Response('Invalid JSON', { status: 400 })
+    return Response.json({ ok: false, errors: ['Invalid JSON'] }, { status: 400 })
   }
 
   const subject = String(body.subject || '').trim()
   const bodyText = String(body.bodyText || '').trim()
   const bodyHtmlInput = String(body.bodyHtml || '').trim()
 
-  if (!subject) return new Response('Subject is required', { status: 400 })
-  if (!bodyText && !bodyHtmlInput) return new Response('Email body is required', { status: 400 })
+  if (!subject) return Response.json({ ok: false, errors: ['Subject is required'] }, { status: 400 })
+  if (!bodyText && !bodyHtmlInput) return Response.json({ ok: false, errors: ['Email body is required'] }, { status: 400 })
 
   const recipients = (Array.isArray(body.recipients) ? body.recipients : [])
     .map((r) => String(r || '').trim().toLowerCase())
     .filter((r) => isValidEmail(r))
   const unique = Array.from(new Set(recipients))
+    .filter((r) => r.toLowerCase() !== OWNER_EMAIL.toLowerCase())
 
   if (unique.length === 0) {
-    return new Response('No valid recipients', { status: 400 })
+    return Response.json({ ok: false, errors: ['No valid recipients'] }, { status: 400 })
   }
   if (unique.length > 500) {
-    return new Response('Too many recipients (max 500)', { status: 400 })
+    return Response.json({ ok: false, errors: ['Too many recipients (max 500)'] }, { status: 400 })
   }
 
   const apiKey = Netlify.env.get('RESEND_API_KEY')
   if (!apiKey) {
-    return new Response('Email service is not configured (RESEND_API_KEY missing).', { status: 500 })
+    console.error('admin-mass-email: RESEND_API_KEY is not configured')
+    return Response.json(
+      { ok: false, errors: ['Email service is not configured. Please add RESEND_API_KEY in site settings.'] },
+      { status: 500 },
+    )
   }
 
   const html = bodyHtmlInput
@@ -67,8 +73,9 @@ export default async (req: Request, _context: Context) => {
 
   const text = bodyText || bodyHtmlInput.replace(/<[^>]*>/g, '')
 
+  const BATCH_SIZE = 49
   const batches: string[][] = []
-  for (let i = 0; i < unique.length; i += 50) batches.push(unique.slice(i, i + 50))
+  for (let i = 0; i < unique.length; i += BATCH_SIZE) batches.push(unique.slice(i, i + BATCH_SIZE))
 
   let sent = 0
   let failed = 0
@@ -97,11 +104,14 @@ export default async (req: Request, _context: Context) => {
       } else {
         failed += batch.length
         const err = await res.text().catch(() => '')
-        errors.push(`HTTP ${res.status}: ${err.slice(0, 200)}`)
+        console.error(`admin-mass-email: Resend API error ${res.status}:`, err.slice(0, 500))
+        errors.push(`Email service error (${res.status}): ${err.slice(0, 200)}`)
       }
     } catch (err) {
       failed += batch.length
-      errors.push(err instanceof Error ? err.message : String(err))
+      const msg = err instanceof Error ? err.message : String(err)
+      console.error('admin-mass-email: fetch failed:', msg)
+      errors.push(msg)
     }
   }
 
