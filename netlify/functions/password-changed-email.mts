@@ -1,7 +1,8 @@
 import { getUser } from '@netlify/identity'
 import type { Context } from '@netlify/functions'
-import { wrapEmail, escapeHtml, SITE_NAME, OWNER_EMAIL, COLORS } from './_email-brand.mjs'
+import { wrapEmail, escapeHtml, SITE_NAME, COLORS } from './_email-brand.mjs'
 
+const OWNER_EMAIL = Netlify.env.get('OWNER_EMAIL') || 'ogmegbeast@gmail.com'
 const FROM_EMAIL = Netlify.env.get('WELCOME_FROM_EMAIL') || `${SITE_NAME} <onboarding@resend.dev>`
 
 export default async (req: Request, _context: Context) => {

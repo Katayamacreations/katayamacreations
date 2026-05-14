@@ -1217,6 +1217,12 @@
     btn.disabled = true;
     msg.textContent = 'Sending…';
     const token = await getAuthToken();
+    if (!token) {
+      msg.textContent = 'Session expired — please log in again.';
+      msg.className = 'pane-msg err';
+      btn.disabled = false;
+      return;
+    }
     try {
       const res = await fetch('/.netlify/functions/admin-mass-email', {
         method: 'POST',
@@ -1225,11 +1231,17 @@
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) {
-        const reason = (data && data.errors && data.errors[0]) || `HTTP ${res.status}`;
-        throw new Error(reason);
+        const reason = (data && data.errors && data.errors[0]) || `Server error (${res.status})`;
+        if (data.sent > 0) {
+          msg.textContent = `Partial send: ${data.sent} sent, ${data.failed} failed. ${reason}`;
+          msg.className = 'pane-msg err';
+        } else {
+          throw new Error(reason);
+        }
+      } else {
+        msg.textContent = `Sent to ${data.sent} recipient${data.sent === 1 ? '' : 's'}.`;
+        msg.className = 'pane-msg ok';
       }
-      msg.textContent = `Sent to ${data.sent} recipient${data.sent === 1 ? '' : 's'}.`;
-      msg.className = 'pane-msg ok';
     } catch (err) {
       msg.textContent = 'Send failed. ' + (err && err.message ? err.message : '');
       msg.className = 'pane-msg err';
