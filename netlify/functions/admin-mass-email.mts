@@ -1,8 +1,8 @@
 import type { Context } from '@netlify/functions'
 import { requireAdmin } from './_admin.mjs'
+import { wrapEmail, escapeHtml, SITE_NAME, OWNER_EMAIL } from './_email-brand.mjs'
 
-const FROM_EMAIL = Netlify.env.get('WELCOME_FROM_EMAIL') || 'Katayama Creations <onboarding@resend.dev>'
-const OWNER_EMAIL = Netlify.env.get('OWNER_EMAIL') || 'ogmegbeast@gmail.com'
+const FROM_EMAIL = Netlify.env.get('WELCOME_FROM_EMAIL') || `${SITE_NAME} <onboarding@resend.dev>`
 
 interface MassEmailBody {
   recipients?: string[]
@@ -11,33 +11,11 @@ interface MassEmailBody {
   bodyText?: string
 }
 
-function escapeHtml(s: string) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
-
 function wrapHtml(inner: string) {
-  return `<!doctype html>
-<html>
-  <body style="margin:0;padding:0;background:#1a0f2e;font-family:Arial,sans-serif;color:#e8e3f0;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#1a0f2e;padding:32px 16px;">
-      <tr><td align="center">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:linear-gradient(160deg,#2d1b46 0%,#1e1232 100%);border:1px solid rgba(192,192,210,0.15);border-radius:16px;padding:32px;">
-          <tr><td style="line-height:1.6;color:#e8e3f0;font-size:14px;">
-            ${inner}
-            <p style="margin:24px 0 0;font-size:12px;color:#8b87a0;">
-              You're receiving this because you have an account at Katayama Creations.
-            </p>
-          </td></tr>
-        </table>
-      </td></tr>
-    </table>
-  </body>
-</html>`
+  return wrapEmail(
+    `<div style="line-height:1.6;font-size:14px;">${inner}</div>`,
+    `You're receiving this because you have an account at ${SITE_NAME}.`,
+  )
 }
 
 function isValidEmail(s: string) {

@@ -1,4 +1,5 @@
 import type { Handler, HandlerEvent } from '@netlify/functions'
+import { wrapEmail, escapeHtml, SITE_NAME, OWNER_EMAIL, COLORS } from './_email-brand.mjs'
 
 interface IdentityUser {
   email?: string
@@ -6,8 +7,7 @@ interface IdentityUser {
   app_metadata?: Record<string, unknown>
 }
 
-const FROM_EMAIL = Netlify.env.get('WELCOME_FROM_EMAIL') || 'Katayama Creations <onboarding@resend.dev>'
-const OWNER_EMAIL = Netlify.env.get('OWNER_EMAIL') || 'ogmegbeast@gmail.com'
+const FROM_EMAIL = Netlify.env.get('WELCOME_FROM_EMAIL') || `${SITE_NAME} <onboarding@resend.dev>`
 const ADMIN_EMAILS: Set<string> = new Set(
   [OWNER_EMAIL, 'nichole_avery@yahoo.com'].map((e) => e.toLowerCase()),
 )
@@ -40,7 +40,7 @@ const handler: Handler = async (event: HandlerEvent) => {
           from: FROM_EMAIL,
           to: [user.email],
           reply_to: OWNER_EMAIL,
-          subject: 'Welcome to Katayama Creations',
+          subject: `Welcome to ${SITE_NAME}`,
           html: renderWelcomeEmail({ name }),
           text: renderWelcomeText({ name }),
         }),
@@ -72,47 +72,26 @@ export { handler }
 
 function renderWelcomeEmail({ name }: { name: string }) {
   const safeName = escapeHtml(name)
-  return `<!doctype html>
-<html>
-  <body style="margin:0;padding:0;background:#1a0f2e;font-family:Arial,sans-serif;color:#e8e3f0;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#1a0f2e;padding:32px 16px;">
-      <tr><td align="center">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:linear-gradient(160deg,#2d1b46 0%,#1e1232 100%);border:1px solid rgba(192,192,210,0.15);border-radius:16px;padding:32px;">
-          <tr><td>
-            <h1 style="margin:0 0 12px;font-size:24px;color:#e8e3f0;">Welcome, ${safeName}!</h1>
-            <p style="margin:0 0 16px;line-height:1.5;color:#c0bcd0;">
-              Thanks for signing up with Katayama Creations. Your account is ready — you can log in any time to place a new order, re-order a past favorite, or check the status of your existing orders.
-            </p>
-            <p style="margin:0 0 16px;line-height:1.5;color:#c0bcd0;">
-              Questions? Just reply to this email or reach out at
-              <a href="mailto:ogmegbeast@gmail.com" style="color:#b8e0c2;">ogmegbeast@gmail.com</a>.
-            </p>
-            <p style="margin:24px 0 0;font-size:12px;color:#8b87a0;">
-              You're receiving this because you signed up at katayamacreations. If this wasn't you, you can ignore this email.
-            </p>
-          </td></tr>
-        </table>
-      </td></tr>
-    </table>
-  </body>
-</html>`
+  return wrapEmail(
+    `<h1 style="margin:0 0 12px;font-size:24px;color:${COLORS.heading};">Welcome, ${safeName}!</h1>
+<p style="margin:0 0 16px;line-height:1.6;color:${COLORS.body};">
+  Thanks for signing up with ${SITE_NAME}. Your account is ready &mdash; you can log in any time to place a new order, re-order a past favorite, or check the status of your existing orders.
+</p>
+<p style="margin:0 0 16px;line-height:1.6;color:${COLORS.body};">
+  Questions? Just reply to this email or reach out at
+  <a href="mailto:${OWNER_EMAIL}" style="color:${COLORS.link};">${OWNER_EMAIL}</a>.
+</p>`,
+    `You're receiving this because you signed up at ${SITE_NAME}. If this wasn't you, you can ignore this email.`,
+    `Your ${SITE_NAME} account is ready — log in to place an order or browse curated reads.`,
+  )
 }
 
 function renderWelcomeText({ name }: { name: string }) {
   return `Welcome, ${name}!
 
-Thanks for signing up with Katayama Creations. Your account is ready — you can log in any time to place a new order, re-order a past favorite, or check the status of your existing orders.
+Thanks for signing up with ${SITE_NAME}. Your account is ready — you can log in any time to place a new order, re-order a past favorite, or check the status of your existing orders.
 
-Questions? Just reply to this email or reach out at ogmegbeast@gmail.com.
+Questions? Just reply to this email or reach out at ${OWNER_EMAIL}.
 
 If this wasn't you, you can ignore this email.`
-}
-
-function escapeHtml(s: string) {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
 }
