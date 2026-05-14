@@ -181,11 +181,32 @@
       color: #8b87a0;
       border-top: 1px solid rgba(192, 192, 210, 0.15);
     }
+    .menu-toggle {
+      display: none;
+      background: transparent;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      color: #c0bcd0;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 4px 10px;
+      border-radius: 8px;
+      line-height: 1;
+    }
+    .menu-toggle:hover { color: #e8e3f0; border-color: #c0bcd0; }
+    @media (max-width: 768px) {
+      header { flex-wrap: wrap; padding: 14px 16px; gap: 0; }
+      .menu-toggle { display: block; order: -1; }
+      nav { display: none; width: 100%; flex-direction: column; order: 10; padding-top: 12px; }
+      nav.open { display: flex; }
+      nav a { margin-left: 0; padding: 10px 0; border-bottom: 1px solid rgba(192, 192, 210, 0.1); }
+      .auth-buttons, .who { order: 1; margin-left: auto; }
+    }
   </style>
 </head>
 <body>
 
 <header>
+  <button class="menu-toggle" id="menuToggle" aria-label="Open menu">&#9776;</button>
   <nav>
     <a href="/">Home</a>
     <a href="/books.html">MK Published Works</a>
@@ -511,5 +532,13 @@
   });
 </script>
 
+<script>
+document.getElementById('menuToggle').addEventListener('click', function() {
+  var nav = this.closest('header').querySelector('nav');
+  nav.classList.toggle('open');
+  this.setAttribute('aria-label', nav.classList.contains('open') ? 'Close menu' : 'Open menu');
+  this.innerHTML = nav.classList.contains('open') ? '&#10005;' : '&#9776;';
+});
+</script>
 </body>
 </html>
