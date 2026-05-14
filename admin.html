@@ -258,6 +258,40 @@
     }
     .field textarea { min-height: 110px; resize: vertical; }
 
+    .reviews-table th, .reviews-table td {
+      text-align: left;
+      padding: 10px 8px;
+      border-bottom: 1px solid rgba(192, 192, 210, 0.1);
+      vertical-align: middle;
+    }
+    .reviews-table th {
+      color: #8b87a0;
+      font-size: 11px;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .reviews-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .review-stars { color: #f0c040; letter-spacing: 1px; }
+    .review-text-cell {
+      max-width: 280px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #c0bcd0;
+    }
+    .review-images-cell img {
+      width: 36px;
+      height: 36px;
+      object-fit: cover;
+      border-radius: 6px;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
     .users-table, .products-table, .photos-table {
       width: 100%;
       border-collapse: collapse;
@@ -432,6 +466,7 @@
       <button type="button" class="tab active" data-pane="orders">Orders</button>
       <button type="button" class="tab" data-pane="users">Users</button>
       <button type="button" class="tab" data-pane="email">Mass email</button>
+      <button type="button" class="tab" data-pane="reviews">Reviews</button>
       <button type="button" class="tab" data-pane="products">Products</button>
       <button type="button" class="tab" data-pane="photos">Photos</button>
     </div>
@@ -497,6 +532,19 @@
         <button type="button" class="button" id="emailSendBtn">Send email</button>
         <span id="emailMsg" class="pane-msg" style="margin:0;"></span>
       </div>
+    </div>
+
+    <div class="pane" id="pane-reviews">
+      <h3>Customer reviews</h3>
+      <div class="summary" id="reviewsSummary"></div>
+      <div class="controls">
+        <label for="reviewSearch">Search</label>
+        <input id="reviewSearch" type="search" placeholder="name, email, or text…">
+        <div class="spacer"></div>
+        <button type="button" class="button secondary" id="reviewsRefreshBtn">Refresh</button>
+      </div>
+      <div id="reviewsStatus" class="pane-msg">Loading…</div>
+      <div id="reviewsTableWrap"></div>
     </div>
 
     <div class="pane" id="pane-products">
@@ -844,6 +892,7 @@
       }
       if (target === 'products') ensureProductsLoaded();
       if (target === 'users' && !usersLoadedOnce) loadUsers();
+      if (target === 'reviews' && !reviewsLoadedOnce) loadReviews();
     });
   });
 
@@ -963,6 +1012,141 @@
       btn.disabled = false;
     }
   }
+
+  // ------------------------------------------------------------------
+  // Reviews
+  // ------------------------------------------------------------------
+  let allReviews = [];
+  let reviewsLoadedOnce = false;
+
+  async function loadReviews() {
+    const status = document.getElementById('reviewsStatus');
+    status.textContent = 'Loading…';
+    status.className = 'pane-msg';
+    try {
+      const res = await fetch('/.netlify/functions/list-reviews?limit=100&offset=0');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      allReviews = Array.isArray(data.reviews) ? data.reviews : [];
+      reviewsLoadedOnce = true;
+      renderReviewsSummary();
+      renderReviewsTable();
+    } catch (err) {
+      status.textContent = 'Failed to load reviews. ' + (err && err.message ? err.message : '');
+      status.className = 'pane-msg err';
+    }
+  }
+
+  function renderReviewsSummary() {
+    const el = document.getElementById('reviewsSummary');
+    const total = allReviews.length;
+    if (total === 0) {
+      el.innerHTML = '';
+      return;
+    }
+    const sum = allReviews.reduce((a, r) => a + parseFloat(r.rating || '0'), 0);
+    const avg = (sum / total).toFixed(1);
+    const withImages = allReviews.filter(r => r.images && r.images.length > 0).length;
+    el.innerHTML = `
+      <div class="stat"><div class="label">Total</div><div class="value">${total}</div></div>
+      <div class="stat"><div class="label">Avg rating</div><div class="value">${avg}</div></div>
+      <div class="stat"><div class="label">With photos</div><div class="value">${withImages}</div></div>
+    `;
+  }
+
+  function starsHtml(rating) {
+    const val = parseFloat(rating) || 0;
+    let s = '';
+    for (let i = 1; i <= 5; i++) {
+      if (val >= i) s += '★';
+      else if (val >= i - 0.5) s += '½';
+      else s += '☆';
+    }
+    return s;
+  }
+
+  function renderReviewsTable() {
+    const wrap = document.getElementById('reviewsTableWrap');
+    const status = document.getElementById('reviewsStatus');
+    const search = (document.getElementById('reviewSearch').value || '').trim().toLowerCase();
+
+    const filtered = allReviews.filter(r => {
+      if (!search) return true;
+      const hay = [r.userName, r.userEmail, r.reviewText].map(v => String(v || '').toLowerCase()).join(' ');
+      return hay.includes(search);
+    });
+
+    status.textContent = `${filtered.length} of ${allReviews.length} review${allReviews.length === 1 ? '' : 's'}`;
+    status.className = 'pane-msg';
+
+    if (filtered.length === 0) {
+      wrap.innerHTML = '<div class="empty">No reviews to show.</div>';
+      return;
+    }
+
+    const rows = filtered.map(r => {
+      const date = r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '—';
+      const imgs = (r.images || []).map(img =>
+        `<img src="/.netlify/functions/serve-review-photo?key=${encodeURIComponent(img.blobKey)}" alt="">`
+      ).join('');
+      return `<tr data-rid="${r.id}">
+        <td><span class="review-stars">${starsHtml(r.rating)}</span></td>
+        <td>${escapeHtml(r.userName || '—')}<div style="color:#8b87a0; font-size:11px;">${escapeHtml(r.userEmail || '')}</div></td>
+        <td class="review-text-cell" title="${escapeHtml(r.reviewText || '')}">${escapeHtml(r.reviewText || '—')}</td>
+        <td class="review-images-cell">${imgs || '—'}</td>
+        <td style="font-size:12px; color:#8b87a0;">${date}</td>
+        <td style="text-align:right; white-space:nowrap;">
+          <button type="button" class="button small secondary danger" data-act="delete-review">Delete</button>
+          <span class="review-msg" data-rid="${r.id}" style="display:none; font-size:11px; margin-left:6px;"></span>
+        </td>
+      </tr>`;
+    }).join('');
+
+    wrap.innerHTML = `<table class="reviews-table">
+      <thead><tr><th>Rating</th><th>Reviewer</th><th>Text</th><th>Photos</th><th>Date</th><th></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+
+    wrap.querySelectorAll('[data-act="delete-review"]').forEach(btn => {
+      const tr = btn.closest('tr');
+      btn.addEventListener('click', () => deleteReview(parseInt(tr.dataset.rid, 10)));
+    });
+  }
+
+  async function deleteReview(reviewId) {
+    const r = allReviews.find(x => x.id === reviewId);
+    if (!r) return;
+    const label = r.userName || r.userEmail || `#${reviewId}`;
+    if (!confirm(`Delete review by ${label}? This cannot be undone.`)) return;
+
+    const msg = document.querySelector(`.review-msg[data-rid="${reviewId}"]`);
+    if (msg) { msg.style.display = 'inline'; msg.textContent = 'Deleting…'; msg.style.color = '#8b87a0'; }
+
+    const token = await getAuthToken();
+    if (!token) {
+      if (msg) { msg.textContent = 'Session expired'; msg.style.color = '#f0b8a8'; }
+      return;
+    }
+
+    try {
+      const res = await fetch(`/.netlify/functions/admin-delete-review?id=${encodeURIComponent(reviewId)}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+      allReviews = allReviews.filter(x => x.id !== reviewId);
+      renderReviewsSummary();
+      renderReviewsTable();
+    } catch (err) {
+      if (msg) { msg.textContent = err && err.message ? err.message : 'Failed'; msg.style.color = '#f0b8a8'; }
+    }
+  }
+
+  document.getElementById('reviewsRefreshBtn').addEventListener('click', loadReviews);
+  document.getElementById('reviewSearch').addEventListener('input', renderReviewsTable);
 
   // ------------------------------------------------------------------
   // Mass email
