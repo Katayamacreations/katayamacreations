@@ -1,5 +1,5 @@
 const SITE_NAME = 'Katayama Creations'
-const OWNER_EMAIL = Netlify.env.get('OWNER_EMAIL') || 'ogmegbeast@gmail.com'
+const OWNER_EMAIL = process.env.OWNER_EMAIL || 'ogmegbeast@gmail.com'
 
 const COLORS = {
   bg: '#1a0f2e',
@@ -24,7 +24,7 @@ export function escapeHtml(s: string) {
 }
 
 function siteUrl() {
-  return (Netlify.env.get('URL') || 'https://katayamacreations.netlify.app').replace(/\/$/, '')
+  return (process.env.URL || 'https://katayamacreations.netlify.app').replace(/\/$/, '')
 }
 
 function logoImg() {

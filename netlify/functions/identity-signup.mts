@@ -7,7 +7,7 @@ interface IdentityUser {
   app_metadata?: Record<string, unknown>
 }
 
-const FROM_EMAIL = Netlify.env.get('WELCOME_FROM_EMAIL') || `${SITE_NAME} <onboarding@resend.dev>`
+const FROM_EMAIL = process.env.WELCOME_FROM_EMAIL || `${SITE_NAME} <onboarding@resend.dev>`
 const ADMIN_EMAILS: Set<string> = new Set(
   [OWNER_EMAIL, 'nichole_avery@yahoo.com'].map((e) => e.toLowerCase()),
 )
@@ -21,7 +21,7 @@ const handler: Handler = async (event: HandlerEvent) => {
   }
 
   const user = payload.user
-  const apiKey = Netlify.env.get('RESEND_API_KEY')
+  const apiKey = process.env.RESEND_API_KEY
   if (apiKey && user?.email) {
     const meta = user.user_metadata || {}
     const name =
