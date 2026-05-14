@@ -110,6 +110,10 @@ export function renderOrderEmailHtml(o: OrderData): string {
 }
 
 export function renderOrderEmailText(o: OrderData): string {
+  return renderOrderSummaryText(o)
+}
+
+export function renderOrderSummaryText(o: OrderData): string {
   const lines: string[] = []
   lines.push(`New custom order from ${o.customerName || 'unknown'} <${o.email}>`)
   lines.push('')
