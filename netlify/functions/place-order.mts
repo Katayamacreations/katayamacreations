@@ -1,7 +1,7 @@
 import type { Context } from '@netlify/functions'
 import { getStore } from '@netlify/blobs'
 import { getUser } from '@netlify/identity'
-import { renderOrderEmailHtml, renderOrderEmailText, type OrderData, type CartItem } from './_order-email.mjs'
+import { renderOrderEmailHtml, renderOrderEmailText, renderOrderSummaryText, type OrderData, type CartItem } from './_order-email.mjs'
 
 const FROM_EMAIL = Netlify.env.get('WELCOME_FROM_EMAIL') || 'Katayama Creations <onboarding@resend.dev>'
 const OWNER_EMAIL = Netlify.env.get('OWNER_EMAIL') || 'ogmegbeast@gmail.com'
@@ -96,8 +96,29 @@ export default async (req: Request, _context: Context) => {
     } catch (err) {
       console.error('Resend send failed', err)
     }
-  } else {
-    console.warn('RESEND_API_KEY is not set — order email notification was not sent')
+  }
+
+  const siteUrl = Netlify.env.get('URL')
+  if (siteUrl) {
+    try {
+      const formRes = await fetch(siteUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          'form-name': 'order-notification',
+          'customerName': order.customerName || 'unknown',
+          'email': order.email || '',
+          'total': `$${order.total}`,
+          'subject': `New order: ${order.customerName || 'unknown'} — $${order.total}`,
+          'summary': renderOrderSummaryText(order),
+        }).toString(),
+      })
+      if (!formRes.ok) {
+        console.error(`Form notification failed ${formRes.status}`)
+      }
+    } catch (err) {
+      console.error('Form notification error', err)
+    }
   }
 
   return Response.json({ ok: true, id, placedAt })
