@@ -18,6 +18,8 @@ interface IncomingOrder {
   zip?: string
   total?: string
   paymentDeadline?: string
+  paymentMethod?: string
+  paymentStatus?: string
 }
 
 export default async (req: Request, _context: Context) => {
@@ -66,6 +68,8 @@ export default async (req: Request, _context: Context) => {
     orderNotes: String(body.orderNotes || ''),
     goodreadsUrl: String(body.goodreadsUrl || ''),
     cart: (body.cart || []).map(sanitizeCartItem),
+    paymentMethod: String(body.paymentMethod || ''),
+    paymentStatus: String(body.paymentStatus || ''),
   }
 
   const store = getStore('orders')
