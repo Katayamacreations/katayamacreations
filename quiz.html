@@ -100,27 +100,13 @@
       width: 120px;
       height: 120px;
       margin: 0 auto 32px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 35% 35%, rgba(160, 120, 255, 0.35), rgba(75, 40, 130, 0.6) 60%, rgba(20, 10, 40, 0.9));
-      box-shadow: 0 0 40px rgba(120, 80, 200, 0.3), 0 0 80px rgba(120, 80, 200, 0.1), inset 0 -8px 20px rgba(0,0,0,0.4);
       display: flex;
       align-items: center;
       justify-content: center;
       animation: float 4s ease-in-out infinite;
-      position: relative;
+      font-size: 80px;
+      line-height: 1;
     }
-    .crystal-ball::after {
-      content: '';
-      position: absolute;
-      width: 36px;
-      height: 18px;
-      background: radial-gradient(ellipse, rgba(255,255,255,0.25), transparent);
-      border-radius: 50%;
-      top: 22px;
-      left: 28px;
-      transform: rotate(-25deg);
-    }
-    .crystal-ball svg { width: 48px; height: 48px; opacity: 0.7; }
     @keyframes float {
       0%,100% { transform: translateY(0); }
       50% { transform: translateY(-10px); }
@@ -461,13 +447,7 @@
 <div class="quiz-wrap">
   <!-- INTRO SCREEN -->
   <div id="introScreen" class="quiz-intro">
-    <div class="crystal-ball">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#c4b0e8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-        <path d="M8 7h8M8 11h6"/>
-      </svg>
-    </div>
+    <div class="crystal-ball">📖</div>
     <h1>What Should You Read Next?</h1>
     <p class="tagline">A literary blind date, curated by fate</p>
     <p>
