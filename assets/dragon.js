@@ -3,25 +3,7 @@
   container.className = 'dragon-wrap';
   container.id = 'dragon';
   container.setAttribute('aria-hidden', 'true');
-
-  var img = document.createElement('img');
-  img.src = '/assets/baby-dragon.png';
-  img.alt = '';
-  img.draggable = false;
-  img.className = 'dragon-img';
-  container.appendChild(img);
-
-  var sparkles = document.createElement('div');
-  sparkles.className = 'dragon-sparkles';
-  for (var i = 0; i < 6; i++) {
-    var s = document.createElement('span');
-    s.className = 'dragon-sparkle';
-    s.style.animationDelay = (i * 0.4) + 's';
-    s.style.left = (Math.random() * 100) + '%';
-    s.style.top = (Math.random() * 100) + '%';
-    sparkles.appendChild(s);
-  }
-  container.appendChild(sparkles);
+  container.innerHTML = '<img src="/assets/dragon.png" alt="" draggable="false" />';
 
   document.body.appendChild(container);
 
@@ -40,15 +22,15 @@
 
   function pickState() {
     var r = Math.random();
-    if (r < 0.4) {
-      state = 'drift';
-      stateTimer = 150 + Math.floor(Math.random() * 200);
-    } else if (r < 0.6) {
-      state = 'circle';
-      stateTimer = 180 + Math.floor(Math.random() * 220);
-    } else if (r < 0.75) {
-      state = 'swoop';
+    if (r < 0.35) {
+      state = 'glide';
+      stateTimer = 120 + Math.floor(Math.random() * 180);
+    } else if (r < 0.55) {
+      state = 'dive';
       stateTimer = 60 + Math.floor(Math.random() * 80);
+    } else if (r < 0.7) {
+      state = 'circle';
+      stateTimer = 150 + Math.floor(Math.random() * 200);
     } else {
       state = 'float';
       stateTimer = 200 + Math.floor(Math.random() * 400);
@@ -61,11 +43,11 @@
 
     if (stateTimer <= 0) pickState();
 
-    if (state === 'float') {
-      ax += (Math.random() - 0.5) * 0.025;
-      ay += (Math.random() - 0.5) * 0.02;
-      ay += Math.sin(time * 0.01) * 0.015;
-    } else if (state === 'drift') {
+    if (state === 'fly') {
+      ax += (Math.random() - 0.5) * 0.04;
+      ay += (Math.random() - 0.5) * 0.03;
+      ay += Math.sin(time * 0.012) * 0.02;
+    } else if (state === 'glide') {
       ax *= 0.98;
       ay = Math.sin(time * 0.008) * 0.012;
     } else if (state === 'swoop') {
