@@ -801,7 +801,7 @@
 
     // Prefill from stored profile
     const meta = currentUser.user_metadata || {};
-    const fullName = meta.full_name || [meta.firstName, meta.lastName].filter(Boolean).join(' ').trim();
+    const fullName = currentUser.name || meta.full_name || [meta.firstName, meta.lastName].filter(Boolean).join(' ').trim();
     document.getElementById('customerName').value = fullName;
     document.getElementById('emailField').value = currentUser.email || '';
     if (meta.state) {
