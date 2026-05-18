@@ -403,9 +403,9 @@
       left: 0;
       z-index: 9999;
       pointer-events: none;
-      width: 100px;
-      height: 100px;
-      filter: drop-shadow(0 0 8px rgba(200,255,0,0.35)) drop-shadow(0 2px 6px rgba(0,0,0,0.6));
+      width: 160px;
+      height: 160px;
+      filter: drop-shadow(0 0 18px rgba(200,255,0,0.6)) drop-shadow(0 0 40px rgba(200,255,0,0.25)) drop-shadow(0 2px 6px rgba(0,0,0,0.8));
     }
     .dragon-wrap svg { width: 100%; height: 100%; overflow: visible; }
     .dragon-wing-l, .dragon-wing-r {
@@ -1284,49 +1284,50 @@ document.getElementById('menuToggle').addEventListener('click', function() {
 <div class="dragon-wrap" id="dragon" aria-hidden="true">
   <svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg">
     <!-- body -->
-    <ellipse cx="55" cy="55" rx="22" ry="16" fill="#2e2e34"/>
+    <ellipse cx="55" cy="55" rx="22" ry="16" fill="#111117" stroke="#c8ff00" stroke-width="0.5" stroke-opacity="0.3"/>
     <!-- belly -->
-    <ellipse cx="55" cy="60" rx="14" ry="9" fill="#3d3d46"/>
+    <ellipse cx="55" cy="60" rx="14" ry="9" fill="#1e1e28"/>
     <!-- head -->
-    <circle cx="80" cy="42" r="13" fill="#2e2e34"/>
+    <circle cx="80" cy="42" r="13" fill="#111117" stroke="#c8ff00" stroke-width="0.4" stroke-opacity="0.3"/>
     <!-- snout -->
-    <ellipse cx="92" cy="44" rx="7" ry="5" fill="#383840"/>
+    <ellipse cx="92" cy="44" rx="7" ry="5" fill="#18181f"/>
     <!-- nostril puffs -->
-    <circle cx="97" cy="42" r="1.5" fill="#666"/>
-    <circle cx="97" cy="46" r="1.5" fill="#666"/>
+    <circle cx="97" cy="42" r="1.8" fill="#ff6633" opacity="0.8"/>
+    <circle cx="97" cy="46" r="1.8" fill="#ff6633" opacity="0.8"/>
     <!-- eyes -->
     <g class="dragon-eye-blink">
-      <circle cx="84" cy="39" r="4.5" fill="#c8ff00"/>
+      <circle cx="84" cy="39" r="5" fill="#c8ff00"/>
       <circle cx="84" cy="39" r="2.2" fill="#111"/>
     </g>
     <!-- little horns -->
-    <polygon points="76,31 74,22 79,30" fill="#3d3d46"/>
-    <polygon points="82,30 82,20 86,29" fill="#3d3d46"/>
+    <polygon points="76,31 74,22 79,30" fill="#c0c0cc"/>
+    <polygon points="82,30 82,20 86,29" fill="#c0c0cc"/>
     <!-- ear frills -->
-    <polygon points="73,35 67,28 74,33" fill="#6b3fa0" opacity="0.9"/>
+    <polygon points="73,35 67,28 74,33" fill="#bf5af2" opacity="0.9"/>
     <!-- left wing -->
     <g class="dragon-wing-l" style="transform-origin:45px 48px">
-      <path d="M45,48 Q20,15 10,30 Q18,35 25,38 Q15,25 22,22 Q28,30 32,36 Q22,18 30,18 Q34,28 38,40 Z" fill="#4a2d6e" stroke="#2e2e34" stroke-width="0.5"/>
+      <path d="M45,48 Q20,15 10,30 Q18,35 25,38 Q15,25 22,22 Q28,30 32,36 Q22,18 30,18 Q34,28 38,40 Z" fill="#bf5af2" stroke="#e0a0ff" stroke-width="0.6" opacity="0.85"/>
     </g>
     <!-- right wing -->
     <g class="dragon-wing-r" style="transform-origin:50px 45px">
-      <path d="M50,45 Q38,12 28,25 Q34,28 38,32 Q30,20 35,18 Q38,26 42,34 Q34,14 40,15 Q42,24 46,38 Z" fill="#4a2d6e" stroke="#2e2e34" stroke-width="0.5" opacity="0.8"/>
+      <path d="M50,45 Q38,12 28,25 Q34,28 38,32 Q30,20 35,18 Q38,26 42,34 Q34,14 40,15 Q42,24 46,38 Z" fill="#bf5af2" stroke="#e0a0ff" stroke-width="0.6" opacity="0.7"/>
     </g>
     <!-- legs -->
-    <g fill="#2e2e34">
+    <g fill="#111117">
       <rect x="42" y="66" width="5" height="10" rx="2"/>
       <rect x="60" y="66" width="5" height="10" rx="2"/>
       <!-- tiny claws -->
-      <circle cx="42" cy="76" r="1.5" fill="#555"/>
-      <circle cx="47" cy="76" r="1.5" fill="#555"/>
-      <circle cx="60" cy="76" r="1.5" fill="#555"/>
-      <circle cx="65" cy="76" r="1.5" fill="#555"/>
+      <circle cx="42" cy="76" r="1.5" fill="#c0c0cc"/>
+      <circle cx="47" cy="76" r="1.5" fill="#c0c0cc"/>
+      <circle cx="60" cy="76" r="1.5" fill="#c0c0cc"/>
+      <circle cx="65" cy="76" r="1.5" fill="#c0c0cc"/>
     </g>
     <!-- tail -->
     <g class="dragon-tail">
-      <path d="M34,58 Q18,62 8,55 Q4,52 6,48" fill="none" stroke="#2e2e34" stroke-width="5" stroke-linecap="round"/>
+      <path d="M34,58 Q18,62 8,55 Q4,52 6,48" fill="none" stroke="#111117" stroke-width="5" stroke-linecap="round"/>
+      <path d="M34,58 Q18,62 8,55 Q4,52 6,48" fill="none" stroke="#c8ff00" stroke-width="0.6" stroke-linecap="round" opacity="0.3"/>
       <!-- tail spade -->
-      <polygon points="6,48 1,42 10,46" fill="#6b3fa0"/>
+      <polygon points="6,48 1,42 10,46" fill="#bf5af2"/>
     </g>
   </svg>
 </div>
@@ -1335,8 +1336,8 @@ document.getElementById('menuToggle').addEventListener('click', function() {
 (function() {
   var d = document.getElementById('dragon');
   if (!d) return;
-  var x = Math.random() * (window.innerWidth - 80);
-  var y = Math.random() * (window.innerHeight / 3);
+  var x = Math.random() * (window.innerWidth - 160);
+  var y = 20 + Math.random() * (window.innerHeight / 4);
   var vx = (1.2 + Math.random()) * (Math.random() < 0.5 ? 1 : -1);
   var vy = 0.7 + Math.random() * 0.6;
   var time = 0;
@@ -1349,8 +1350,8 @@ document.getElementById('menuToggle').addEventListener('click', function() {
     x += vx;
     y += Math.sin(time * bobFreq) * 0.8;
 
-    if (x > window.innerWidth - 40) { vx = -(1.2 + Math.random()); }
-    if (x < -20) { vx = 1.2 + Math.random(); }
+    if (x > window.innerWidth - 160) { vx = -(1.2 + Math.random()); }
+    if (x < -40) { vx = 1.2 + Math.random(); }
     if (y < -10) { vy = Math.abs(vy); }
     if (y > window.innerHeight * 0.6) { vy = -Math.abs(vy); }
 
