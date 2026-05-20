@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, numeric, integer } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, numeric, integer, date } from "drizzle-orm/pg-core";
 
 export const reviews = pgTable("reviews", {
   id: serial().primaryKey(),
@@ -19,4 +19,16 @@ export const reviewImages = pgTable("review_images", {
   fileName: text("file_name").notNull(),
   contentType: text("content_type").notNull(),
   uploadedAt: timestamp("uploaded_at").defaultNow(),
+});
+
+export const siteVisits = pgTable("site_visits", {
+  id: serial().primaryKey(),
+  visitDate: date("visit_date").notNull(),
+  path: text("path").notNull().default("/"),
+  country: text("country").notNull().default("Unknown"),
+  countryCode: text("country_code").notNull().default(""),
+  city: text("city").notNull().default("Unknown"),
+  latitude: numeric("latitude", { precision: 9, scale: 6 }),
+  longitude: numeric("longitude", { precision: 9, scale: 6 }),
+  createdAt: timestamp("created_at").defaultNow(),
 });

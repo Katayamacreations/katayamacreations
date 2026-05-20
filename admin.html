@@ -394,6 +394,92 @@
     }
     .pane .pane-msg.ok { color: #b8e0c2; }
     .pane .pane-msg.err { color: #f0b8a8; }
+
+    .analytics-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 160px;
+      padding: 12px 0;
+      overflow-x: auto;
+    }
+    .analytics-chart .bar-wrap {
+      flex: 1 1 0;
+      min-width: 12px;
+      max-width: 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: flex-end;
+    }
+    .analytics-chart .bar {
+      width: 100%;
+      min-height: 2px;
+      border-radius: 4px 4px 0 0;
+      background: linear-gradient(180deg, #6b48a6, #4a2d75);
+      position: relative;
+      cursor: default;
+    }
+    .analytics-chart .bar:hover { background: linear-gradient(180deg, #8b68c6, #6b48a6); }
+    .analytics-chart .bar-label {
+      font-size: 9px;
+      color: #8b87a0;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      margin-top: 4px;
+      white-space: nowrap;
+    }
+    .analytics-chart .bar-count {
+      font-size: 9px;
+      color: #c0bcd0;
+      margin-bottom: 2px;
+    }
+    .world-map-wrap {
+      position: relative;
+      background: rgba(20, 10, 40, 0.5);
+      border: 1px solid rgba(192, 192, 210, 0.12);
+      border-radius: 14px;
+      overflow: hidden;
+      margin: 14px 0;
+    }
+    .world-map-wrap svg { display: block; width: 100%; height: auto; }
+    .map-dot {
+      fill: #8b68c6;
+      stroke: #e8e3f0;
+      stroke-width: 0.3;
+      opacity: 0.85;
+    }
+    .map-dot:hover { fill: #b8e0c2; opacity: 1; }
+    .location-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .location-table th, .location-table td {
+      text-align: left;
+      padding: 10px 8px;
+      border-bottom: 1px solid rgba(192, 192, 210, 0.1);
+      vertical-align: middle;
+    }
+    .location-table th {
+      color: #8b87a0;
+      font-size: 11px;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .location-count {
+      display: inline-block;
+      min-width: 28px;
+      text-align: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(107, 72, 166, 0.3);
+      color: #d4c0f0;
+      font-weight: 700;
+      font-size: 12px;
+    }
     footer {
       text-align: center;
       padding: 30px;
@@ -470,6 +556,7 @@
       <button type="button" class="tab" data-pane="reviews">Reviews</button>
       <button type="button" class="tab" data-pane="products">Products</button>
       <button type="button" class="tab" data-pane="photos">Photos</button>
+      <button type="button" class="tab" data-pane="analytics">Analytics</button>
     </div>
 
     <div class="pane active" id="pane-orders">
@@ -602,6 +689,35 @@
         <span id="photoMsg" class="pane-msg" style="margin:0;"></span>
       </div>
       <div id="photoList" style="margin-top:18px;"></div>
+    </div>
+
+    <div class="pane" id="pane-analytics">
+      <h3>Site analytics</h3>
+      <div class="controls">
+        <label for="analyticsDays">Period</label>
+        <select id="analyticsDays">
+          <option value="7">Last 7 days</option>
+          <option value="14">Last 14 days</option>
+          <option value="30" selected>Last 30 days</option>
+          <option value="60">Last 60 days</option>
+          <option value="90">Last 90 days</option>
+        </select>
+        <div class="spacer"></div>
+        <button type="button" class="button secondary" id="analyticsRefreshBtn">Refresh</button>
+      </div>
+      <div class="summary" id="analyticsSummary"></div>
+      <div id="analyticsStatus" class="pane-msg">Loading…</div>
+
+      <div class="card" style="margin-top:14px;">
+        <h3 style="font-size:14px; margin-bottom:8px;">Daily visits</h3>
+        <div class="analytics-chart" id="analyticsChart"></div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <h3 style="font-size:14px; margin-bottom:8px;">Visitor locations</h3>
+        <div class="world-map-wrap" id="worldMapWrap"></div>
+        <div id="locationTableWrap" style="margin-top:14px;"></div>
+      </div>
     </div>
   </div>
 </section>
@@ -894,6 +1010,7 @@
       if (target === 'products') ensureProductsLoaded();
       if (target === 'users' && !usersLoadedOnce) loadUsers();
       if (target === 'reviews' && !reviewsLoadedOnce) loadReviews();
+      if (target === 'analytics' && !analyticsLoadedOnce) loadAnalytics();
     });
   });
 
@@ -1568,6 +1685,158 @@
       alert('Delete failed: ' + (err && err.message ? err.message : ''));
     }
   }
+
+  // ------------------------------------------------------------------
+  // Analytics
+  // ------------------------------------------------------------------
+  let analyticsLoadedOnce = false;
+  let analyticsData = null;
+
+  async function loadAnalytics() {
+    const status = document.getElementById('analyticsStatus');
+    status.textContent = 'Loading…';
+    status.className = 'pane-msg';
+    const token = await getAuthToken();
+    if (!token) {
+      status.textContent = 'Session expired — please log in again.';
+      status.className = 'pane-msg err';
+      return;
+    }
+    const days = document.getElementById('analyticsDays').value || '30';
+    try {
+      const res = await fetch(`/api/admin/site-visits?days=${days}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      analyticsData = await res.json();
+      analyticsLoadedOnce = true;
+      renderAnalyticsSummary();
+      renderAnalyticsChart();
+      renderWorldMap();
+      renderLocationTable();
+      status.textContent = `${analyticsData.totalVisits} visit${analyticsData.totalVisits === 1 ? '' : 's'} in the last ${analyticsData.days} days`;
+      status.className = 'pane-msg ok';
+    } catch (err) {
+      status.textContent = 'Failed to load analytics. ' + (err && err.message ? err.message : '');
+      status.className = 'pane-msg err';
+    }
+  }
+
+  function renderAnalyticsSummary() {
+    const el = document.getElementById('analyticsSummary');
+    if (!analyticsData) { el.innerHTML = ''; return; }
+    const { daily, totalVisits, locations } = analyticsData;
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayEntry = daily.find(d => d.date === todayStr);
+    const todayCount = todayEntry ? todayEntry.count : 0;
+    const uniqueCountries = new Set(locations.map(l => l.country)).size;
+    const uniqueCities = locations.length;
+    const avgPerDay = daily.length > 0 ? Math.round(totalVisits / daily.length) : 0;
+    el.innerHTML = `
+      <div class="stat"><div class="label">Today</div><div class="value">${todayCount}</div></div>
+      <div class="stat"><div class="label">Total</div><div class="value">${totalVisits}</div></div>
+      <div class="stat"><div class="label">Avg / day</div><div class="value">${avgPerDay}</div></div>
+      <div class="stat"><div class="label">Countries</div><div class="value">${uniqueCountries}</div></div>
+      <div class="stat"><div class="label">Cities</div><div class="value">${uniqueCities}</div></div>
+    `;
+  }
+
+  function renderAnalyticsChart() {
+    const chart = document.getElementById('analyticsChart');
+    if (!analyticsData || !analyticsData.daily.length) {
+      chart.innerHTML = '<div class="empty" style="width:100%;">No visit data yet.</div>';
+      return;
+    }
+    const { daily } = analyticsData;
+    const maxCount = Math.max(...daily.map(d => d.count), 1);
+    chart.innerHTML = daily.map(d => {
+      const pct = Math.max((d.count / maxCount) * 100, 2);
+      const label = d.date.slice(5);
+      return `<div class="bar-wrap">
+        <span class="bar-count">${d.count}</span>
+        <div class="bar" style="height:${pct}%;" title="${d.date}: ${d.count} visit${d.count === 1 ? '' : 's'}"></div>
+        <span class="bar-label">${label}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function renderWorldMap() {
+    const wrap = document.getElementById('worldMapWrap');
+    if (!analyticsData || !analyticsData.locations.length) {
+      wrap.innerHTML = '<div class="empty" style="padding:40px;">No location data yet.</div>';
+      return;
+    }
+    const locs = analyticsData.locations.filter(l => l.lat != null && l.lng != null);
+    if (locs.length === 0) {
+      wrap.innerHTML = '<div class="empty" style="padding:40px;">No geolocation data available.</div>';
+      return;
+    }
+    const W = 800, H = 400;
+    const maxCount = Math.max(...locs.map(l => l.count), 1);
+
+    function project(lat, lng) {
+      const x = ((lng + 180) / 360) * W;
+      const y = ((90 - lat) / 180) * H;
+      return { x, y };
+    }
+
+    const dots = locs.map(l => {
+      const { x, y } = project(l.lat, l.lng);
+      const r = Math.max(3, Math.min(12, 3 + (l.count / maxCount) * 9));
+      return `<circle class="map-dot" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}">
+        <title>${escapeHtml(l.city)}, ${escapeHtml(l.country)} — ${l.count} visit${l.count === 1 ? '' : 's'}</title>
+      </circle>`;
+    }).join('\n');
+
+    const continentCoords = [
+      [[72,-168],[68,-135],[60,-140],[55,-130],[50,-127],[45,-124],[40,-124],[35,-120],[32,-117],[28,-115],[25,-110],[22,-105],[20,-105],[18,-97],[16,-93],[18,-89],[21,-87],[25,-80],[28,-82],[30,-82],[30,-88],[29,-94],[26,-97],[28,-90],[30,-84],[31,-82],[33,-79],[36,-76],[40,-74],[42,-71],[44,-67],[46,-60],[48,-56],[51,-55],[53,-57],[56,-60],[59,-64],[62,-70],[64,-63],[67,-60],[69,-55],[72,-56],[75,-62],[78,-72],[76,-88],[72,-95],[75,-100],[70,-127]],
+      [[12,-72],[10,-76],[8,-77],[5,-77],[2,-79],[0,-80],[-3,-80],[-5,-76],[-4,-60],[-5,-35],[-8,-35],[-13,-39],[-18,-40],[-23,-42],[-28,-49],[-33,-53],[-35,-57],[-40,-62],[-45,-66],[-49,-68],[-52,-70],[-55,-67],[-53,-64],[-50,-73],[-46,-76],[-42,-73],[-35,-72],[-28,-70],[-22,-70],[-18,-70],[-15,-75],[-10,-77],[-5,-80],[-1,-80],[2,-78],[5,-77],[8,-72],[10,-72]],
+      [[36,-6],[38,0],[42,3],[43,8],[46,3],[47,-2],[49,-5],[51,-10],[53,-6],[54,-3],[56,6],[58,8],[60,5],[63,6],[65,13],[68,16],[70,20],[71,28],[70,32],[65,30],[60,30],[58,28],[56,22],[54,14],[52,15],[50,20],[47,15],[45,13],[43,16],[41,20],[40,26],[38,24],[36,28],[35,25],[37,10]],
+      [[35,-6],[37,10],[35,25],[33,32],[30,32],[25,35],[20,38],[15,42],[12,44],[10,50],[5,42],[1,42],[-2,41],[-5,40],[-10,40],[-15,37],[-20,35],[-25,33],[-30,30],[-34,26],[-35,20],[-30,17],[-25,15],[-20,12],[-15,12],[-10,14],[-6,12],[-1,9],[3,10],[5,1],[5,-4],[8,-8],[10,-14],[15,-17],[20,-17],[25,-15],[30,-10],[33,-8]],
+      [[70,32],[65,30],[60,30],[55,55],[50,55],[45,52],[42,45],[40,40],[38,35],[35,35],[33,32],[30,32],[25,35],[20,38],[15,42],[12,44],[10,50],[8,77],[15,75],[12,80],[8,80],[5,100],[2,104],[0,104],[-2,106],[-5,106],[-8,112],[0,105],[5,110],[10,115],[15,120],[20,110],[22,108],[25,120],[30,122],[35,130],[38,140],[42,145],[45,145],[50,143],[52,140],[55,135],[60,163],[62,165],[65,170],[68,180],[70,180],[72,155],[70,140],[68,140],[65,100],[68,70],[70,60],[72,50]],
+      [[-12,131],[-15,129],[-18,122],[-22,116],[-27,114],[-30,115],[-33,116],[-35,118],[-38,144],[-37,150],[-33,152],[-28,153],[-24,152],[-20,149],[-16,146],[-13,143],[-11,136]],
+      [[65,-22],[64,-15],[66,-18]],
+      [[-42,172],[-38,178],[-46,167],[-42,172]],
+    ];
+    const landPaths = continentCoords.map(pts => {
+      const d = pts.map((p, i) => {
+        const {x, y} = project(p[0], p[1]);
+        return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ') + ' Z';
+      return `<path d="${d}" fill="rgba(139,104,198,0.18)" stroke="rgba(192,192,210,0.35)" stroke-width="0.7" stroke-linejoin="round"/>`;
+    }).join('\n      ');
+
+    wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+      <rect width="${W}" height="${H}" fill="rgba(15,8,30,0.6)" rx="8"/>
+      <g stroke="rgba(192,192,210,0.06)" stroke-width="0.5" fill="none">
+        ${Array.from({length: 7}, (_, i) => `<line x1="0" y1="${(H/6)*i}" x2="${W}" y2="${(H/6)*i}"/>`).join('')}
+        ${Array.from({length: 13}, (_, i) => `<line x1="${(W/12)*i}" y1="0" x2="${(W/12)*i}" y2="${H}"/>`).join('')}
+      </g>
+      <g>${landPaths}</g>
+      ${dots}
+    </svg>`;
+  }
+
+  function renderLocationTable() {
+    const wrap = document.getElementById('locationTableWrap');
+    if (!analyticsData || !analyticsData.locations.length) {
+      wrap.innerHTML = '<div class="empty">No location data yet.</div>';
+      return;
+    }
+    const rows = analyticsData.locations.slice(0, 50).map(l => `<tr>
+      <td>${escapeHtml(l.countryCode || '—')}</td>
+      <td style="color:#e8e3f0;">${escapeHtml(l.country)}</td>
+      <td>${escapeHtml(l.city)}</td>
+      <td><span class="location-count">${l.count}</span></td>
+    </tr>`).join('');
+    wrap.innerHTML = `<table class="location-table">
+      <thead><tr><th></th><th>Country</th><th>City</th><th>Visits</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  }
+
+  document.getElementById('analyticsRefreshBtn').addEventListener('click', loadAnalytics);
+  document.getElementById('analyticsDays').addEventListener('change', loadAnalytics);
 </script>
 
 <script>
