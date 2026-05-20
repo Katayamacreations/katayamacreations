@@ -222,6 +222,46 @@
       color: #8b87a0;
       margin-top: 6px;
     }
+    .tip-section {
+      border-top: 1px solid rgba(192, 192, 210, 0.15);
+      padding-top: 14px;
+      margin-top: 10px;
+    }
+    .tip-section label {
+      margin-bottom: 8px;
+      display: block;
+    }
+    .tip-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .tip-btn {
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      background: rgba(20, 10, 40, 0.6);
+      color: #c0bcd0;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+    .tip-btn:hover {
+      border-color: #c0bcd0;
+      color: #e8e3f0;
+    }
+    .tip-btn.active {
+      background: linear-gradient(135deg, #4a2d75 0%, #6b48a6 100%);
+      border-color: rgba(192, 192, 210, 0.4);
+      color: #e8e3f0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tip-note {
+      font-size: 12px;
+      color: #8b87a0;
+      margin-top: 8px;
+    }
     .deadline-note {
       margin-top: 12px;
       padding: 12px 14px;
@@ -542,8 +582,26 @@
     <div class="totals">
       <div class="totals-row"><span>Subtotal</span><span id="subtotal">$0.00</span></div>
       <div class="totals-row"><span id="shipLabel">Shipping</span><span id="shipping">—</span></div>
-      <div class="totals-row grand"><span>Total</span><span id="total">$0.00</span></div>
       <div class="ship-note" id="shipNote"></div>
+    </div>
+
+    <div class="tip-section">
+      <label>Add a tip for Megan</label>
+      <div class="tip-buttons" id="tipButtons">
+        <button type="button" class="tip-btn active" data-tip="0">No tip</button>
+        <button type="button" class="tip-btn" data-tip="1">$1</button>
+        <button type="button" class="tip-btn" data-tip="2">$2</button>
+        <button type="button" class="tip-btn" data-tip="3">$3</button>
+        <button type="button" class="tip-btn" data-tip="5">$5</button>
+        <button type="button" class="tip-btn" data-tip="10">$10</button>
+        <button type="button" class="tip-btn" data-tip="15">$15</button>
+      </div>
+      <div class="tip-note" id="tipNote"></div>
+    </div>
+
+    <div class="totals" style="margin-top: 0;">
+      <div class="totals-row" id="tipRow" style="display:none;"><span>Tip</span><span id="tipDisplay">$0.00</span></div>
+      <div class="totals-row grand"><span>Total</span><span id="total">$0.00</span></div>
     </div>
 
     <div class="deadline-note">
@@ -835,6 +893,7 @@
 
   // cart state
   let cart = [];
+  let tipAmount = 0;
   try {
     const raw = sessionStorage.getItem(CART_KEY);
     if (raw) cart = JSON.parse(raw);
@@ -995,8 +1054,17 @@
         : `Estimated transit: ${ship.info.days} business days.`;
     }
 
-    const total = subtotal + (ship.cost || 0);
+    const total = subtotal + (ship.cost || 0) + tipAmount;
     document.getElementById('total').textContent = fmt(total);
+
+    const tipRow = document.getElementById('tipRow');
+    const tipDisplay = document.getElementById('tipDisplay');
+    if (tipAmount > 0) {
+      tipRow.style.display = 'flex';
+      tipDisplay.textContent = fmt(tipAmount);
+    } else {
+      tipRow.style.display = 'none';
+    }
 
     const placeBtn = document.getElementById('placeOrder');
     placeBtn.disabled = cart.length === 0 || ship.cost === null;
@@ -1016,6 +1084,17 @@
   zipInput.addEventListener('input', () => { syncLocalOption(); render(); });
   syncLocalOption();
 
+  document.getElementById('tipButtons').addEventListener('click', (e) => {
+    const btn = e.target.closest('.tip-btn');
+    if (!btn) return;
+    document.querySelectorAll('.tip-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    tipAmount = Number(btn.dataset.tip) || 0;
+    const noteEl = document.getElementById('tipNote');
+    noteEl.textContent = tipAmount > 0 ? 'Thank you for your generosity!' : '';
+    render();
+  });
+
   const form = document.getElementById('customOrderForm');
   const success = document.getElementById('success');
   const modal = document.getElementById('payModal');
@@ -1032,7 +1111,7 @@
     const subtotal = cart.reduce((sum, it) => sum + it.price * it.qty, 0);
     const ship = computeShipping(subtotal);
     if (cart.length === 0 || ship.cost === null) return;
-    const total = subtotal + ship.cost;
+    const total = subtotal + ship.cost + tipAmount;
     const deadline = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const customerName = document.getElementById('customerName').value.trim();
     const orderNotes = document.getElementById('orderNotes').value;
@@ -1055,6 +1134,7 @@
         : `${ship.methodLabel} (${ship.info.label}, ${ship.lb} lb)`,
       state: ship.stateName,
       zip: zipInput.value.trim(),
+      tip: tipAmount.toFixed(2),
       total: total.toFixed(2),
       paymentDeadline: deadline.toISOString(),
     };

@@ -16,6 +16,7 @@ interface IncomingOrder {
   shippingMethod?: string
   state?: string
   zip?: string
+  tip?: string
   total?: string
   paymentDeadline?: string
   paymentMethod?: string
@@ -63,6 +64,7 @@ export default async (req: Request, _context: Context) => {
     shippingMethod: String(body.shippingMethod || ''),
     subtotal: String(body.subtotal || '0.00'),
     shippingCost: String(body.shippingCost || '0.00'),
+    tip: String(body.tip || '0.00'),
     total: String(body.total || '0.00'),
     paymentDeadline: String(body.paymentDeadline || ''),
     orderNotes: String(body.orderNotes || ''),
