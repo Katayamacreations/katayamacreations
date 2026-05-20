@@ -18,6 +18,7 @@ export interface OrderData {
   shippingMethod: string
   subtotal: string
   shippingCost: string
+  tip?: string
   total: string
   paymentDeadline: string
   orderNotes: string
@@ -67,6 +68,11 @@ export function renderOrderEmailHtml(o: OrderData): string {
     ? `<p style="margin:8px 0 0;line-height:1.5;color:${COLORS.body};font-size:14px;"><strong>Goodreads:</strong> <a href="${escapeHtml(o.goodreadsUrl)}" style="color:${COLORS.link};">${escapeHtml(o.goodreadsUrl)}</a></p>`
     : ''
 
+  const tipValue = parseFloat(o.tip || '0')
+  const tipRow = tipValue > 0
+    ? `<tr><td style="color:${COLORS.body};padding:4px 0;">Tip</td><td style="text-align:right;color:${COLORS.body};padding:4px 0;">$${escapeHtml(o.tip!)}</td></tr>`
+    : ''
+
   const content = `<h1 style="margin:0 0 8px;font-size:22px;color:${COLORS.heading};">New custom order</h1>
 <p style="margin:0 0 20px;color:#b8b3c8;font-size:14px;">From <strong>${escapeHtml(o.customerName || 'unknown')}</strong> — <a href="mailto:${escapeHtml(o.email)}" style="color:${COLORS.link};">${escapeHtml(o.email)}</a></p>
 
@@ -77,6 +83,7 @@ export function renderOrderEmailHtml(o: OrderData): string {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:14px;">
   <tr><td style="color:${COLORS.body};padding:4px 0;">Subtotal</td><td style="text-align:right;color:${COLORS.body};padding:4px 0;">$${escapeHtml(o.subtotal)}</td></tr>
   <tr><td style="color:${COLORS.body};padding:4px 0;">Shipping ${o.shippingMethod ? `<span style="font-size:12px;color:${COLORS.muted};">(${escapeHtml(o.shippingMethod)})</span>` : ''}</td><td style="text-align:right;color:${COLORS.body};padding:4px 0;">$${escapeHtml(o.shippingCost)}</td></tr>
+  ${tipRow}
   <tr><td style="color:${COLORS.heading};font-weight:700;font-size:16px;padding:10px 0;border-top:1px solid rgba(192,192,210,0.2);">Total</td><td style="text-align:right;color:${COLORS.heading};font-weight:700;font-size:16px;padding:10px 0;border-top:1px solid rgba(192,192,210,0.2);">$${escapeHtml(o.total)}</td></tr>
 </table>
 
@@ -111,6 +118,8 @@ export function renderOrderSummaryText(o: OrderData): string {
   lines.push('')
   lines.push(`Subtotal:  $${o.subtotal}`)
   lines.push(`Shipping:  $${o.shippingCost}${o.shippingMethod ? ` (${o.shippingMethod})` : ''}`)
+  const tipVal = parseFloat(o.tip || '0')
+  if (tipVal > 0) lines.push(`Tip:       $${o.tip}`)
   lines.push(`Total:     $${o.total}`)
   lines.push('')
   lines.push(`Ship to: ${o.state || '—'}${o.zip ? ` ${o.zip}` : ''}`)
