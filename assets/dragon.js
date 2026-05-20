@@ -111,3 +111,10 @@
   }
   requestAnimationFrame(frame);
 })();
+
+(function () {
+  if (sessionStorage.getItem('_v')) return;
+  sessionStorage.setItem('_v', '1');
+  var img = new Image();
+  img.src = '/api/track?path=' + encodeURIComponent(location.pathname);
+})();
