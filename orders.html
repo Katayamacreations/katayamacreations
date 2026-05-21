@@ -217,6 +217,11 @@
       padding: 3px 10px; border-radius: 999px; margin-top: 6px;
     }
     .review-badge svg { width: 14px; height: 14px; }
+    .review-locked {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; color: #8b87a0; margin-top: 6px;
+    }
+    .review-locked svg { width: 14px; height: 14px; flex-shrink: 0; }
     .review-stars-inline { display: inline-flex; gap: 1px; }
     .review-stars-inline svg { width: 16px; height: 16px; }
     .menu-toggle {
@@ -611,11 +616,26 @@
     }
   }
 
+  const REVIEW_WAIT_DAYS = 14;
+
+  function canReview(order) {
+    if ((order.status || '').toLowerCase() === 'delivered') return { allowed: true };
+    const placed = order.placedAt ? new Date(order.placedAt) : null;
+    if (placed) {
+      const daysPassed = (Date.now() - placed.getTime()) / (1000 * 60 * 60 * 24);
+      if (daysPassed >= REVIEW_WAIT_DAYS) return { allowed: true };
+      return { allowed: false, daysLeft: Math.ceil(REVIEW_WAIT_DAYS - daysPassed) };
+    }
+    return { allowed: false, daysLeft: REVIEW_WAIT_DAYS };
+  }
+
   function renderOrder(o) {
     const li = document.createElement('li');
     li.className = 'order-item';
     const existingReview = userReviews.find(r => (r.orderId || r.order_id) === o.id);
     const hasReview = !!existingReview;
+    const eligibility = canReview(o);
+    const reviewAllowed = eligibility.allowed || hasReview;
     const when = o.placedAt ? new Date(o.placedAt).toLocaleString(undefined, {
       month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
     }) : '';
@@ -624,6 +644,26 @@
       return `${it.qty}× ${escapeHtml(it.bundleLabel || '')}${extras ? ` <span style="color:#8b87a0;">(${escapeHtml(extras)})</span>` : ''}`;
     }).join('<br>');
     const stateClass = (o.status || 'pending').toLowerCase();
+
+    let reviewBtnHtml;
+    if (reviewAllowed) {
+      reviewBtnHtml = `<button type="button" class="button" data-act="review" style="background:linear-gradient(135deg,#6b48a6 0%,#8b5cf6 100%);">
+          ${hasReview ? '✏ Edit Review' : '⭐ Write Review'}
+        </button>`;
+    } else {
+      reviewBtnHtml = `<button type="button" class="button" disabled style="opacity:0.45;cursor:not-allowed;background:linear-gradient(135deg,#6b48a6 0%,#8b5cf6 100%);">
+          ⭐ Write Review
+        </button>`;
+    }
+
+    let reviewStatusHtml = '';
+    if (hasReview) {
+      reviewStatusHtml = `<div class="review-badge"><span class="review-stars-inline">${renderStaticStars(parseFloat(existingReview.rating))}</span> You reviewed this order</div>`;
+    } else if (!eligibility.allowed) {
+      const lockIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+      reviewStatusHtml = `<div class="review-locked">${lockIcon} Reviews available once delivered or in ${eligibility.daysLeft} day${eligibility.daysLeft === 1 ? '' : 's'}</div>`;
+    }
+
     li.innerHTML = `
       <div class="order-head">
         <div>
@@ -647,14 +687,13 @@
       </div>
       <div class="order-actions">
         <button type="button" class="button secondary" data-act="reorder">Re-order this</button>
-        <button type="button" class="button" data-act="review" style="background:linear-gradient(135deg,#6b48a6 0%,#8b5cf6 100%);">
-          ${hasReview ? '✏ Edit Review' : '⭐ Write Review'}
-        </button>
+        ${reviewBtnHtml}
       </div>
-      ${hasReview ? `<div class="review-badge"><span class="review-stars-inline">${renderStaticStars(parseFloat(existingReview.rating))}</span> You reviewed this order</div>` : ''}
+      ${reviewStatusHtml}
     `;
     li.querySelector('[data-act="reorder"]').addEventListener('click', () => reorder(o));
-    li.querySelector('[data-act="review"]').addEventListener('click', () => openReviewModal(o));
+    const reviewBtn = li.querySelector('[data-act="review"]');
+    if (reviewBtn) reviewBtn.addEventListener('click', () => openReviewModal(o));
     return li;
   }
 

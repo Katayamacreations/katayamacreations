@@ -58,6 +58,31 @@ export default async (req: Request, _context: Context) => {
   }
   const roundedRating = Math.round(rating * 2) / 2;
 
+  const REVIEW_WAIT_DAYS = 14;
+  const orderStore = getStore("orders");
+  const { blobs } = await orderStore.list({ prefix: `${user.id}/` });
+  let matchedOrder: Record<string, unknown> | null = null;
+  for (const b of blobs) {
+    try {
+      const o = await orderStore.get(b.key, { type: "json" }) as Record<string, unknown>;
+      if (o && o.id === orderId) { matchedOrder = o; break; }
+    } catch { /* skip */ }
+  }
+  if (!matchedOrder) {
+    return new Response("Order not found", { status: 404 });
+  }
+  const isDelivered = String(matchedOrder.status || "").toLowerCase() === "delivered";
+  const placedAt = matchedOrder.placedAt ? new Date(String(matchedOrder.placedAt)) : null;
+  const daysSincePlaced = placedAt ? (Date.now() - placedAt.getTime()) / (1000 * 60 * 60 * 24) : 0;
+  const isOldEnough = daysSincePlaced >= REVIEW_WAIT_DAYS;
+  if (!isDelivered && !isOldEnough) {
+    const daysLeft = Math.ceil(REVIEW_WAIT_DAYS - daysSincePlaced);
+    return new Response(
+      JSON.stringify({ error: "Review not yet available", daysLeft }),
+      { status: 403, headers: { "Content-Type": "application/json" } },
+    );
+  }
+
   const existing = await db
     .select()
     .from(reviews)
