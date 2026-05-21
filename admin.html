@@ -539,7 +539,7 @@
   <div class="card gate" id="gateCard">
     <h2>Admin sign-in required</h2>
     <p id="gateMsg">This page is only available to administrators. Please log in with the owner account.</p>
-    <div class="actions">
+    <div class="actions" id="gateActions">
       <a class="button" href="/signup.html?mode=login&next=/admin.html">Log in</a>
       <a class="button secondary" href="/">Back home</a>
     </div>
@@ -729,6 +729,7 @@
     getUser,
     logout,
     handleAuthCallback,
+    refreshSession,
     MissingIdentityError,
   } from 'https://esm.sh/@netlify/identity@1.0.0?bundle'
 
@@ -770,6 +771,8 @@
   }
 
   async function getAuthToken() {
+    const refreshed = await refreshSession().catch(() => null);
+    if (refreshed) return refreshed;
     const match = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
     return match ? decodeURIComponent(match[1]) : null;
   }
@@ -779,8 +782,14 @@
     status.textContent = 'Loading…';
     const token = await getAuthToken();
     if (!token) {
+      try { await logout(); } catch (_) {}
+      currentUser = null;
+      whoami.style.display = 'none';
       gateCard.style.display = 'block';
       gateMsg.textContent = 'Your session expired. Please log in again.';
+      document.getElementById('gateActions').innerHTML =
+        '<a class="button" href="/signup.html?mode=login&next=/admin.html">Log in</a>' +
+        '<a class="button secondary" href="/">Back home</a>';
       return;
     }
     let res;
@@ -796,9 +805,23 @@
       gateSection.style.display = 'block';
       adminSection.style.display = 'none';
       gateCard.style.display = 'block';
-      gateMsg.textContent = res.status === 403
-        ? `Signed in as ${currentUser?.email || 'this account'} — but this account isn't an admin. Sign out and log in with the owner account.`
-        : 'Please log in to continue.';
+      const gateActions = document.getElementById('gateActions');
+      if (res.status === 403) {
+        gateMsg.textContent = `Signed in as ${currentUser?.email || 'this account'} — but this account isn't an admin. Sign out and log in with the owner account.`;
+        gateActions.innerHTML = '<button class="button" type="button" id="gateSignOutBtn">Sign out</button>' +
+          '<a class="button secondary" href="/">Back home</a>';
+        document.getElementById('gateSignOutBtn').addEventListener('click', async () => {
+          try { await logout(); } catch (_) {}
+          window.location.href = '/signup.html?mode=login&next=/admin.html';
+        });
+      } else {
+        try { await logout(); } catch (_) {}
+        currentUser = null;
+        whoami.style.display = 'none';
+        gateMsg.textContent = 'Your session could not be verified. Please log in again.';
+        gateActions.innerHTML = '<a class="button" href="/signup.html?mode=login&next=/admin.html">Log in</a>' +
+          '<a class="button secondary" href="/">Back home</a>';
+      }
       return;
     }
     if (!res.ok) {
