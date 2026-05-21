@@ -137,6 +137,45 @@
     .info-row .label { color: #8b87a0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
     .info-row .value { color: #e8e3f0; font-size: 16px; }
     .helper { font-size: 12px; color: #8b87a0; margin-top: 4px; }
+    .orders-list { list-style: none; padding: 0; margin: 0; }
+    .order-item {
+      padding: 14px;
+      background: rgba(20, 10, 40, 0.5);
+      border: 1px solid rgba(192, 192, 210, 0.12);
+      border-radius: 12px;
+      margin-bottom: 10px;
+    }
+    .order-head {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .order-when { color: #8b87a0; font-size: 12px; }
+    .order-total { font-weight: 700; color: #e8e3f0; }
+    .order-state {
+      display: inline-block;
+      padding: 2px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      border-radius: 999px;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      color: #c0bcd0;
+      background: rgba(20, 10, 40, 0.6);
+    }
+    .order-state.paid { color: #b8e0c2; border-color: rgba(184, 224, 194, 0.4); }
+    .order-state.shipped { color: #b8c8e0; border-color: rgba(184, 200, 224, 0.4); }
+    .order-state.delivered { color: #d4c0f0; border-color: rgba(212, 192, 240, 0.4); }
+    .order-state.cancelled { color: #f0b8a8; border-color: rgba(230, 115, 92, 0.4); }
+    .order-cart {
+      margin: 6px 0 8px;
+      font-size: 13px;
+      color: #c0bcd0;
+      line-height: 1.5;
+    }
     #gateCard { display: none; text-align: center; }
     #accountContent { display: none; }
     footer {
@@ -217,6 +256,12 @@
         <span class="label">Name</span>
         <span class="value" id="acctName">—</span>
       </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 16px;font-size:20px;color:#e8e3f0;">Your past orders</h2>
+      <div id="ordersStatus" style="color:#8b87a0; font-size:14px; margin-bottom:12px;">Loading…</div>
+      <ul class="orders-list" id="ordersList"></ul>
     </div>
 
     <div class="card">
@@ -302,6 +347,58 @@
     const meta = currentUser.user_metadata || {};
     document.getElementById('acctName').textContent =
       currentUser.name || meta.full_name || [meta.firstName, meta.lastName].filter(Boolean).join(' ') || '—';
+
+    loadOrders(currentUser);
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  async function loadOrders(user) {
+    const status = document.getElementById('ordersStatus');
+    const list = document.getElementById('ordersList');
+    status.textContent = 'Loading…';
+    const nfJwt = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
+    const token = nfJwt ? decodeURIComponent(nfJwt[1]) : null;
+    if (!token) { status.textContent = 'Please log in again to see your orders.'; return; }
+    try {
+      const res = await fetch('/.netlify/functions/list-orders', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const { orders } = await res.json();
+      if (!orders || orders.length === 0) {
+        status.textContent = 'No past orders yet — your first order will show up here.';
+        return;
+      }
+      status.textContent = '';
+      orders.forEach(o => {
+        const li = document.createElement('li');
+        li.className = 'order-item';
+        const when = o.placedAt ? new Date(o.placedAt).toLocaleString(undefined, {
+          month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
+        }) : '';
+        const items = (o.cart || []).map(it => `${it.qty}× ${it.bundleLabel}`).join(', ');
+        const stateClass = (o.status || 'pending').toLowerCase();
+        li.innerHTML = `
+          <div class="order-head">
+            <div>
+              <div class="order-when">${escapeHtml(when)}</div>
+              <span class="order-state ${escapeHtml(stateClass)}">${escapeHtml(o.status || 'pending')}</span>
+            </div>
+            <div class="order-total">${escapeHtml('$' + (o.total || '0.00'))}</div>
+          </div>
+          <div class="order-cart">${escapeHtml(items)}</div>
+        `;
+        list.appendChild(li);
+      });
+    } catch (err) {
+      console.error(err);
+      status.textContent = "Couldn't load past orders right now. Please refresh and try again.";
+    }
   }
 
   document.getElementById('changePwForm').addEventListener('submit', async (e) => {
