@@ -754,7 +754,11 @@
     { id: 'kindle',   label: 'Blind Date with a Kindle Box',        price: 18 },
     { id: 'original', label: 'Blind Date with a Book Original',     price: 25 },
     { id: 'ultimate', label: 'Blind Date with a Book Ultimate Box', price: 45 },
+    { id: 'glasses',  label: 'Bookish Glasses',                     price: 15, merch: true },
+    { id: 'totes',    label: 'Totes',                               price: 10, merch: true },
   ];
+
+  const MERCH_ITEMS = BUNDLES.filter(b => b.merch);
 
   try {
     const res = await fetch('/.netlify/functions/get-site-content');
@@ -771,6 +775,7 @@
             suffix: p.suffix || undefined,
           });
         }
+        for (const m of MERCH_ITEMS) BUNDLES.push(m);
       }
     }
   } catch (_) {}
@@ -1199,6 +1204,16 @@
     return String(s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  const merchParam = new URLSearchParams(window.location.search).get('addMerch');
+  if (merchParam) {
+    const mb = findBundle(merchParam);
+    if (mb) {
+      cart.push({ bundleId: mb.id, bundleLabel: mb.label, price: mb.price, qty: 1, theme: '', color: '', notes: '' });
+      saveCart();
+    }
+    history.replaceState(null, '', window.location.pathname);
   }
 
   render();
