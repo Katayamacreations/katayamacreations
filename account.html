@@ -240,7 +240,7 @@
     </div>
 
     <div class="card" style="text-align:center;">
-      <button class="button danger" type="button" id="signOutBtn">Sign out</button>
+      <button class="button danger" type="button" id="signOutBtnCard">Sign out</button>
     </div>
   </div>
 </section>
@@ -286,6 +286,10 @@
       if (whoEmail) whoEmail.textContent = currentUser.email || 'your account';
     }
     document.getElementById('signOutBtn').addEventListener('click', async () => {
+      try { await logout(); } catch (_) {}
+      window.location.href = '/';
+    });
+    document.getElementById('signOutBtnCard').addEventListener('click', async () => {
       try { await logout(); } catch (_) {}
       window.location.href = '/';
     });
@@ -340,11 +344,6 @@
       btn.disabled = false;
       btn.textContent = 'Update password';
     }
-  });
-
-  document.getElementById('signOutBtn').addEventListener('click', async () => {
-    await logout();
-    window.location.href = '/';
   });
 </script>
 
