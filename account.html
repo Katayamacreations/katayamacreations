@@ -284,8 +284,31 @@
       </form>
     </div>
 
-    <div class="card" style="text-align:center;">
-      <button class="button danger" type="button" id="signOutBtnCard">Sign out</button>
+    <div class="card">
+      <h2 style="margin:0 0 16px;font-size:20px;color:#e8e3f0;">Danger zone</h2>
+      <div class="alert error" id="deleteError"></div>
+      <p style="color:#b8b3c8;margin:0 0 14px;font-size:14px;">
+        Permanently delete your account and all associated data. Your reviews will remain visible but will no longer show your name.
+        This action cannot be undone.
+      </p>
+      <div class="actions">
+        <button class="button danger" type="button" id="deleteAccountBtn">Delete my account</button>
+        <button class="button danger" type="button" id="signOutBtnCard">Sign out</button>
+      </div>
+    </div>
+
+    <div id="deleteModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;">
+      <div class="card" style="max-width:420px;width:90%;margin:auto;text-align:center;">
+        <h2 style="margin:0 0 12px;font-size:20px;color:#f0b8a8;">Delete your account?</h2>
+        <p style="color:#b8b3c8;margin:0 0 18px;font-size:14px;">
+          This will permanently delete your account and order history. Your reviews will stay but will be shown as "Former Customer". Type <strong style="color:#e8e3f0;">DELETE</strong> to confirm.
+        </p>
+        <input id="deleteConfirmInput" type="text" placeholder='Type "DELETE" to confirm' autocomplete="off" style="margin-bottom:16px;">
+        <div class="actions" style="justify-content:center;">
+          <button class="button danger" type="button" id="confirmDeleteBtn" disabled>Delete permanently</button>
+          <button class="button" type="button" id="cancelDeleteBtn">Cancel</button>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -440,6 +463,58 @@
     } finally {
       btn.disabled = false;
       btn.textContent = 'Update password';
+    }
+  });
+
+  const deleteModal = document.getElementById('deleteModal');
+  const deleteConfirmInput = document.getElementById('deleteConfirmInput');
+  const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+  document.getElementById('deleteAccountBtn').addEventListener('click', () => {
+    deleteModal.style.display = 'flex';
+    deleteConfirmInput.value = '';
+    confirmDeleteBtn.disabled = true;
+    deleteConfirmInput.focus();
+  });
+
+  document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
+    deleteModal.style.display = 'none';
+  });
+
+  deleteConfirmInput.addEventListener('input', () => {
+    confirmDeleteBtn.disabled = deleteConfirmInput.value.trim() !== 'DELETE';
+  });
+
+  confirmDeleteBtn.addEventListener('click', async () => {
+    confirmDeleteBtn.disabled = true;
+    confirmDeleteBtn.textContent = 'Deleting…';
+    const deleteError = document.getElementById('deleteError');
+    deleteError.classList.remove('show');
+    const nfJwt = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
+    const token = nfJwt ? decodeURIComponent(nfJwt[1]) : null;
+    if (!token) {
+      deleteError.textContent = 'Session expired. Please log in again.';
+      deleteError.classList.add('show');
+      deleteModal.style.display = 'none';
+      return;
+    }
+    try {
+      const res = await fetch('/.netlify/functions/delete-account', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const msg = await res.text().catch(() => '');
+        throw new Error(msg || `HTTP ${res.status}`);
+      }
+      document.cookie = 'nf_jwt=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+      window.location.href = '/?account_deleted=1';
+    } catch (err) {
+      deleteModal.style.display = 'none';
+      deleteError.textContent = 'Could not delete account. Please try again.';
+      deleteError.classList.add('show');
+      confirmDeleteBtn.disabled = false;
+      confirmDeleteBtn.textContent = 'Delete permanently';
     }
   });
 </script>
