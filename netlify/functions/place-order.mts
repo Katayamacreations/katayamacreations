@@ -14,6 +14,9 @@ interface IncomingOrder {
   subtotal?: string
   shippingCost?: string
   shippingMethod?: string
+  address1?: string
+  address2?: string
+  city?: string
   state?: string
   zip?: string
   tip?: string
@@ -59,6 +62,9 @@ export default async (req: Request, _context: Context) => {
     status: 'pending',
     customerName: String(body.customerName || user.name || '').trim(),
     email: user.email || '',
+    address1: String(body.address1 || '').trim(),
+    address2: String(body.address2 || '').trim(),
+    city: String(body.city || '').trim(),
     state: String(body.state || ''),
     zip: String(body.zip || '').trim(),
     shippingMethod: String(body.shippingMethod || ''),

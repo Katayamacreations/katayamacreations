@@ -13,6 +13,9 @@ export interface CartItem {
 export interface OrderData {
   customerName: string
   email: string
+  address1?: string
+  address2?: string
+  city?: string
   state: string
   zip?: string
   shippingMethod: string
@@ -91,7 +94,7 @@ export function renderOrderEmailHtml(o: OrderData): string {
   Venmo payment due by <strong>${escapeHtml(fmtDeadline(o.paymentDeadline))}</strong>. Unpaid orders auto-cancel after 24 hours.
 </div>
 
-<p style="margin:18px 0 0;line-height:1.5;color:${COLORS.body};font-size:14px;"><strong>Ship to:</strong> ${escapeHtml(o.state || '—')}${o.zip ? ` ${escapeHtml(o.zip)}` : ''}</p>
+<p style="margin:18px 0 0;line-height:1.5;color:${COLORS.body};font-size:14px;"><strong>Ship to:</strong> ${escapeHtml(o.address1 || '')}${o.address2 ? `, ${escapeHtml(o.address2)}` : ''}, ${escapeHtml(o.city || '')}${o.state ? `, ${escapeHtml(o.state)}` : ''}${o.zip ? ` ${escapeHtml(o.zip)}` : ''}</p>
 ${goodreadsBlock}
 ${orderNotesBlock}`
 
@@ -122,7 +125,8 @@ export function renderOrderSummaryText(o: OrderData): string {
   if (tipVal > 0) lines.push(`Tip:       $${o.tip}`)
   lines.push(`Total:     $${o.total}`)
   lines.push('')
-  lines.push(`Ship to: ${o.state || '—'}${o.zip ? ` ${o.zip}` : ''}`)
+  const addrParts = [o.address1, o.address2, o.city, o.state].filter(Boolean)
+  lines.push(`Ship to: ${addrParts.join(', ')}${o.zip ? ` ${o.zip}` : ''}`)
   lines.push(`Venmo deadline: ${fmtDeadline(o.paymentDeadline)}`)
   if (o.goodreadsUrl) {
     lines.push(`Goodreads: ${o.goodreadsUrl}`)
@@ -137,6 +141,9 @@ export function renderOrderSummaryText(o: OrderData): string {
 export const SAMPLE_ORDER: OrderData = {
   customerName: 'Sample Customer',
   email: 'sample@example.com',
+  address1: '123 Main St',
+  address2: 'Apt 4B',
+  city: 'Portland',
   state: 'California',
   shippingMethod: 'USPS Ground Advantage (Zone 3, 2 lb)',
   subtotal: '40.00',

@@ -922,7 +922,7 @@
           <div class="order-email">${escapeHtml(o.email || '')}</div>
           <div class="order-cart">${items}</div>
           <div class="order-meta">
-            Ship to ${escapeHtml(o.state || '—')} · ${escapeHtml(o.shippingMethod || '—')}${o.paymentMethod ? ` · Paid via ${escapeHtml(o.paymentMethod)}` : ''}
+            Ship to ${escapeHtml([o.address1, o.address2, o.city, o.state].filter(Boolean).join(', '))}${o.zip ? ` ${escapeHtml(o.zip)}` : ''} · ${escapeHtml(o.shippingMethod || '—')}${o.paymentMethod ? ` · Paid via ${escapeHtml(o.paymentMethod)}` : ''}
           </div>
           ${o.orderNotes ? `<div class="order-meta">Customer note: ${escapeHtml(o.orderNotes)}</div>` : ''}
           ${o.goodreadsUrl ? `<div class="order-meta">Goodreads: <a href="${escapeHtml(o.goodreadsUrl)}" target="_blank" rel="noopener" style="color:#b8e0c2;">${escapeHtml(o.goodreadsUrl)}</a></div>` : ''}
