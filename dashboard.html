@@ -516,14 +516,26 @@
     <div class="cart-empty" id="cartEmpty">Your cart is empty. Add a bundle above to get started.</div>
 
     <div class="grid">
+      <div class="full">
+        <label for="address1">Street address</label>
+        <input id="address1" placeholder="123 Main St" autocomplete="address-line1" required>
+      </div>
+      <div class="full">
+        <label for="address2">Apt / Suite / Unit (optional)</label>
+        <input id="address2" placeholder="Apt 4B" autocomplete="address-line2">
+      </div>
       <div>
-        <label for="state">Ship to (state)</label>
+        <label for="city">City</label>
+        <input id="city" placeholder="Portland" autocomplete="address-level2" required>
+      </div>
+      <div>
+        <label for="state">State</label>
         <select id="state">
           <option value="">— select —</option>
         </select>
       </div>
       <div>
-        <label for="zip">Delivery ZIP</label>
+        <label for="zip">ZIP code</label>
         <input id="zip" inputmode="numeric" pattern="[0-9-]*" placeholder="12345" autocomplete="postal-code">
       </div>
       <div class="full">
@@ -849,6 +861,9 @@
   // Default-select the user's saved state, if we have one
   if (currentUser) {
     const meta = currentUser.user_metadata || {};
+    if (meta.address1) document.getElementById('address1').value = meta.address1;
+    if (meta.address2) document.getElementById('address2').value = meta.address2;
+    if (meta.city) document.getElementById('city').value = meta.city;
     if (meta.state) stateSel.value = meta.state;
     if (meta.zip) document.getElementById('zip').value = meta.zip;
   }
@@ -1029,7 +1044,9 @@
     }
 
     const placeBtn = document.getElementById('placeOrder');
-    placeBtn.disabled = cart.length === 0 || ship.cost === null;
+    const addr1 = document.getElementById('address1').value.trim();
+    const cityVal = document.getElementById('city').value.trim();
+    placeBtn.disabled = cart.length === 0 || ship.cost === null || !addr1 || !cityVal;
   }
 
   document.getElementById('addToCart').addEventListener('click', addToCart);
@@ -1043,6 +1060,8 @@
   });
   stateSel.addEventListener('change', render);
   document.getElementById('shipMethod').addEventListener('change', render);
+  document.getElementById('address1').addEventListener('input', render);
+  document.getElementById('city').addEventListener('input', render);
   zipInput.addEventListener('input', () => { syncLocalOption(); render(); });
   syncLocalOption();
 
@@ -1094,6 +1113,9 @@
       shippingMethod: ship.local
         ? ship.methodLabel
         : `${ship.methodLabel} (${ship.info.label}, ${ship.lb} lb)`,
+      address1: document.getElementById('address1').value.trim(),
+      address2: document.getElementById('address2').value.trim(),
+      city: document.getElementById('city').value.trim(),
       state: ship.stateName,
       zip: zipInput.value.trim(),
       tip: tipAmount.toFixed(2),

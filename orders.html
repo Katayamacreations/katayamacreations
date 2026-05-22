@@ -676,7 +676,7 @@
       </div>
       <div class="order-cart">${items}</div>
       <div class="order-meta-row">
-        Ship to ${escapeHtml(o.state || '—')} · ${escapeHtml(o.shippingMethod || '—')}
+        Ship to ${escapeHtml([o.address1, o.address2, o.city, o.state].filter(Boolean).join(', '))}${o.zip ? ` ${escapeHtml(o.zip)}` : ''} · ${escapeHtml(o.shippingMethod || '—')}
       </div>
       ${o.trackingNumber ? `<div class="order-meta-row">Tracking: <span class="tracking">${escapeHtml(o.trackingNumber)}</span></div>` : ''}
       ${o.orderNotes ? `<div class="order-meta-row">Note: ${escapeHtml(o.orderNotes)}</div>` : ''}
