@@ -837,9 +837,6 @@
     const fullName = currentUser.name || meta.full_name || [meta.firstName, meta.lastName].filter(Boolean).join(' ').trim();
     document.getElementById('customerName').value = fullName;
     document.getElementById('emailField').value = currentUser.email || '';
-    if (meta.state) {
-      // wait until states are populated, then set
-    }
   }
 
   // populate dropdowns
@@ -858,15 +855,19 @@
     stateSel.appendChild(o);
   });
 
-  // Default-select the user's saved state, if we have one
+  // Autofill shipping fields from profile
   if (currentUser) {
     const meta = currentUser.user_metadata || {};
     if (meta.address1) document.getElementById('address1').value = meta.address1;
     if (meta.address2) document.getElementById('address2').value = meta.address2;
     if (meta.city) document.getElementById('city').value = meta.city;
-    if (meta.state) stateSel.value = meta.state;
+    if (meta.state) {
+      const stateOpt = Array.from(stateSel.options).find(o => o.value === meta.state);
+      if (stateOpt) stateSel.value = meta.state;
+    }
     if (meta.zip) document.getElementById('zip').value = meta.zip;
   }
+
 
   // cart state
   let cart = [];
