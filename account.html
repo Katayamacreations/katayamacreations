@@ -178,6 +178,58 @@
     }
     #gateCard { display: none; text-align: center; }
     #accountContent { display: none; }
+    .profile-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+    }
+    .profile-grid .full { grid-column: 1 / -1; }
+    .profile-field { margin-bottom: 0; }
+    .profile-field .label { color: #8b87a0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 4px; }
+    .profile-field .value { color: #e8e3f0; font-size: 15px; min-height: 20px; }
+    .profile-field .value.empty { color: #6b6580; font-style: italic; }
+    .profile-field input,
+    .profile-field select,
+    .profile-field textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      border-radius: 10px;
+      font-size: 14px;
+      box-sizing: border-box;
+      background: rgba(20, 10, 40, 0.6);
+      color: #e8e3f0;
+      font-family: inherit;
+    }
+    .profile-field input::placeholder,
+    .profile-field textarea::placeholder { color: #8b87a0; }
+    .profile-field input:focus,
+    .profile-field select:focus,
+    .profile-field textarea:focus {
+      outline: none;
+      border-color: #c0bcd0;
+      background: rgba(30, 18, 50, 0.8);
+    }
+    .profile-field select option { background: #2a1745; color: #e8e3f0; }
+    .profile-field textarea { min-height: 60px; resize: vertical; }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 0 0 16px;
+    }
+    .card-header h2 { margin: 0; font-size: 20px; color: #e8e3f0; }
+    .edit-toggle {
+      background: transparent;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      color: #c0bcd0;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .edit-toggle:hover { color: #e8e3f0; border-color: #c0bcd0; }
     footer {
       text-align: center;
       padding: 30px;
@@ -235,7 +287,7 @@
 
 <section class="hero">
   <h1>My Account</h1>
-  <p class="subtitle">Manage your account settings and password.</p>
+  <p class="subtitle">View and update your contact info, shipping address, and password.</p>
 </section>
 
 <section class="section">
@@ -256,6 +308,112 @@
         <span class="label">Name</span>
         <span class="value" id="acctName">—</span>
       </div>
+    </div>
+
+    <div class="card" id="profileCard">
+      <div class="card-header">
+        <h2>Contact &amp; Shipping</h2>
+        <button type="button" class="edit-toggle" id="editProfileBtn">Edit</button>
+      </div>
+      <div class="alert success" id="profileSuccess"></div>
+      <div class="alert error" id="profileError"></div>
+
+      <div id="profileView">
+        <div class="profile-grid">
+          <div class="profile-field">
+            <div class="label">Phone</div>
+            <div class="value" id="viewPhone"></div>
+          </div>
+          <div class="profile-field full">
+            <div class="label">Street address</div>
+            <div class="value" id="viewAddress1"></div>
+          </div>
+          <div class="profile-field full">
+            <div class="label">Apt / Suite</div>
+            <div class="value" id="viewAddress2"></div>
+          </div>
+          <div class="profile-field">
+            <div class="label">City</div>
+            <div class="value" id="viewCity"></div>
+          </div>
+          <div class="profile-field">
+            <div class="label">State</div>
+            <div class="value" id="viewState"></div>
+          </div>
+          <div class="profile-field">
+            <div class="label">ZIP code</div>
+            <div class="value" id="viewZip"></div>
+          </div>
+          <div class="profile-field">
+            <div class="label">Country</div>
+            <div class="value" id="viewCountry"></div>
+          </div>
+          <div class="profile-field full">
+            <div class="label">Delivery notes</div>
+            <div class="value" id="viewNotes"></div>
+          </div>
+        </div>
+      </div>
+
+      <form id="profileEditForm" style="display:none;">
+        <div class="profile-grid">
+          <div class="profile-field">
+            <label for="editPhone">Phone</label>
+            <input id="editPhone" type="tel" placeholder="(555) 123-4567" autocomplete="tel">
+          </div>
+          <div class="profile-field full">
+            <label for="editAddress1">Street address</label>
+            <input id="editAddress1" required placeholder="123 Main St" autocomplete="address-line1">
+          </div>
+          <div class="profile-field full">
+            <label for="editAddress2">Apt / Suite (optional)</label>
+            <input id="editAddress2" placeholder="Apt 4B" autocomplete="address-line2">
+          </div>
+          <div class="profile-field">
+            <label for="editCity">City</label>
+            <input id="editCity" required placeholder="Springfield" autocomplete="address-level2">
+          </div>
+          <div class="profile-field">
+            <label for="editState">State</label>
+            <select id="editState" required autocomplete="address-level1">
+              <option value="">— select —</option>
+              <option>Alabama</option><option>Alaska</option><option>Arizona</option>
+              <option>Arkansas</option><option>California</option><option>Colorado</option>
+              <option>Connecticut</option><option>Delaware</option><option>Florida</option>
+              <option>Georgia</option><option>Hawaii</option><option>Idaho</option>
+              <option>Illinois</option><option>Indiana</option><option>Iowa</option>
+              <option>Kansas</option><option>Kentucky</option><option>Louisiana</option>
+              <option>Maine</option><option>Maryland</option><option>Massachusetts</option>
+              <option>Michigan</option><option>Minnesota</option><option>Mississippi</option>
+              <option>Missouri</option><option>Montana</option><option>Nebraska</option>
+              <option>Nevada</option><option>New Hampshire</option><option>New Jersey</option>
+              <option>New Mexico</option><option>New York</option><option>North Carolina</option>
+              <option>North Dakota</option><option>Ohio</option><option>Oklahoma</option>
+              <option>Oregon</option><option>Pennsylvania</option><option>Rhode Island</option>
+              <option>South Carolina</option><option>South Dakota</option><option>Tennessee</option>
+              <option>Texas</option><option>Utah</option><option>Vermont</option>
+              <option>Virginia</option><option>Washington</option><option>West Virginia</option>
+              <option>Wisconsin</option><option>Wyoming</option>
+            </select>
+          </div>
+          <div class="profile-field">
+            <label for="editZip">ZIP code</label>
+            <input id="editZip" required inputmode="numeric" pattern="[0-9-]*" placeholder="12345" autocomplete="postal-code">
+          </div>
+          <div class="profile-field">
+            <label for="editCountry">Country</label>
+            <input id="editCountry" required autocomplete="country-name">
+          </div>
+          <div class="profile-field full">
+            <label for="editNotes">Delivery notes (optional)</label>
+            <textarea id="editNotes" placeholder="Leave at front door, ring buzzer 3, etc."></textarea>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="button" type="submit" id="saveProfileBtn">Save changes</button>
+          <button class="button" type="button" id="cancelEditBtn" style="background:transparent;border:1px solid rgba(192,192,210,0.25);box-shadow:none;">Cancel</button>
+        </div>
+      </form>
     </div>
 
     <div class="card">
@@ -371,7 +529,103 @@
     document.getElementById('acctName').textContent =
       currentUser.name || meta.full_name || [meta.firstName, meta.lastName].filter(Boolean).join(' ') || '—';
 
+    populateProfileView(meta);
+    setupProfileEdit(meta);
+
     loadOrders(currentUser);
+  }
+
+  function setViewField(id, value) {
+    const el = document.getElementById(id);
+    if (value) {
+      el.textContent = value;
+      el.classList.remove('empty');
+    } else {
+      el.textContent = 'Not set';
+      el.classList.add('empty');
+    }
+  }
+
+  function populateProfileView(meta) {
+    setViewField('viewPhone', meta.phone);
+    setViewField('viewAddress1', meta.address1);
+    setViewField('viewAddress2', meta.address2);
+    setViewField('viewCity', meta.city);
+    setViewField('viewState', meta.state);
+    setViewField('viewZip', meta.zip);
+    setViewField('viewCountry', meta.country);
+    setViewField('viewNotes', meta.notes);
+  }
+
+  function setupProfileEdit(meta) {
+    const editBtn = document.getElementById('editProfileBtn');
+    const cancelBtn = document.getElementById('cancelEditBtn');
+    const viewSection = document.getElementById('profileView');
+    const editForm = document.getElementById('profileEditForm');
+    const profileSuccess = document.getElementById('profileSuccess');
+    const profileError = document.getElementById('profileError');
+
+    function enterEditMode() {
+      const m = currentUser.user_metadata || {};
+      document.getElementById('editPhone').value = m.phone || '';
+      document.getElementById('editAddress1').value = m.address1 || '';
+      document.getElementById('editAddress2').value = m.address2 || '';
+      document.getElementById('editCity').value = m.city || '';
+      document.getElementById('editState').value = m.state || '';
+      document.getElementById('editZip').value = m.zip || '';
+      document.getElementById('editCountry').value = m.country || 'United States';
+      document.getElementById('editNotes').value = m.notes || '';
+      viewSection.style.display = 'none';
+      editForm.style.display = 'block';
+      editBtn.style.display = 'none';
+      profileSuccess.classList.remove('show');
+      profileError.classList.remove('show');
+    }
+
+    function exitEditMode() {
+      editForm.style.display = 'none';
+      viewSection.style.display = 'block';
+      editBtn.style.display = '';
+    }
+
+    editBtn.addEventListener('click', enterEditMode);
+    cancelBtn.addEventListener('click', exitEditMode);
+
+    editForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      profileSuccess.classList.remove('show');
+      profileError.classList.remove('show');
+      const saveBtn = document.getElementById('saveProfileBtn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving…';
+
+      const updated = {
+        phone: document.getElementById('editPhone').value.trim(),
+        address1: document.getElementById('editAddress1').value.trim(),
+        address2: document.getElementById('editAddress2').value.trim(),
+        city: document.getElementById('editCity').value.trim(),
+        state: document.getElementById('editState').value.trim(),
+        zip: document.getElementById('editZip').value.trim(),
+        country: document.getElementById('editCountry').value.trim(),
+        notes: document.getElementById('editNotes').value.trim(),
+      };
+
+      try {
+        const existingMeta = currentUser.user_metadata || {};
+        await updateUser({ data: { ...existingMeta, ...updated } });
+        currentUser.user_metadata = { ...existingMeta, ...updated };
+        populateProfileView(currentUser.user_metadata);
+        exitEditMode();
+        profileSuccess.textContent = 'Contact and shipping info updated.';
+        profileSuccess.classList.add('show');
+      } catch (err) {
+        profileError.textContent = err instanceof AuthError ? err.message : 'Could not save changes. Please try again.';
+        profileError.classList.add('show');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save changes';
+      }
+    });
   }
 
   function escapeHtml(s) {
