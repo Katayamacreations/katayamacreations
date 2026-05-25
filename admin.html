@@ -469,6 +469,132 @@
       text-transform: uppercase;
       font-weight: 700;
     }
+    .location-country-row { cursor: pointer; }
+    .location-country-row:hover { background: rgba(139,104,198,0.08); }
+    .location-country-row td:first-child .loc-toggle {
+      display: inline-block;
+      width: 16px;
+      font-size: 10px;
+      color: #8b87a0;
+      transition: transform 0.15s;
+    }
+    .location-country-row.expanded td:first-child .loc-toggle { transform: rotate(90deg); }
+    .location-bar-wrap {
+      flex: 1;
+      height: 6px;
+      background: rgba(139,104,198,0.12);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .location-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #7c5cbf, #b084e8);
+    }
+    .location-bar-cell {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .location-city-row td { padding-left: 32px; color: #9a96ab; font-size: 12px; }
+    .location-city-row td:first-child { padding-left: 36px; }
+    .location-cities-hidden { display: none; }
+    .loc-show-all-btn {
+      background: none;
+      border: 1px solid rgba(192,192,210,0.2);
+      color: #b084e8;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    .loc-show-all-btn:hover { background: rgba(139,104,198,0.1); }
+    .analytics-mode-btns {
+      display: inline-flex;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .analytics-mode-btns button {
+      padding: 8px 14px;
+      border: none;
+      background: rgba(20, 10, 40, 0.6);
+      color: #c0bcd0;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+    }
+    .analytics-mode-btns button + button { border-left: 1px solid rgba(192, 192, 210, 0.25); }
+    .analytics-mode-btns button.active {
+      background: linear-gradient(135deg, #4a2d75 0%, #6b48a6 100%);
+      color: #e8e3f0;
+    }
+    .month-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .month-nav button {
+      padding: 6px 10px;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      border-radius: 8px;
+      background: rgba(20, 10, 40, 0.6);
+      color: #c0bcd0;
+      font-size: 14px;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .month-nav button:hover { color: #e8e3f0; border-color: rgba(192, 192, 210, 0.45); }
+    .month-nav .month-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #e8e3f0;
+      min-width: 130px;
+      text-align: center;
+    }
+    .pages-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .pages-table th, .pages-table td {
+      text-align: left;
+      padding: 10px 8px;
+      border-bottom: 1px solid rgba(192, 192, 210, 0.1);
+      vertical-align: middle;
+    }
+    .pages-table th {
+      color: #8b87a0;
+      font-size: 11px;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .pages-table .page-bar-cell { width: 50%; }
+    .page-bar-bg {
+      height: 18px;
+      background: rgba(20, 10, 40, 0.5);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .page-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #4a2d75, #6b48a6);
+      min-width: 2px;
+    }
+    .page-count {
+      display: inline-block;
+      background: rgba(107, 72, 166, 0.3);
+      color: #d4c0f0;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 12px;
+    }
     .location-count {
       display: inline-block;
       min-width: 28px;
@@ -694,23 +820,30 @@
     <div class="pane" id="pane-analytics">
       <h3>Site analytics</h3>
       <div class="controls">
-        <label for="analyticsDays">Period</label>
-        <select id="analyticsDays">
-          <option value="7">Last 7 days</option>
-          <option value="14">Last 14 days</option>
-          <option value="30" selected>Last 30 days</option>
-          <option value="60">Last 60 days</option>
-          <option value="90">Last 90 days</option>
-        </select>
+        <div class="analytics-mode-btns">
+          <button type="button" id="analyticsModMonth" class="active">Month</button>
+          <button type="button" id="analyticsModDay">Day</button>
+        </div>
+        <div class="month-nav" id="monthNav">
+          <button type="button" id="monthPrev">&larr;</button>
+          <span class="month-label" id="monthLabel"></span>
+          <button type="button" id="monthNext">&rarr;</button>
+        </div>
+        <input type="date" id="analyticsDate" style="display:none;">
         <div class="spacer"></div>
         <button type="button" class="button secondary" id="analyticsRefreshBtn">Refresh</button>
       </div>
       <div class="summary" id="analyticsSummary"></div>
       <div id="analyticsStatus" class="pane-msg">Loading…</div>
 
-      <div class="card" style="margin-top:14px;">
+      <div class="card" style="margin-top:14px;" id="dailyChartCard">
         <h3 style="font-size:14px; margin-bottom:8px;">Daily visits</h3>
         <div class="analytics-chart" id="analyticsChart"></div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <h3 style="font-size:14px; margin-bottom:8px;">Clicks by page</h3>
+        <div id="pagesTableWrap"></div>
       </div>
 
       <div class="card" style="margin-top:14px;">
@@ -1714,6 +1847,66 @@
   // ------------------------------------------------------------------
   let analyticsLoadedOnce = false;
   let analyticsData = null;
+  let analyticsMode = 'month';
+  let analyticsMonth = (() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  })();
+
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  function updateMonthLabel() {
+    const [y, m] = analyticsMonth.split('-').map(Number);
+    document.getElementById('monthLabel').textContent = `${monthNames[m - 1]} ${y}`;
+  }
+
+  function initAnalyticsDate() {
+    const dateInput = document.getElementById('analyticsDate');
+    dateInput.value = new Date().toISOString().slice(0, 10);
+  }
+
+  updateMonthLabel();
+  initAnalyticsDate();
+
+  document.getElementById('analyticsModMonth').addEventListener('click', () => {
+    analyticsMode = 'month';
+    document.getElementById('analyticsModMonth').classList.add('active');
+    document.getElementById('analyticsModDay').classList.remove('active');
+    document.getElementById('monthNav').style.display = '';
+    document.getElementById('analyticsDate').style.display = 'none';
+    document.getElementById('dailyChartCard').style.display = '';
+    loadAnalytics();
+  });
+
+  document.getElementById('analyticsModDay').addEventListener('click', () => {
+    analyticsMode = 'day';
+    document.getElementById('analyticsModDay').classList.add('active');
+    document.getElementById('analyticsModMonth').classList.remove('active');
+    document.getElementById('monthNav').style.display = 'none';
+    document.getElementById('analyticsDate').style.display = '';
+    document.getElementById('dailyChartCard').style.display = 'none';
+    loadAnalytics();
+  });
+
+  document.getElementById('monthPrev').addEventListener('click', () => {
+    let [y, m] = analyticsMonth.split('-').map(Number);
+    m -= 1;
+    if (m < 1) { m = 12; y -= 1; }
+    analyticsMonth = `${y}-${String(m).padStart(2, '0')}`;
+    updateMonthLabel();
+    loadAnalytics();
+  });
+
+  document.getElementById('monthNext').addEventListener('click', () => {
+    let [y, m] = analyticsMonth.split('-').map(Number);
+    m += 1;
+    if (m > 12) { m = 1; y += 1; }
+    analyticsMonth = `${y}-${String(m).padStart(2, '0')}`;
+    updateMonthLabel();
+    loadAnalytics();
+  });
+
+  document.getElementById('analyticsDate').addEventListener('change', loadAnalytics);
 
   async function loadAnalytics() {
     const status = document.getElementById('analyticsStatus');
@@ -1725,19 +1918,29 @@
       status.className = 'pane-msg err';
       return;
     }
-    const days = document.getElementById('analyticsDays').value || '30';
+    let apiUrl;
+    if (analyticsMode === 'day') {
+      const date = document.getElementById('analyticsDate').value;
+      apiUrl = `/api/admin/site-visits?mode=day&date=${encodeURIComponent(date)}`;
+    } else {
+      apiUrl = `/api/admin/site-visits?mode=month&month=${encodeURIComponent(analyticsMonth)}`;
+    }
     try {
-      const res = await fetch(`/api/admin/site-visits?days=${days}`, {
+      const res = await fetch(apiUrl, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       analyticsData = await res.json();
       analyticsLoadedOnce = true;
       renderAnalyticsSummary();
-      renderAnalyticsChart();
+      if (analyticsMode === 'month') renderAnalyticsChart();
+      renderPagesTable();
       renderWorldMap();
       renderLocationTable();
-      status.textContent = `${analyticsData.totalVisits} visit${analyticsData.totalVisits === 1 ? '' : 's'} in the last ${analyticsData.days} days`;
+      const label = analyticsMode === 'day'
+        ? `${analyticsData.totalVisits} visit${analyticsData.totalVisits === 1 ? '' : 's'} on ${analyticsData.date}`
+        : `${analyticsData.totalVisits} visit${analyticsData.totalVisits === 1 ? '' : 's'} in ${monthNames[parseInt(analyticsData.month.split('-')[1], 10) - 1]} ${analyticsData.month.split('-')[0]}`;
+      status.textContent = label;
       status.className = 'pane-msg ok';
     } catch (err) {
       status.textContent = 'Failed to load analytics. ' + (err && err.message ? err.message : '');
@@ -1748,20 +1951,28 @@
   function renderAnalyticsSummary() {
     const el = document.getElementById('analyticsSummary');
     if (!analyticsData) { el.innerHTML = ''; return; }
-    const { daily, totalVisits, locations } = analyticsData;
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const todayEntry = daily.find(d => d.date === todayStr);
-    const todayCount = todayEntry ? todayEntry.count : 0;
+    const { daily, totalVisits, locations, pages } = analyticsData;
     const uniqueCountries = new Set(locations.map(l => l.country)).size;
     const uniqueCities = locations.length;
-    const avgPerDay = daily.length > 0 ? Math.round(totalVisits / daily.length) : 0;
-    el.innerHTML = `
-      <div class="stat"><div class="label">Today</div><div class="value">${todayCount}</div></div>
-      <div class="stat"><div class="label">Total</div><div class="value">${totalVisits}</div></div>
-      <div class="stat"><div class="label">Avg / day</div><div class="value">${avgPerDay}</div></div>
-      <div class="stat"><div class="label">Countries</div><div class="value">${uniqueCountries}</div></div>
-      <div class="stat"><div class="label">Cities</div><div class="value">${uniqueCities}</div></div>
-    `;
+    const topPage = pages && pages.length > 0 ? pages[0].path : '—';
+    if (analyticsMode === 'day') {
+      el.innerHTML = `
+        <div class="stat"><div class="label">Total</div><div class="value">${totalVisits}</div></div>
+        <div class="stat"><div class="label">Pages visited</div><div class="value">${pages ? pages.length : 0}</div></div>
+        <div class="stat"><div class="label">Top page</div><div class="value" style="font-size:15px;">${escapeHtml(topPage)}</div></div>
+        <div class="stat"><div class="label">Countries</div><div class="value">${uniqueCountries}</div></div>
+        <div class="stat"><div class="label">Cities</div><div class="value">${uniqueCities}</div></div>
+      `;
+    } else {
+      const avgPerDay = daily.length > 0 ? Math.round(totalVisits / daily.length) : 0;
+      el.innerHTML = `
+        <div class="stat"><div class="label">Total</div><div class="value">${totalVisits}</div></div>
+        <div class="stat"><div class="label">Avg / day</div><div class="value">${avgPerDay}</div></div>
+        <div class="stat"><div class="label">Pages visited</div><div class="value">${pages ? pages.length : 0}</div></div>
+        <div class="stat"><div class="label">Countries</div><div class="value">${uniqueCountries}</div></div>
+        <div class="stat"><div class="label">Cities</div><div class="value">${uniqueCities}</div></div>
+      `;
+    }
   }
 
   function renderAnalyticsChart() {
@@ -1771,16 +1982,47 @@
       return;
     }
     const { daily } = analyticsData;
-    const maxCount = Math.max(...daily.map(d => d.count), 1);
-    chart.innerHTML = daily.map(d => {
+    const [year, mon] = analyticsData.month ? analyticsData.month.split('-').map(Number) : [new Date().getFullYear(), new Date().getMonth() + 1];
+    const daysInMonth = new Date(year, mon, 0).getDate();
+    const dayMap = {};
+    daily.forEach(d => { dayMap[d.date] = d.count; });
+    const allDays = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      const ds = `${year}-${String(mon).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      allDays.push({ date: ds, count: dayMap[ds] || 0 });
+    }
+    const maxCount = Math.max(...allDays.map(d => d.count), 1);
+    chart.innerHTML = allDays.map(d => {
       const pct = Math.max((d.count / maxCount) * 100, 2);
-      const label = d.date.slice(5);
+      const dayNum = parseInt(d.date.slice(8), 10);
       return `<div class="bar-wrap">
-        <span class="bar-count">${d.count}</span>
+        <span class="bar-count">${d.count || ''}</span>
         <div class="bar" style="height:${pct}%;" title="${d.date}: ${d.count} visit${d.count === 1 ? '' : 's'}"></div>
-        <span class="bar-label">${label}</span>
+        <span class="bar-label">${dayNum}</span>
       </div>`;
     }).join('');
+  }
+
+  function renderPagesTable() {
+    const wrap = document.getElementById('pagesTableWrap');
+    if (!analyticsData || !analyticsData.pages || analyticsData.pages.length === 0) {
+      wrap.innerHTML = '<div class="empty">No page data yet.</div>';
+      return;
+    }
+    const pages = analyticsData.pages;
+    const maxCount = Math.max(...pages.map(p => p.count), 1);
+    const rows = pages.map(p => {
+      const pct = Math.max((p.count / maxCount) * 100, 2);
+      return `<tr>
+        <td style="color:#e8e3f0; font-family:monospace; font-size:12px;">${escapeHtml(p.path)}</td>
+        <td class="page-bar-cell"><div class="page-bar-bg"><div class="page-bar-fill" style="width:${pct.toFixed(1)}%;"></div></div></td>
+        <td><span class="page-count">${p.count}</span></td>
+      </tr>`;
+    }).join('');
+    wrap.innerHTML = `<table class="pages-table">
+      <thead><tr><th>Page</th><th>Distribution</th><th>Clicks</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
   }
 
   function renderWorldMap() {
@@ -1846,20 +2088,64 @@
       wrap.innerHTML = '<div class="empty">No location data yet.</div>';
       return;
     }
-    const rows = analyticsData.locations.slice(0, 50).map(l => `<tr>
-      <td>${escapeHtml(l.countryCode || '—')}</td>
-      <td style="color:#e8e3f0;">${escapeHtml(l.country)}</td>
-      <td>${escapeHtml(l.city)}</td>
-      <td><span class="location-count">${l.count}</span></td>
-    </tr>`).join('');
+    const grouped = {};
+    analyticsData.locations.forEach(l => {
+      const key = l.country || 'Unknown';
+      if (!grouped[key]) grouped[key] = { country: key, countryCode: l.countryCode || '—', total: 0, cities: [] };
+      grouped[key].total += l.count;
+      grouped[key].cities.push(l);
+    });
+    const countries = Object.values(grouped).sort((a, b) => b.total - a.total);
+    const maxTotal = countries.length ? countries[0].total : 1;
+    const INITIAL_SHOW = 10;
+    const hasMore = countries.length > INITIAL_SHOW;
+
+    let rows = '';
+    countries.forEach((c, ci) => {
+      const pct = ((c.total / maxTotal) * 100).toFixed(1);
+      const hiddenClass = ci >= INITIAL_SHOW ? ' location-cities-hidden' : '';
+      rows += `<tr class="location-country-row${hiddenClass}" data-country-idx="${ci}">
+        <td><span class="loc-toggle">&#9654;</span> ${escapeHtml(c.countryCode)}</td>
+        <td style="color:#e8e3f0;font-weight:600;">${escapeHtml(c.country)}</td>
+        <td><div class="location-bar-cell"><div class="location-bar-wrap"><div class="location-bar-fill" style="width:${pct}%"></div></div></div></td>
+        <td><span class="location-count">${c.total}</span></td>
+      </tr>`;
+      c.cities.sort((a, b) => b.count - a.count);
+      c.cities.forEach(city => {
+        rows += `<tr class="location-city-row location-cities-hidden" data-parent-idx="${ci}">
+          <td></td>
+          <td>${escapeHtml(city.city)}</td>
+          <td></td>
+          <td style="color:#9a96ab;font-size:12px;">${city.count}</td>
+        </tr>`;
+      });
+    });
+
     wrap.innerHTML = `<table class="location-table">
-      <thead><tr><th></th><th>Country</th><th>City</th><th>Visits</th></tr></thead>
+      <thead><tr><th></th><th>Country</th><th></th><th>Visits</th></tr></thead>
       <tbody>${rows}</tbody>
-    </table>`;
+    </table>${hasMore ? `<button class="loc-show-all-btn" id="locShowAllBtn">Show all ${countries.length} countries</button>` : ''}`;
+
+    wrap.querySelectorAll('.location-country-row').forEach(row => {
+      row.addEventListener('click', () => {
+        const idx = row.dataset.countryIdx;
+        const isExpanded = row.classList.toggle('expanded');
+        wrap.querySelectorAll(`.location-city-row[data-parent-idx="${idx}"]`).forEach(cr => {
+          cr.classList.toggle('location-cities-hidden', !isExpanded);
+        });
+      });
+    });
+
+    const showAllBtn = document.getElementById('locShowAllBtn');
+    if (showAllBtn) {
+      showAllBtn.addEventListener('click', () => {
+        wrap.querySelectorAll('.location-country-row.location-cities-hidden').forEach(r => r.classList.remove('location-cities-hidden'));
+        showAllBtn.remove();
+      });
+    }
   }
 
   document.getElementById('analyticsRefreshBtn').addEventListener('click', loadAnalytics);
-  document.getElementById('analyticsDays').addEventListener('change', loadAnalytics);
 </script>
 
 <script>
