@@ -871,14 +871,18 @@
       <div id="msgStatus" class="pane-msg">Loading…</div>
       <div id="msgList"></div>
 
-      <div id="msgReplyOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
-        <div style="background:linear-gradient(180deg,#2a1745,#1a0f2e);border:1px solid rgba(192,192,210,0.25);border-radius:16px;padding:28px;width:90%;max-width:520px;max-height:80vh;overflow-y:auto;">
-          <h3 id="msgReplyTitle" style="margin:0 0 12px;font-size:18px;color:#e8e3f0;">Reply</h3>
-          <div id="msgReplyBody" style="background:rgba(107,72,166,0.12);padding:14px;border-radius:10px;margin-bottom:16px;font-size:13px;color:#c0bcd0;white-space:pre-wrap;"></div>
-          <textarea id="msgReplyText" rows="5" placeholder="Write your reply…" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(192,192,210,0.25);background:rgba(20,10,40,0.6);color:#e8e3f0;font-size:14px;resize:vertical;"></textarea>
-          <div style="display:flex;gap:10px;margin-top:14px;">
-            <button type="button" class="button" id="msgReplySend">Send reply</button>
-            <button type="button" class="button secondary" id="msgReplyCancel">Cancel</button>
+      <div id="msgThreadOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+        <div style="background:linear-gradient(180deg,#2a1745,#1a0f2e);border:1px solid rgba(192,192,210,0.25);border-radius:16px;padding:28px;width:90%;max-width:600px;max-height:85vh;display:flex;flex-direction:column;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h3 id="msgThreadTitle" style="margin:0;font-size:18px;color:#e8e3f0;">Conversation</h3>
+            <button type="button" id="msgThreadClose" style="background:none;border:none;color:#8a85a0;font-size:22px;cursor:pointer;padding:0 4px;">&times;</button>
+          </div>
+          <div id="msgThreadMessages" style="flex:1;overflow-y:auto;margin-bottom:16px;display:flex;flex-direction:column;gap:10px;"></div>
+          <div style="border-top:1px solid rgba(192,192,210,0.15);padding-top:14px;">
+            <textarea id="msgThreadReplyText" rows="3" placeholder="Write your reply…" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(192,192,210,0.25);background:rgba(20,10,40,0.6);color:#e8e3f0;font-size:14px;resize:vertical;"></textarea>
+            <div style="display:flex;gap:10px;margin-top:10px;">
+              <button type="button" class="button" id="msgThreadSendBtn">Send reply</button>
+            </div>
           </div>
         </div>
       </div>
@@ -2225,30 +2229,19 @@
       const name = escapeHtml((m.user_name || m.userName || '').trim() || m.user_email || m.userEmail);
       const subject = escapeHtml((m.subject || '').trim() || '(no subject)');
       const body = escapeHtml((m.body || '').slice(0, 200));
-      const repliedAt = m.replied_at || m.repliedAt;
-      const replyDate = repliedAt ? new Date(repliedAt).toLocaleString() : '';
+      const replyCount = m.reply_count || m.replyCount || 0;
 
-      let replySection = '';
-      if (hasReply) {
-        replySection = `<div style="margin-top:10px;padding:10px 14px;background:rgba(107,72,166,0.12);border-radius:8px;border-left:3px solid #b8e0c2;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-            <span style="font-size:11px;color:#b8e0c2;font-weight:600;">Admin reply</span>
-            <span style="font-size:10px;color:#8a85a0;">${replyDate}</span>
-          </div>
-          <div style="font-size:12px;color:#c0bcd0;white-space:pre-wrap;word-break:break-word;">${escapeHtml(replyText)}</div>
-        </div>`;
-      }
-
-      return `<div class="order-row" style="border-left:3px solid ${isRead ? '#3a3555' : '#b8e0c2'};margin-bottom:8px;padding:14px 16px;cursor:pointer;" data-msg-id="${m.id}">
+      return `<div class="order-row" style="border-left:3px solid ${isRead ? '#3a3555' : '#b8e0c2'};margin-bottom:8px;padding:14px 16px;cursor:pointer;" onclick="openThread(${m.id})" data-msg-id="${m.id}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
           <strong style="color:#e8e3f0;font-size:14px;">${name}</strong>
           <span style="font-size:11px;color:#8a85a0;">${date}</span>
         </div>
         <div style="font-size:13px;color:#c0bcd0;font-weight:600;margin-bottom:4px;">${subject}</div>
-        <div style="font-size:12px;color:#9a96ab;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${body}</div>${replySection}
+        <div style="font-size:12px;color:#9a96ab;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${body}</div>
         <div style="margin-top:6px;display:flex;gap:8px;align-items:center;">
           ${hasReply ? '<span style="font-size:11px;color:#b8e0c2;">&#10003; Replied</span>' : '<span style="font-size:11px;color:#e8a87c;">Awaiting reply</span>'}
-          <button type="button" class="button secondary" style="font-size:11px;padding:4px 10px;margin-left:auto;" onclick="openReply(${m.id})">Reply</button>
+          ${replyCount > 0 ? `<span style="font-size:11px;color:#a89cc8;background:rgba(107,72,166,0.2);padding:2px 8px;border-radius:10px;">${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}</span>` : ''}
+          <button type="button" style="font-size:11px;padding:4px 10px;background:none;border:1px solid rgba(220,80,80,0.4);color:#e07070;border-radius:6px;cursor:pointer;margin-left:auto;" onclick="event.stopPropagation();deleteMessage(${m.id})">Delete</button>
         </div>
       </div>`;
     }).join('');
@@ -2257,42 +2250,118 @@
   document.getElementById('msgFilter').addEventListener('change', renderMessages);
   document.getElementById('msgRefreshBtn').addEventListener('click', loadMessages);
 
-  let replyMsgId = null;
-
-  window.openReply = function(id) {
-    const m = allMessages.find(x => x.id === id);
-    if (!m) return;
-    replyMsgId = id;
-    const overlay = document.getElementById('msgReplyOverlay');
-    document.getElementById('msgReplyTitle').textContent = `Reply to ${(m.user_name || m.userName || '').trim() || m.user_email || m.userEmail}`;
-    document.getElementById('msgReplyBody').textContent = `Subject: ${m.subject || '(none)'}\n\n${m.body}${(m.admin_reply || m.adminReply) ? '\n\n— Your previous reply —\n' + (m.admin_reply || m.adminReply) : ''}`;
-    document.getElementById('msgReplyText').value = '';
-    overlay.style.display = 'flex';
+  window.deleteMessage = async function(id) {
+    if (!confirm('Delete this message? It will be hidden from view.')) return;
+    try {
+      const res = await fetch('/.netlify/functions/delete-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      loadMessages();
+    } catch {
+      alert('Failed to delete message. Please try again.');
+    }
   };
 
-  document.getElementById('msgReplyCancel').addEventListener('click', () => {
-    document.getElementById('msgReplyOverlay').style.display = 'none';
-    replyMsgId = null;
+  let threadMsgId = null;
+
+  window.openThread = async function(id) {
+    threadMsgId = id;
+    const overlay = document.getElementById('msgThreadOverlay');
+    const threadMsgs = document.getElementById('msgThreadMessages');
+    const titleEl = document.getElementById('msgThreadTitle');
+
+    const m = allMessages.find(x => x.id === id);
+    const name = (m?.user_name || m?.userName || '').trim() || m?.user_email || m?.userEmail || 'Customer';
+    titleEl.textContent = `Conversation with ${name}`;
+
+    threadMsgs.innerHTML = '<div style="text-align:center;color:#8a85a0;padding:20px;">Loading thread…</div>';
+    overlay.style.display = 'flex';
+    document.getElementById('msgThreadReplyText').value = '';
+
+    try {
+      const res = await fetch(`/.netlify/functions/message-replies?messageId=${id}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const msg = data.message;
+      const replies = data.replies || [];
+
+      let html = '';
+
+      html += `<div style="padding:12px 14px;background:rgba(107,72,166,0.12);border-radius:10px;border-left:3px solid #a89cc8;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:12px;font-weight:600;color:#a89cc8;">${escapeHtml((msg.user_name || msg.userName || '').trim() || msg.user_email || msg.userEmail)}</span>
+          <span style="font-size:10px;color:#8a85a0;">${new Date(msg.created_at || msg.createdAt).toLocaleString()}</span>
+        </div>
+        ${msg.subject ? `<div style="font-size:13px;color:#e8e3f0;font-weight:600;margin-bottom:4px;">${escapeHtml(msg.subject)}</div>` : ''}
+        <div style="font-size:13px;color:#c0bcd0;white-space:pre-wrap;word-break:break-word;">${escapeHtml(msg.body)}</div>
+      </div>`;
+
+      const legacyReply = msg.admin_reply || msg.adminReply;
+      const hasThreadReplies = replies.length > 0;
+
+      if (legacyReply && !hasThreadReplies) {
+        const replyDate = msg.replied_at || msg.repliedAt;
+        html += `<div style="padding:12px 14px;background:rgba(90,180,120,0.08);border-radius:10px;border-left:3px solid #b8e0c2;align-self:flex-end;max-width:90%;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-size:12px;font-weight:600;color:#b8e0c2;">Admin</span>
+            <span style="font-size:10px;color:#8a85a0;">${replyDate ? new Date(replyDate).toLocaleString() : ''}</span>
+          </div>
+          <div style="font-size:13px;color:#c0bcd0;white-space:pre-wrap;word-break:break-word;">${escapeHtml(legacyReply)}</div>
+        </div>`;
+      }
+
+      for (const r of replies) {
+        const isAdmin = (r.sender_type || r.senderType) === 'admin';
+        html += `<div style="padding:12px 14px;background:${isAdmin ? 'rgba(90,180,120,0.08)' : 'rgba(107,72,166,0.12)'};border-radius:10px;border-left:3px solid ${isAdmin ? '#b8e0c2' : '#a89cc8'};${isAdmin ? 'align-self:flex-end;max-width:90%;' : ''}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-size:12px;font-weight:600;color:${isAdmin ? '#b8e0c2' : '#a89cc8'};">${escapeHtml(r.sender_name || r.senderName || (isAdmin ? 'Admin' : 'Customer'))}</span>
+            <span style="font-size:10px;color:#8a85a0;">${new Date(r.created_at || r.createdAt).toLocaleString()}</span>
+          </div>
+          <div style="font-size:13px;color:#c0bcd0;white-space:pre-wrap;word-break:break-word;">${escapeHtml(r.body)}</div>
+        </div>`;
+      }
+
+      threadMsgs.innerHTML = html;
+      threadMsgs.scrollTop = threadMsgs.scrollHeight;
+
+      if (!m.is_read && !m.isRead) {
+        fetch('/.netlify/functions/admin-messages', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id }),
+        }).catch(() => {});
+      }
+    } catch {
+      threadMsgs.innerHTML = '<div style="text-align:center;color:#e07070;padding:20px;">Failed to load thread.</div>';
+    }
+  };
+
+  document.getElementById('msgThreadClose').addEventListener('click', () => {
+    document.getElementById('msgThreadOverlay').style.display = 'none';
+    threadMsgId = null;
+    loadMessages();
   });
 
-  document.getElementById('msgReplySend').addEventListener('click', async () => {
-    if (!replyMsgId) return;
-    const replyText = document.getElementById('msgReplyText').value.trim();
+  document.getElementById('msgThreadSendBtn').addEventListener('click', async () => {
+    if (!threadMsgId) return;
+    const replyText = document.getElementById('msgThreadReplyText').value.trim();
     if (!replyText) return;
-    const btn = document.getElementById('msgReplySend');
+    const btn = document.getElementById('msgThreadSendBtn');
     btn.disabled = true;
     btn.textContent = 'Sending…';
     try {
-      const res = await fetch('/.netlify/functions/admin-messages', {
-        method: 'PATCH',
+      const res = await fetch(`/.netlify/functions/message-replies?messageId=${threadMsgId}`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: replyMsgId, reply: replyText }),
+        body: JSON.stringify({ body: replyText }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      document.getElementById('msgReplyOverlay').style.display = 'none';
-      replyMsgId = null;
-      loadMessages();
-    } catch (err) {
+      document.getElementById('msgThreadReplyText').value = '';
+      openThread(threadMsgId);
+    } catch {
       alert('Failed to send reply. Please try again.');
     } finally {
       btn.disabled = false;

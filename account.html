@@ -467,6 +467,22 @@
       <div id="myMsgList"></div>
     </div>
 
+    <div id="userThreadOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+      <div style="background:linear-gradient(180deg,#2a1745,#1a0f2e);border:1px solid rgba(192,192,210,0.25);border-radius:16px;padding:28px;width:90%;max-width:600px;max-height:85vh;display:flex;flex-direction:column;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h3 id="userThreadTitle" style="margin:0;font-size:18px;color:#e8e3f0;">Conversation</h3>
+          <button type="button" id="userThreadClose" style="background:none;border:none;color:#8a85a0;font-size:22px;cursor:pointer;padding:0 4px;">&times;</button>
+        </div>
+        <div id="userThreadMessages" style="flex:1;overflow-y:auto;margin-bottom:16px;display:flex;flex-direction:column;gap:10px;"></div>
+        <div style="border-top:1px solid rgba(192,192,210,0.15);padding-top:14px;">
+          <textarea id="userThreadReplyText" rows="3" placeholder="Write a reply…" maxlength="5000" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(192,192,210,0.25);background:rgba(20,10,40,0.6);color:#e8e3f0;font-size:14px;resize:vertical;"></textarea>
+          <div style="display:flex;gap:10px;margin-top:10px;">
+            <button type="button" class="button" id="userThreadSendBtn">Send reply</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="card">
       <h2 style="margin:0 0 16px;font-size:20px;color:#e8e3f0;">Danger zone</h2>
       <div class="alert error" id="deleteError"></div>
@@ -770,17 +786,18 @@
         const date = new Date(m.created_at || m.createdAt).toLocaleString();
         const subj = (m.subject || '').trim() || '(no subject)';
         const reply = m.admin_reply || m.adminReply;
-        const replyDate = m.replied_at || m.repliedAt;
-        return `<div style="border:1px solid rgba(192,192,210,0.15);border-radius:10px;padding:14px;margin-bottom:10px;">
+        const replyCount = m.reply_count || m.replyCount || 0;
+        return `<div style="border:1px solid rgba(192,192,210,0.15);border-radius:10px;padding:14px;margin-bottom:10px;cursor:pointer;transition:border-color 0.2s;" onclick="window._openUserThread(${m.id})" onmouseenter="this.style.borderColor='rgba(168,156,200,0.4)'" onmouseleave="this.style.borderColor='rgba(192,192,210,0.15)'">
           <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
             <strong style="color:#e8e3f0;font-size:13px;">${escapeHtml(subj)}</strong>
             <span style="font-size:11px;color:#8a85a0;">${date}</span>
           </div>
-          <div style="font-size:13px;color:#c0bcd0;white-space:pre-wrap;margin-bottom:8px;">${escapeHtml(m.body)}</div>
-          ${reply ? `<div style="border-top:1px solid rgba(192,192,210,0.1);padding-top:8px;margin-top:8px;">
-            <div style="font-size:11px;color:#b8e0c2;margin-bottom:4px;">Admin reply — ${replyDate ? new Date(replyDate).toLocaleString() : ''}</div>
-            <div style="font-size:13px;color:#e8e3f0;white-space:pre-wrap;">${escapeHtml(reply)}</div>
-          </div>` : `<div style="font-size:11px;color:#e8a87c;">Awaiting reply</div>`}
+          <div style="font-size:13px;color:#c0bcd0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:8px;">${escapeHtml((m.body || '').slice(0, 150))}</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            ${reply ? '<span style="font-size:11px;color:#b8e0c2;">&#10003; Replied</span>' : '<span style="font-size:11px;color:#e8a87c;">Awaiting reply</span>'}
+            ${replyCount > 0 ? `<span style="font-size:11px;color:#a89cc8;background:rgba(107,72,166,0.2);padding:2px 8px;border-radius:10px;">${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}</span>` : ''}
+            <button type="button" onclick="event.stopPropagation();window._deleteMsg(${m.id})" style="background:none;border:1px solid rgba(220,80,80,0.4);color:#e07070;font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;margin-left:auto;">Delete</button>
+          </div>
         </div>`;
       }).join('');
     } catch {
@@ -793,6 +810,126 @@
     setInterval(loadMyMessages, 30000);
   }
   window._refreshUserMessages = loadMyMessages;
+
+  let userThreadMsgId = null;
+
+  window._openUserThread = async function(id) {
+    userThreadMsgId = id;
+    const overlay = document.getElementById('userThreadOverlay');
+    const threadMsgs = document.getElementById('userThreadMessages');
+
+    threadMsgs.innerHTML = '<div style="text-align:center;color:#8a85a0;padding:20px;">Loading thread…</div>';
+    overlay.style.display = 'flex';
+    document.getElementById('userThreadReplyText').value = '';
+
+    try {
+      const nfJwt = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
+      const token = nfJwt ? decodeURIComponent(nfJwt[1]) : null;
+      if (!token) throw new Error('Not signed in');
+
+      const res = await fetch(`/.netlify/functions/message-replies?messageId=${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const msg = data.message;
+      const replies = data.replies || [];
+
+      const subj = (msg.subject || '').trim() || '(no subject)';
+      document.getElementById('userThreadTitle').textContent = subj;
+
+      let html = '';
+
+      html += `<div style="padding:12px 14px;background:rgba(107,72,166,0.12);border-radius:10px;border-left:3px solid #a89cc8;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:12px;font-weight:600;color:#a89cc8;">You</span>
+          <span style="font-size:10px;color:#8a85a0;">${new Date(msg.created_at || msg.createdAt).toLocaleString()}</span>
+        </div>
+        <div style="font-size:13px;color:#c0bcd0;white-space:pre-wrap;word-break:break-word;">${escapeHtml(msg.body)}</div>
+      </div>`;
+
+      const legacyReply = msg.admin_reply || msg.adminReply;
+      const hasThreadReplies = replies.length > 0;
+
+      if (legacyReply && !hasThreadReplies) {
+        const replyDate = msg.replied_at || msg.repliedAt;
+        html += `<div style="padding:12px 14px;background:rgba(90,180,120,0.08);border-radius:10px;border-left:3px solid #b8e0c2;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-size:12px;font-weight:600;color:#b8e0c2;">Admin</span>
+            <span style="font-size:10px;color:#8a85a0;">${replyDate ? new Date(replyDate).toLocaleString() : ''}</span>
+          </div>
+          <div style="font-size:13px;color:#c0bcd0;white-space:pre-wrap;word-break:break-word;">${escapeHtml(legacyReply)}</div>
+        </div>`;
+      }
+
+      for (const r of replies) {
+        const isAdmin = (r.sender_type || r.senderType) === 'admin';
+        html += `<div style="padding:12px 14px;background:${isAdmin ? 'rgba(90,180,120,0.08)' : 'rgba(107,72,166,0.12)'};border-radius:10px;border-left:3px solid ${isAdmin ? '#b8e0c2' : '#a89cc8'};">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-size:12px;font-weight:600;color:${isAdmin ? '#b8e0c2' : '#a89cc8'};">${isAdmin ? 'Admin' : 'You'}</span>
+            <span style="font-size:10px;color:#8a85a0;">${new Date(r.created_at || r.createdAt).toLocaleString()}</span>
+          </div>
+          <div style="font-size:13px;color:#c0bcd0;white-space:pre-wrap;word-break:break-word;">${escapeHtml(r.body)}</div>
+        </div>`;
+      }
+
+      threadMsgs.innerHTML = html;
+      threadMsgs.scrollTop = threadMsgs.scrollHeight;
+    } catch {
+      threadMsgs.innerHTML = '<div style="text-align:center;color:#e07070;padding:20px;">Failed to load thread.</div>';
+    }
+  };
+
+  document.getElementById('userThreadClose').addEventListener('click', () => {
+    document.getElementById('userThreadOverlay').style.display = 'none';
+    userThreadMsgId = null;
+    loadMyMessages();
+  });
+
+  document.getElementById('userThreadSendBtn').addEventListener('click', async () => {
+    if (!userThreadMsgId) return;
+    const replyText = document.getElementById('userThreadReplyText').value.trim();
+    if (!replyText) return;
+    const btn = document.getElementById('userThreadSendBtn');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    try {
+      const nfJwt = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
+      const token = nfJwt ? decodeURIComponent(nfJwt[1]) : null;
+      if (!token) throw new Error('Not signed in');
+      const res = await fetch(`/.netlify/functions/message-replies?messageId=${userThreadMsgId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ body: replyText }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      document.getElementById('userThreadReplyText').value = '';
+      window._openUserThread(userThreadMsgId);
+    } catch {
+      alert('Failed to send reply. Please try again.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Send reply';
+    }
+  });
+
+  window._deleteMsg = async function(id) {
+    if (!confirm('Delete this message? This cannot be undone.')) return;
+    try {
+      const nfJwt = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
+      const token = nfJwt ? decodeURIComponent(nfJwt[1]) : null;
+      if (!token) throw new Error('Not signed in');
+      const res = await fetch('/.netlify/functions/delete-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      loadMyMessages();
+    } catch {
+      alert('Failed to delete message. Please try again.');
+    }
+  };
 
   document.getElementById('sendMsgForm').addEventListener('submit', async e => {
     e.preventDefault();
