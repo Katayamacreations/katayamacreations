@@ -1164,7 +1164,7 @@
         <div style="text-align:right;">
           <span class="order-state ${escapeHtml(stateClass)}">${escapeHtml(o.status || 'pending')}</span>
           <div class="order-total" style="margin-top:8px;">$${escapeHtml(o.total || '0.00')}</div>
-          <div class="order-meta" style="margin-top:4px;">Sub $${escapeHtml(o.subtotal || '0.00')} · Ship $${escapeHtml(o.shippingCost || '0.00')}</div>
+          <div class="order-meta" style="margin-top:4px;">Sub $${escapeHtml(o.subtotal || '0.00')} · Ship $${escapeHtml(o.shippingCost || '0.00')} · Tip ${parseFloat(o.tip || '0') > 0 ? '$' + escapeHtml(o.tip) : 'None'}</div>
         </div>
       </div>
       <div class="order-actions">
