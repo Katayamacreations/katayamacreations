@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, numeric, integer, date } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, numeric, integer, date, boolean } from "drizzle-orm/pg-core";
 
 export const reviews = pgTable("reviews", {
   id: serial().primaryKey(),
@@ -30,5 +30,28 @@ export const siteVisits = pgTable("site_visits", {
   city: text("city").notNull().default("Unknown"),
   latitude: numeric("latitude", { precision: 9, scale: 6 }),
   longitude: numeric("longitude", { precision: 9, scale: 6 }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const notifications = pgTable("notifications", {
+  id: serial().primaryKey(),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull().default(""),
+  relatedId: text("related_id").notNull().default(""),
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const messages = pgTable("messages", {
+  id: serial().primaryKey(),
+  userId: text("user_id").notNull(),
+  userEmail: text("user_email").notNull(),
+  userName: text("user_name").notNull().default(""),
+  subject: text("subject").notNull().default(""),
+  body: text("body").notNull(),
+  adminReply: text("admin_reply"),
+  repliedAt: timestamp("replied_at"),
+  isRead: boolean("is_read").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
