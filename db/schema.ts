@@ -39,6 +39,7 @@ export const notifications = pgTable("notifications", {
   title: text("title").notNull(),
   body: text("body").notNull().default(""),
   relatedId: text("related_id").notNull().default(""),
+  userId: text("user_id").notNull().default(""),
   isRead: boolean("is_read").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
