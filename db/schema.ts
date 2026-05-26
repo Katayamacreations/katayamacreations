@@ -55,4 +55,15 @@ export const messages = pgTable("messages", {
   repliedAt: timestamp("replied_at"),
   isRead: boolean("is_read").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
+  deletedBy: text("deleted_by"),
+});
+
+export const messageReplies = pgTable("message_replies", {
+  id: serial().primaryKey(),
+  messageId: integer("message_id").notNull().references(() => messages.id),
+  senderType: text("sender_type").notNull(),
+  senderName: text("sender_name").notNull().default(""),
+  body: text("body").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
