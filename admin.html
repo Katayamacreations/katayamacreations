@@ -328,6 +328,53 @@
     }
     .badge.admin { color: #d4c0f0; border-color: rgba(212, 192, 240, 0.4); }
     .badge.unconfirmed { color: #f0b8a8; border-color: rgba(230, 115, 92, 0.4); }
+    .badge.warning { color: #f0d8a8; border-color: rgba(240, 200, 120, 0.4); }
+
+    .stock-inline {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .stock-inline select, .stock-inline input {
+      padding: 5px 7px;
+      border: 1px solid rgba(192, 192, 210, 0.25);
+      border-radius: 8px;
+      background: rgba(20, 10, 40, 0.6);
+      color: #e8e3f0;
+      font-size: 12px;
+    }
+    .stock-inline input[type="number"] {
+      width: 64px;
+      text-align: center;
+    }
+    .stock-inline select {
+      max-width: 120px;
+    }
+    .stock-inline .stock-save-btn {
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 8px;
+      border: 1px solid rgba(184, 224, 194, 0.4);
+      background: rgba(20, 10, 40, 0.6);
+      color: #b8e0c2;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .stock-inline .stock-save-btn:hover {
+      background: rgba(184, 224, 194, 0.15);
+    }
+    .stock-inline .stock-save-btn[disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .stock-msg {
+      font-size: 11px;
+      margin-top: 3px;
+    }
+    .stock-msg.ok { color: #b8e0c2; }
+    .stock-msg.err { color: #f0b8a8; }
 
     .photo-grid {
       display: grid;
@@ -789,6 +836,22 @@
           <label for="prodImage">Cover photo</label>
           <select id="prodImage"><option value="">— no cover —</option></select>
         </div>
+      </div>
+      <div class="row three">
+        <div class="field">
+          <label for="prodStockStatus">Availability</label>
+          <select id="prodStockStatus">
+            <option value="available">Available</option>
+            <option value="pre-order">Pre-order</option>
+            <option value="out-of-stock">Out of stock</option>
+            <option value="shop-break">Shop break</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="prodStockQty">Stock quantity</label>
+          <input id="prodStockQty" type="number" min="0" step="1" placeholder="Leave blank = unlimited">
+        </div>
+        <div class="field"></div>
       </div>
       <div class="actions">
         <button type="button" class="button" id="prodSaveBtn">Add product</button>
@@ -1593,14 +1656,31 @@
       list.innerHTML = '<div class="empty">No products yet — the home page will fall back to its built-in bundles.</div>';
       return;
     }
+    const statusLabels = { 'available': 'Available', 'pre-order': 'Pre-order', 'out-of-stock': 'Out of stock', 'shop-break': 'Shop break' };
+    const statusClasses = { 'available': 'admin', 'pre-order': 'warning', 'out-of-stock': '', 'shop-break': '' };
     const rows = allProducts.map(p => {
       const cover = p.imageId ? `<img src="/.netlify/functions/serve-photo?id=${encodeURIComponent(p.imageId)}" alt="" style="width:48px; height:48px; border-radius:6px; object-fit:cover;">` : '';
-      const status = p.active === false ? '<span class="badge">hidden</span>' : '<span class="badge admin">active</span>';
+      const activeStatus = p.active === false ? '<span class="badge">hidden</span>' : '<span class="badge admin">active</span>';
+      const ss = p.stockStatus || 'available';
+      const stockBadge = `<span class="badge ${statusClasses[ss] || ''}">${statusLabels[ss] || ss}</span>`;
+      const qtyVal = p.stockQty != null ? p.stockQty : '';
+      const stockEditor = `
+        <div class="stock-inline">
+          <select data-stock-status="${escapeHtml(p.id)}">
+            <option value="available"${ss === 'available' ? ' selected' : ''}>Available</option>
+            <option value="pre-order"${ss === 'pre-order' ? ' selected' : ''}>Pre-order</option>
+            <option value="out-of-stock"${ss === 'out-of-stock' ? ' selected' : ''}>Out of stock</option>
+            <option value="shop-break"${ss === 'shop-break' ? ' selected' : ''}>Shop break</option>
+          </select>
+          <input type="number" min="0" step="1" placeholder="∞" value="${qtyVal}" data-stock-qty="${escapeHtml(p.id)}" title="Stock quantity (blank = unlimited)">
+          <button type="button" class="stock-save-btn" data-stock-save="${escapeHtml(p.id)}">Update</button>
+        </div>
+        <div class="stock-msg" data-stock-msg="${escapeHtml(p.id)}"></div>`;
       return `<tr data-id="${escapeHtml(p.id)}">
         <td style="width:60px;">${cover}</td>
         <td><strong style="color:#e8e3f0;">${escapeHtml(p.label)}</strong>${p.description ? `<div style="color:#8b87a0; font-size:12px;">${escapeHtml(p.description)}</div>` : ''}</td>
         <td>$${Number(p.price).toFixed(2)}${p.suffix ? `<span style="color:#8b87a0;">${escapeHtml(p.suffix)}</span>` : ''}</td>
-        <td>${status}</td>
+        <td>${activeStatus} ${stockBadge}${stockEditor}</td>
         <td style="text-align:right; white-space:nowrap;">
           <button type="button" class="button small secondary" data-act="edit">Edit</button>
           <button type="button" class="button small secondary" data-act="toggle">${p.active === false ? 'Show' : 'Hide'}</button>
@@ -1609,7 +1689,7 @@
       </tr>`;
     }).join('');
     list.innerHTML = `<table class="products-table">
-      <thead><tr><th></th><th>Product</th><th>Price</th><th>Status</th><th></th></tr></thead>
+      <thead><tr><th></th><th>Product</th><th>Price</th><th>Status / Stock</th><th></th></tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
     list.querySelectorAll('tr[data-id]').forEach(tr => {
@@ -1617,7 +1697,57 @@
       tr.querySelector('[data-act="edit"]').addEventListener('click', () => startEditProduct(id));
       tr.querySelector('[data-act="toggle"]').addEventListener('click', () => toggleProduct(id));
       tr.querySelector('[data-act="delete"]').addEventListener('click', () => deleteProduct(id));
+      const saveBtn = tr.querySelector(`[data-stock-save="${id}"]`);
+      if (saveBtn) saveBtn.addEventListener('click', () => updateProductStock(id));
     });
+  }
+
+  async function updateProductStock(id) {
+    const p = allProducts.find(x => x.id === id);
+    if (!p) return;
+    const statusSel = document.querySelector(`[data-stock-status="${id}"]`);
+    const qtyInput = document.querySelector(`[data-stock-qty="${id}"]`);
+    const saveBtn = document.querySelector(`[data-stock-save="${id}"]`);
+    const msgEl = document.querySelector(`[data-stock-msg="${id}"]`);
+    const newStatus = statusSel.value;
+    const qtyRaw = qtyInput.value.trim();
+    const newQty = qtyRaw === '' ? null : parseInt(qtyRaw, 10);
+    if (qtyRaw !== '' && (!Number.isFinite(newQty) || newQty < 0)) {
+      msgEl.textContent = 'Invalid quantity.';
+      msgEl.className = 'stock-msg err';
+      return;
+    }
+    saveBtn.disabled = true;
+    msgEl.textContent = '';
+    const token = await getAuthToken();
+    try {
+      const res = await fetch('/.netlify/functions/admin-products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          id: p.id, label: p.label, price: p.price, suffix: p.suffix || '',
+          description: p.description || '', imageId: p.imageId || '',
+          active: p.active !== false,
+          stockStatus: newStatus,
+          stockQty: newQty,
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      allProducts = Array.isArray(data.products) ? data.products : [];
+      renderProducts();
+      const updatedMsg = document.querySelector(`[data-stock-msg="${id}"]`);
+      if (updatedMsg) {
+        updatedMsg.textContent = 'Updated!';
+        updatedMsg.className = 'stock-msg ok';
+        setTimeout(() => { updatedMsg.textContent = ''; }, 2000);
+      }
+    } catch (err) {
+      msgEl.textContent = 'Update failed.';
+      msgEl.className = 'stock-msg err';
+    } finally {
+      saveBtn.disabled = false;
+    }
   }
 
   function refreshImageOptions() {
@@ -1638,6 +1768,8 @@
     document.getElementById('prodSuffix').value = p.suffix || '';
     document.getElementById('prodDescription').value = p.description || '';
     document.getElementById('prodImage').value = p.imageId || '';
+    document.getElementById('prodStockStatus').value = p.stockStatus || 'available';
+    document.getElementById('prodStockQty').value = p.stockQty != null ? p.stockQty : '';
     document.getElementById('prodSaveBtn').textContent = 'Save changes';
     document.getElementById('prodResetBtn').style.display = '';
     document.getElementById('prodMsg').textContent = `Editing ${p.label}`;
@@ -1651,6 +1783,8 @@
     document.getElementById('prodSuffix').value = '';
     document.getElementById('prodDescription').value = '';
     document.getElementById('prodImage').value = '';
+    document.getElementById('prodStockStatus').value = 'available';
+    document.getElementById('prodStockQty').value = '';
     document.getElementById('prodSaveBtn').textContent = 'Add product';
     document.getElementById('prodResetBtn').style.display = 'none';
     document.getElementById('prodMsg').textContent = '';
@@ -1669,6 +1803,9 @@
     const suffix = document.getElementById('prodSuffix').value.trim();
     const description = document.getElementById('prodDescription').value.trim();
     const imageId = document.getElementById('prodImage').value;
+    const stockStatus = document.getElementById('prodStockStatus').value;
+    const stockQtyRaw = document.getElementById('prodStockQty').value.trim();
+    const stockQty = stockQtyRaw === '' ? null : parseInt(stockQtyRaw, 10);
 
     if (!label) { msg.textContent = 'Label is required.'; msg.className = 'pane-msg err'; return; }
     if (!Number.isFinite(price) || price < 0) { msg.textContent = 'Enter a valid price.'; msg.className = 'pane-msg err'; return; }
@@ -1682,6 +1819,7 @@
         body: JSON.stringify({
           id: editingProductId || undefined,
           label, price, suffix, description, imageId,
+          stockStatus, stockQty,
         }),
       });
       if (!res.ok) {
@@ -1714,6 +1852,8 @@
           id: p.id, label: p.label, price: p.price, suffix: p.suffix || '',
           description: p.description || '', imageId: p.imageId || '',
           active: p.active === false,
+          stockStatus: p.stockStatus || 'available',
+          stockQty: p.stockQty != null ? p.stockQty : null,
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

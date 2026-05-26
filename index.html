@@ -324,15 +324,23 @@
         const products = (data.products || []).filter(p => p.active !== false);
         if (products.length > 0) {
           const cards = document.getElementById('shopCards');
+          const statusLabels = { 'available': '', 'pre-order': 'Pre-order', 'out-of-stock': 'Sold out', 'shop-break': 'Shop break' };
+          const statusColors = { 'pre-order': '#f0d8a8', 'out-of-stock': '#f0b8a8', 'shop-break': '#c0bcd0' };
           cards.innerHTML = products.map(p => {
             const cover = p.imageId
               ? `/.netlify/functions/serve-photo?id=${encodeURIComponent(p.imageId)}`
               : '/assets/blind-date-book.png';
             const desc = p.description ? `<div style="padding:14px; color:#c0bcd0; font-size:14px;">${escapeHtml(p.description)}</div>` : '';
-            return `<a href="/dashboard.html" class="book-tile" aria-label="Order ${escapeHtml(p.label)} — $${Number(p.price).toFixed(2)}">
+            const ss = p.stockStatus || 'available';
+            const isOrderable = ss === 'available' || ss === 'pre-order';
+            const stockLabel = statusLabels[ss];
+            const stockBadge = stockLabel ? `<div style="padding:4px 14px 0;"><span style="display:inline-block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; padding:2px 10px; border-radius:999px; border:1px solid ${statusColors[ss] || 'rgba(192,192,210,0.25)'}; color:${statusColors[ss] || '#c0bcd0'}; background:rgba(20,10,40,0.6);">${escapeHtml(stockLabel)}</span></div>` : '';
+            const qtyNote = ss === 'available' && p.stockQty != null && p.stockQty > 0 && p.stockQty <= 5 ? `<div style="padding:2px 14px 0; font-size:12px; color:#f0d8a8;">Only ${p.stockQty} left!</div>` : '';
+            const dimStyle = !isOrderable ? ' style="opacity:0.6; pointer-events:none;"' : '';
+            return `<a href="/dashboard.html" class="book-tile"${dimStyle} aria-label="Order ${escapeHtml(p.label)} — $${Number(p.price).toFixed(2)}">
               <img src="${cover}" alt="${escapeHtml(p.label)} — $${Number(p.price).toFixed(2)}">
               <div style="padding:14px 14px 6px; font-weight:700; color:#e8e3f0;">${escapeHtml(p.label)} — $${Number(p.price).toFixed(2)}${escapeHtml(p.suffix || '')}</div>
-              ${desc}
+              ${stockBadge}${qtyNote}${desc}
             </a>`;
           }).join('');
         }

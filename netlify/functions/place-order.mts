@@ -49,6 +49,41 @@ export default async (req: Request, _context: Context) => {
     return new Response('Cart is empty', { status: 400 })
   }
 
+  const configStore = getStore('site-config')
+  const productsData = await configStore.get('products', { type: 'json' }).catch(() => null)
+  const products: any[] = Array.isArray(productsData) ? productsData : []
+
+  for (const item of body.cart) {
+    const product = products.find((p: any) => p.id === item.bundleId)
+    if (product) {
+      const ss = product.stockStatus || 'available'
+      if (ss === 'out-of-stock' || ss === 'shop-break') {
+        return new Response(`"${product.label}" is currently unavailable.`, { status: 400 })
+      }
+      if (product.stockQty != null) {
+        const qty = typeof item.qty === 'number' ? item.qty : 1
+        if (qty > product.stockQty) {
+          return new Response(`"${product.label}" only has ${product.stockQty} in stock.`, { status: 400 })
+        }
+      }
+    }
+  }
+
+  for (const item of body.cart) {
+    const product = products.find((p: any) => p.id === item.bundleId)
+    if (product && product.stockQty != null) {
+      const qty = typeof item.qty === 'number' ? item.qty : 1
+      product.stockQty = Math.max(0, product.stockQty - qty)
+      if (product.stockQty === 0) {
+        product.stockStatus = 'out-of-stock'
+      }
+    }
+  }
+
+  if (products.length > 0) {
+    await configStore.setJSON('products', products)
+  }
+
   const placedAt = new Date().toISOString()
   const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 
