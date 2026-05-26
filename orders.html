@@ -683,6 +683,7 @@
       <div class="order-meta-row" style="margin-top:8px;">
         <span style="color:#c0bcd0;">Subtotal ${escapeHtml('$' + (o.subtotal || '0.00'))}</span>
         · Shipping ${escapeHtml('$' + (o.shippingCost || '0.00'))}
+        · Tip ${parseFloat(o.tip || '0') > 0 ? escapeHtml('$' + o.tip) : 'None'}
         · <span class="order-total">Total ${escapeHtml('$' + (o.total || '0.00'))}</span>
       </div>
       <div class="order-actions">
