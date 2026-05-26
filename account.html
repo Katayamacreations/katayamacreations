@@ -442,6 +442,31 @@
       </form>
     </div>
 
+    <div class="card" id="messageCard">
+      <h2 style="margin:0 0 16px;font-size:20px;color:#e8e3f0;">Message the team</h2>
+      <div class="alert success" id="msgSendSuccess"></div>
+      <div class="alert error" id="msgSendError"></div>
+      <form id="sendMsgForm">
+        <div class="field">
+          <label for="msgSubject">Subject</label>
+          <input id="msgSubject" type="text" placeholder="What's this about?" maxlength="200" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="msgBody">Message</label>
+          <textarea id="msgBody" required rows="4" placeholder="Write your message…" maxlength="5000" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(192,192,210,0.25);background:rgba(20,10,40,0.6);color:#e8e3f0;font-size:14px;resize:vertical;"></textarea>
+        </div>
+        <div class="actions">
+          <button class="button" type="submit" id="sendMsgBtn">Send message</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card" id="myMessagesCard">
+      <h2 style="margin:0 0 16px;font-size:20px;color:#e8e3f0;">Your messages</h2>
+      <div id="myMsgStatus" style="color:#8b87a0;font-size:14px;margin-bottom:12px;">Loading…</div>
+      <div id="myMsgList"></div>
+    </div>
+
     <div class="card">
       <h2 style="margin:0 0 16px;font-size:20px;color:#e8e3f0;">Danger zone</h2>
       <div class="alert error" id="deleteError"></div>
@@ -629,7 +654,7 @@
   }
 
   function escapeHtml(s) {
-    return String(s)
+    return String(s || '')
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
@@ -720,6 +745,90 @@
     }
   });
 
+  // ------------------------------------------------------------------
+  // Messaging
+  // ------------------------------------------------------------------
+  async function loadMyMessages() {
+    const status = document.getElementById('myMsgStatus');
+    const list = document.getElementById('myMsgList');
+    try {
+      const nfJwt = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
+      const token = nfJwt ? decodeURIComponent(nfJwt[1]) : null;
+      if (!token) { status.textContent = ''; list.innerHTML = ''; return; }
+      const res = await fetch('/.netlify/functions/user-messages', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error();
+      const msgs = await res.json();
+      if (!msgs.length) {
+        status.textContent = 'No messages yet.';
+        list.innerHTML = '';
+        return;
+      }
+      status.textContent = '';
+      list.innerHTML = msgs.map(m => {
+        const date = new Date(m.created_at || m.createdAt).toLocaleString();
+        const subj = (m.subject || '').trim() || '(no subject)';
+        const reply = m.admin_reply || m.adminReply;
+        const replyDate = m.replied_at || m.repliedAt;
+        return `<div style="border:1px solid rgba(192,192,210,0.15);border-radius:10px;padding:14px;margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+            <strong style="color:#e8e3f0;font-size:13px;">${escapeHtml(subj)}</strong>
+            <span style="font-size:11px;color:#8a85a0;">${date}</span>
+          </div>
+          <div style="font-size:13px;color:#c0bcd0;white-space:pre-wrap;margin-bottom:8px;">${escapeHtml(m.body)}</div>
+          ${reply ? `<div style="border-top:1px solid rgba(192,192,210,0.1);padding-top:8px;margin-top:8px;">
+            <div style="font-size:11px;color:#b8e0c2;margin-bottom:4px;">Admin reply — ${replyDate ? new Date(replyDate).toLocaleString() : ''}</div>
+            <div style="font-size:13px;color:#e8e3f0;white-space:pre-wrap;">${escapeHtml(reply)}</div>
+          </div>` : `<div style="font-size:11px;color:#e8a87c;">Awaiting reply</div>`}
+        </div>`;
+      }).join('');
+    } catch {
+      status.textContent = '';
+    }
+  }
+
+  if (currentUser) loadMyMessages();
+
+  document.getElementById('sendMsgForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const success = document.getElementById('msgSendSuccess');
+    const error = document.getElementById('msgSendError');
+    success.classList.remove('show');
+    error.classList.remove('show');
+
+    const subject = document.getElementById('msgSubject').value.trim();
+    const body = document.getElementById('msgBody').value.trim();
+    if (!body) return;
+
+    const btn = document.getElementById('sendMsgBtn');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    try {
+      const nfJwt = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
+      const token = nfJwt ? decodeURIComponent(nfJwt[1]) : null;
+      if (!token) throw new Error('Not signed in');
+      const res = await fetch('/.netlify/functions/send-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ subject, body }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      success.textContent = 'Message sent! The team will get back to you soon.';
+      success.classList.add('show');
+      document.getElementById('msgSubject').value = '';
+      document.getElementById('msgBody').value = '';
+      loadMyMessages();
+    } catch (err) {
+      error.textContent = 'Failed to send message. Please try again.';
+      error.classList.add('show');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Send message';
+    }
+  });
+
   const deleteModal = document.getElementById('deleteModal');
   const deleteConfirmInput = document.getElementById('deleteConfirmInput');
   const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
@@ -783,4 +892,5 @@ document.getElementById('menuToggle').addEventListener('click', function() {
 </script>
 <script src="/assets/dragon.js"></script>
 <script src="/assets/new-order-notification.js"></script>
+<script src="/assets/notification-bell.js"></script>
 </body>

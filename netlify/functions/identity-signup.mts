@@ -1,5 +1,7 @@
 import type { Handler, HandlerEvent } from '@netlify/functions'
 import { wrapEmail, escapeHtml, SITE_NAME, OWNER_EMAIL, COLORS } from './_email-brand.mjs'
+import { db } from '../../db/index.js'
+import { notifications } from '../../db/schema.js'
 
 interface IdentityUser {
   email?: string
@@ -48,6 +50,22 @@ const handler: Handler = async (event: HandlerEvent) => {
     } catch (err) {
       console.error('Welcome email failed', err)
     }
+  }
+
+  try {
+    const meta = user?.user_metadata || {}
+    const displayName =
+      (meta.full_name && String(meta.full_name)) ||
+      [meta.firstName, meta.lastName].filter(Boolean).join(' ').trim() ||
+      user?.email || 'Someone'
+    await db.insert(notifications).values({
+      type: 'signup',
+      title: 'New sign-up',
+      body: `${displayName} (${user?.email || 'unknown'}) just signed up`,
+      relatedId: '',
+    })
+  } catch (err) {
+    console.error('Signup notification failed', err)
   }
 
   const existingRoles = Array.isArray((user?.app_metadata as Record<string, unknown> | undefined)?.roles)

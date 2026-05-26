@@ -684,6 +684,7 @@
       <button type="button" class="tab" data-pane="products">Products</button>
       <button type="button" class="tab" data-pane="photos">Photos</button>
       <button type="button" class="tab" data-pane="analytics">Analytics</button>
+      <button type="button" class="tab" data-pane="messages">Messages</button>
     </div>
 
     <div class="pane active" id="pane-orders">
@@ -853,6 +854,36 @@
         <div id="locationTableWrap" style="margin-top:14px;"></div>
       </div>
     </div>
+
+    <div class="pane" id="pane-messages">
+      <h3>Customer messages</h3>
+      <div class="controls">
+        <label for="msgFilter">Filter</label>
+        <select id="msgFilter">
+          <option value="">All</option>
+          <option value="unread">Unread</option>
+          <option value="replied">Replied</option>
+          <option value="unreplied">Needs reply</option>
+        </select>
+        <div class="spacer"></div>
+        <button type="button" class="button secondary" id="msgRefreshBtn">Refresh</button>
+      </div>
+      <div id="msgStatus" class="pane-msg">Loading…</div>
+      <div id="msgList"></div>
+
+      <div id="msgReplyOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+        <div style="background:linear-gradient(180deg,#2a1745,#1a0f2e);border:1px solid rgba(192,192,210,0.25);border-radius:16px;padding:28px;width:90%;max-width:520px;max-height:80vh;overflow-y:auto;">
+          <h3 id="msgReplyTitle" style="margin:0 0 12px;font-size:18px;color:#e8e3f0;">Reply</h3>
+          <div id="msgReplyBody" style="background:rgba(107,72,166,0.12);padding:14px;border-radius:10px;margin-bottom:16px;font-size:13px;color:#c0bcd0;white-space:pre-wrap;"></div>
+          <textarea id="msgReplyText" rows="5" placeholder="Write your reply…" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(192,192,210,0.25);background:rgba(20,10,40,0.6);color:#e8e3f0;font-size:14px;resize:vertical;"></textarea>
+          <div style="display:flex;gap:10px;margin-top:14px;">
+            <button type="button" class="button" id="msgReplySend">Send reply</button>
+            <button type="button" class="button secondary" id="msgReplyCancel">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </section>
 
@@ -1168,6 +1199,7 @@
       if (target === 'users' && !usersLoadedOnce) loadUsers();
       if (target === 'reviews' && !reviewsLoadedOnce) loadReviews();
       if (target === 'analytics' && !analyticsLoadedOnce) loadAnalytics();
+      if (target === 'messages' && !messagesLoadedOnce) loadMessages();
     });
   });
 
@@ -2147,6 +2179,119 @@
   }
 
   document.getElementById('analyticsRefreshBtn').addEventListener('click', loadAnalytics);
+
+  // ------------------------------------------------------------------
+  // Messages
+  // ------------------------------------------------------------------
+  let messagesLoadedOnce = false;
+  let allMessages = [];
+
+  async function loadMessages() {
+    const status = document.getElementById('msgStatus');
+    status.textContent = 'Loading…';
+    try {
+      const res = await fetch('/.netlify/functions/admin-messages');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      allMessages = await res.json();
+      messagesLoadedOnce = true;
+      renderMessages();
+    } catch (err) {
+      status.textContent = 'Failed to load messages.';
+    }
+  }
+
+  function renderMessages() {
+    const filter = document.getElementById('msgFilter').value;
+    let msgs = allMessages;
+    if (filter === 'unread') msgs = msgs.filter(m => !m.is_read && !m.isRead);
+    else if (filter === 'replied') msgs = msgs.filter(m => m.admin_reply || m.adminReply);
+    else if (filter === 'unreplied') msgs = msgs.filter(m => !(m.admin_reply || m.adminReply));
+
+    const wrap = document.getElementById('msgList');
+    const status = document.getElementById('msgStatus');
+
+    if (!msgs.length) {
+      status.textContent = filter ? 'No messages match this filter.' : 'No messages yet.';
+      wrap.innerHTML = '';
+      return;
+    }
+    status.textContent = `${msgs.length} message${msgs.length !== 1 ? 's' : ''}`;
+
+    wrap.innerHTML = msgs.map(m => {
+      const isRead = m.is_read || m.isRead;
+      const hasReply = m.admin_reply || m.adminReply;
+      const date = new Date(m.created_at || m.createdAt).toLocaleString();
+      const name = escapeHtml((m.user_name || m.userName || '').trim() || m.user_email || m.userEmail);
+      const subject = escapeHtml((m.subject || '').trim() || '(no subject)');
+      const body = escapeHtml((m.body || '').slice(0, 200));
+
+      return `<div class="order-row" style="border-left:3px solid ${isRead ? '#3a3555' : '#b8e0c2'};margin-bottom:8px;padding:14px 16px;cursor:pointer;" data-msg-id="${m.id}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <strong style="color:#e8e3f0;font-size:14px;">${name}</strong>
+          <span style="font-size:11px;color:#8a85a0;">${date}</span>
+        </div>
+        <div style="font-size:13px;color:#c0bcd0;font-weight:600;margin-bottom:4px;">${subject}</div>
+        <div style="font-size:12px;color:#9a96ab;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${body}</div>
+        <div style="margin-top:6px;display:flex;gap:8px;align-items:center;">
+          ${hasReply ? '<span style="font-size:11px;color:#b8e0c2;">&#10003; Replied</span>' : '<span style="font-size:11px;color:#e8a87c;">Awaiting reply</span>'}
+          <button type="button" class="button secondary" style="font-size:11px;padding:4px 10px;margin-left:auto;" onclick="openReply(${m.id})">Reply</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('msgFilter').addEventListener('change', renderMessages);
+  document.getElementById('msgRefreshBtn').addEventListener('click', loadMessages);
+
+  let replyMsgId = null;
+
+  window.openReply = function(id) {
+    const m = allMessages.find(x => x.id === id);
+    if (!m) return;
+    replyMsgId = id;
+    const overlay = document.getElementById('msgReplyOverlay');
+    document.getElementById('msgReplyTitle').textContent = `Reply to ${(m.user_name || m.userName || '').trim() || m.user_email || m.userEmail}`;
+    document.getElementById('msgReplyBody').textContent = `Subject: ${m.subject || '(none)'}\n\n${m.body}${(m.admin_reply || m.adminReply) ? '\n\n— Your previous reply —\n' + (m.admin_reply || m.adminReply) : ''}`;
+    document.getElementById('msgReplyText').value = '';
+    overlay.style.display = 'flex';
+  };
+
+  document.getElementById('msgReplyCancel').addEventListener('click', () => {
+    document.getElementById('msgReplyOverlay').style.display = 'none';
+    replyMsgId = null;
+  });
+
+  document.getElementById('msgReplySend').addEventListener('click', async () => {
+    if (!replyMsgId) return;
+    const replyText = document.getElementById('msgReplyText').value.trim();
+    if (!replyText) return;
+    const btn = document.getElementById('msgReplySend');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    try {
+      const res = await fetch('/.netlify/functions/admin-messages', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: replyMsgId, reply: replyText }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      document.getElementById('msgReplyOverlay').style.display = 'none';
+      replyMsgId = null;
+      loadMessages();
+    } catch (err) {
+      alert('Failed to send reply. Please try again.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Send reply';
+    }
+  });
+
+  // Handle #hash navigation for deep-linking to tabs
+  if (location.hash) {
+    const hashPane = location.hash.slice(1);
+    const tabBtn = document.querySelector(`.tab[data-pane="${hashPane}"]`);
+    if (tabBtn) tabBtn.click();
+  }
 </script>
 
 <script>
@@ -2160,5 +2305,6 @@ document.getElementById('menuToggle').addEventListener('click', function() {
 <script src="/assets/dragon.js"></script>
 
 <script src="/assets/new-order-notification.js"></script>
+<script src="/assets/notification-bell.js"></script>
 </body>
 </html>

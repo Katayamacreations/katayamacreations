@@ -2,6 +2,8 @@ import type { Context } from '@netlify/functions'
 import { getStore } from '@netlify/blobs'
 import { getUser } from '@netlify/identity'
 import { renderOrderEmailHtml, renderOrderEmailText, renderOrderSummaryText, type OrderData, type CartItem } from './_order-email.mjs'
+import { db } from '../../db/index.js'
+import { notifications } from '../../db/schema.js'
 
 const FROM_EMAIL = Netlify.env.get('WELCOME_FROM_EMAIL') || 'Katayama Creations <onboarding@resend.dev>'
 const OWNER_EMAIL = Netlify.env.get('OWNER_EMAIL') || 'ogmegbeast@gmail.com'
@@ -82,6 +84,17 @@ export default async (req: Request, _context: Context) => {
 
   const store = getStore('orders')
   await store.setJSON(`${user.id}/${placedAt}-${id}`, order)
+
+  try {
+    await db.insert(notifications).values({
+      type: 'order',
+      title: 'New order',
+      body: `${order.customerName || 'A customer'} placed an order for $${order.total}`,
+      relatedId: id,
+    })
+  } catch (err) {
+    console.error('Notification insert failed', err)
+  }
 
   const apiKey = Netlify.env.get('RESEND_API_KEY')
   if (apiKey) {
