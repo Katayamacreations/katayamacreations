@@ -785,6 +785,8 @@
             label: p.label,
             price: Number(p.price) || 0,
             suffix: p.suffix || undefined,
+            stockStatus: p.stockStatus || 'available',
+            stockQty: p.stockQty != null ? Number(p.stockQty) : null,
           });
         }
         for (const m of MERCH_ITEMS) BUNDLES.push(m);
@@ -841,10 +843,16 @@
 
   // populate dropdowns
   const bundleSel = document.getElementById('bundle');
+  const statusLabels = { 'pre-order': ' (Pre-order)', 'out-of-stock': ' (Sold out)', 'shop-break': ' (Shop break)' };
   BUNDLES.forEach(b => {
     const o = document.createElement('option');
     o.value = b.id;
-    o.textContent = `${b.label} — $${b.price}${b.suffix || ''}`;
+    const ss = b.stockStatus || 'available';
+    const isOrderable = ss === 'available' || ss === 'pre-order';
+    const qtyOk = b.stockQty == null || b.stockQty > 0;
+    o.disabled = !isOrderable || !qtyOk;
+    const tag = !qtyOk ? ' (Sold out)' : (statusLabels[ss] || '');
+    o.textContent = `${b.label} — $${b.price}${b.suffix || ''}${tag}`;
     bundleSel.appendChild(o);
   });
   const stateSel = document.getElementById('state');
@@ -895,6 +903,18 @@
     const id = bundleSel.value;
     const b = findBundle(id);
     if (!b) { alert('Pick a bundle first.'); return; }
+    const ss = b.stockStatus || 'available';
+    if (ss === 'out-of-stock' || ss === 'shop-break') {
+      alert('This item is currently unavailable.');
+      return;
+    }
+    if (b.stockQty != null) {
+      const alreadyInCart = cart.filter(c => c.bundleId === b.id).reduce((s, c) => s + c.qty, 0);
+      if (alreadyInCart >= b.stockQty) {
+        alert(`Only ${b.stockQty} in stock. You already have ${alreadyInCart} in your cart.`);
+        return;
+      }
+    }
     cart.push({
       bundleId: b.id,
       bundleLabel: b.label,
@@ -913,7 +933,19 @@
   }
 
   function changeQty(idx, delta) {
-    cart[idx].qty = Math.max(1, (cart[idx].qty || 1) + delta);
+    const item = cart[idx];
+    const newQty = Math.max(1, (item.qty || 1) + delta);
+    if (delta > 0) {
+      const b = findBundle(item.bundleId);
+      if (b && b.stockQty != null) {
+        const othersInCart = cart.filter((c, i) => i !== idx && c.bundleId === item.bundleId).reduce((s, c) => s + c.qty, 0);
+        if (newQty + othersInCart > b.stockQty) {
+          alert(`Only ${b.stockQty} in stock.`);
+          return;
+        }
+      }
+    }
+    item.qty = newQty;
     saveCart();
     render();
   }

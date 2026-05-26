@@ -2,6 +2,8 @@ import type { Context } from '@netlify/functions'
 import { getStore } from '@netlify/blobs'
 import { requireAdmin } from './_admin.mjs'
 
+type StockStatus = 'available' | 'pre-order' | 'out-of-stock' | 'shop-break'
+
 interface Product {
   id: string
   label: string
@@ -10,6 +12,8 @@ interface Product {
   imageId?: string
   suffix?: string
   active?: boolean
+  stockQty?: number | null
+  stockStatus?: StockStatus
   createdAt?: string
   updatedAt?: string
 }
@@ -22,6 +26,8 @@ interface UpsertBody {
   imageId?: string
   suffix?: string
   active?: boolean
+  stockQty?: number | string | null
+  stockStatus?: StockStatus
 }
 
 const PRODUCTS_KEY = 'products'
@@ -72,6 +78,14 @@ export default async (req: Request, _context: Context) => {
     }
 
     const products = await readProducts()
+    const validStatuses: StockStatus[] = ['available', 'pre-order', 'out-of-stock', 'shop-break']
+    const stockStatus: StockStatus | undefined =
+      body.stockStatus && validStatuses.includes(body.stockStatus) ? body.stockStatus : undefined
+    const stockQty: number | null =
+      body.stockQty === null || body.stockQty === '' ? null
+        : body.stockQty !== undefined ? (Number.isFinite(Number(body.stockQty)) ? Math.max(0, Math.round(Number(body.stockQty))) : null)
+        : undefined as any
+
     const now = new Date().toISOString()
     let id = String(body.id || '').trim()
     if (id) {
@@ -85,6 +99,8 @@ export default async (req: Request, _context: Context) => {
         imageId: body.imageId !== undefined ? String(body.imageId || '') : products[idx].imageId || '',
         suffix: body.suffix !== undefined ? String(body.suffix || '') : products[idx].suffix || '',
         active: body.active !== undefined ? !!body.active : products[idx].active !== false,
+        stockQty: stockQty !== undefined ? stockQty : products[idx].stockQty ?? null,
+        stockStatus: stockStatus !== undefined ? stockStatus : products[idx].stockStatus || 'available',
         updatedAt: now,
       }
     } else {
@@ -103,6 +119,8 @@ export default async (req: Request, _context: Context) => {
         imageId: body.imageId ? String(body.imageId) : '',
         suffix: body.suffix ? String(body.suffix) : '',
         active: body.active !== false,
+        stockQty: stockQty !== undefined ? stockQty : null,
+        stockStatus: stockStatus || 'available',
         createdAt: now,
         updatedAt: now,
       })
