@@ -787,6 +787,7 @@
         const subj = (m.subject || '').trim() || '(no subject)';
         const reply = m.admin_reply || m.adminReply;
         const replyCount = m.reply_count || m.replyCount || 0;
+        const hasReply = replyCount > 0 || !!reply;
         return `<div style="border:1px solid rgba(192,192,210,0.15);border-radius:10px;padding:14px;margin-bottom:10px;cursor:pointer;transition:border-color 0.2s;" onclick="window._openUserThread(${m.id})" onmouseenter="this.style.borderColor='rgba(168,156,200,0.4)'" onmouseleave="this.style.borderColor='rgba(192,192,210,0.15)'">
           <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
             <strong style="color:#e8e3f0;font-size:13px;">${escapeHtml(subj)}</strong>
@@ -794,7 +795,7 @@
           </div>
           <div style="font-size:13px;color:#c0bcd0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:8px;">${escapeHtml((m.body || '').slice(0, 150))}</div>
           <div style="display:flex;align-items:center;gap:8px;">
-            ${reply ? '<span style="font-size:11px;color:#b8e0c2;">&#10003; Replied</span>' : '<span style="font-size:11px;color:#e8a87c;">Awaiting reply</span>'}
+            ${hasReply ? '<span style="font-size:11px;color:#b8e0c2;">&#10003; Replied</span>' : '<span style="font-size:11px;color:#e8a87c;">Awaiting reply</span>'}
             ${replyCount > 0 ? `<span style="font-size:11px;color:#a89cc8;background:rgba(107,72,166,0.2);padding:2px 8px;border-radius:10px;">${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}</span>` : ''}
             <button type="button" onclick="event.stopPropagation();window._deleteMsg(${m.id})" style="background:none;border:1px solid rgba(220,80,80,0.4);color:#e07070;font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;margin-left:auto;">Delete</button>
           </div>
@@ -847,20 +848,6 @@
         </div>
         <div style="font-size:13px;color:#c0bcd0;white-space:pre-wrap;word-break:break-word;">${escapeHtml(msg.body)}</div>
       </div>`;
-
-      const legacyReply = msg.admin_reply || msg.adminReply;
-      const hasThreadReplies = replies.length > 0;
-
-      if (legacyReply && !hasThreadReplies) {
-        const replyDate = msg.replied_at || msg.repliedAt;
-        html += `<div style="padding:12px 14px;background:rgba(90,180,120,0.08);border-radius:10px;border-left:3px solid #b8e0c2;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <span style="font-size:12px;font-weight:600;color:#b8e0c2;">Admin</span>
-            <span style="font-size:10px;color:#8a85a0;">${replyDate ? new Date(replyDate).toLocaleString() : ''}</span>
-          </div>
-          <div style="font-size:13px;color:#c0bcd0;white-space:pre-wrap;word-break:break-word;">${escapeHtml(legacyReply)}</div>
-        </div>`;
-      }
 
       for (const r of replies) {
         const isAdmin = (r.sender_type || r.senderType) === 'admin';
