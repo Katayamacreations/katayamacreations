@@ -2348,8 +2348,8 @@
     const filter = document.getElementById('msgFilter').value;
     let msgs = allMessages;
     if (filter === 'unread') msgs = msgs.filter(m => !m.is_read && !m.isRead);
-    else if (filter === 'replied') msgs = msgs.filter(m => m.admin_reply || m.adminReply);
-    else if (filter === 'unreplied') msgs = msgs.filter(m => !(m.admin_reply || m.adminReply));
+    else if (filter === 'replied') msgs = msgs.filter(m => (m.reply_count || m.replyCount || 0) > 0 || m.admin_reply || m.adminReply);
+    else if (filter === 'unreplied') msgs = msgs.filter(m => (m.reply_count || m.replyCount || 0) === 0 && !(m.admin_reply || m.adminReply));
 
     const wrap = document.getElementById('msgList');
     const status = document.getElementById('msgStatus');
@@ -2363,13 +2363,12 @@
 
     wrap.innerHTML = msgs.map(m => {
       const isRead = m.is_read || m.isRead;
-      const replyText = m.admin_reply || m.adminReply || '';
-      const hasReply = !!replyText;
+      const replyCount = m.reply_count || m.replyCount || 0;
+      const hasReply = replyCount > 0 || !!(m.admin_reply || m.adminReply);
       const date = new Date(m.created_at || m.createdAt).toLocaleString();
       const name = escapeHtml((m.user_name || m.userName || '').trim() || m.user_email || m.userEmail);
       const subject = escapeHtml((m.subject || '').trim() || '(no subject)');
       const body = escapeHtml((m.body || '').slice(0, 200));
-      const replyCount = m.reply_count || m.replyCount || 0;
 
       return `<div class="order-row" style="border-left:3px solid ${isRead ? '#3a3555' : '#b8e0c2'};margin-bottom:8px;padding:14px 16px;cursor:pointer;" onclick="openThread(${m.id})" data-msg-id="${m.id}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
@@ -2438,20 +2437,6 @@
         ${msg.subject ? `<div style="font-size:13px;color:#e8e3f0;font-weight:600;margin-bottom:4px;">${escapeHtml(msg.subject)}</div>` : ''}
         <div style="font-size:13px;color:#c0bcd0;white-space:pre-wrap;word-break:break-word;">${escapeHtml(msg.body)}</div>
       </div>`;
-
-      const legacyReply = msg.admin_reply || msg.adminReply;
-      const hasThreadReplies = replies.length > 0;
-
-      if (legacyReply && !hasThreadReplies) {
-        const replyDate = msg.replied_at || msg.repliedAt;
-        html += `<div style="padding:12px 14px;background:rgba(90,180,120,0.08);border-radius:10px;border-left:3px solid #b8e0c2;align-self:flex-end;max-width:90%;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <span style="font-size:12px;font-weight:600;color:#b8e0c2;">Admin</span>
-            <span style="font-size:10px;color:#8a85a0;">${replyDate ? new Date(replyDate).toLocaleString() : ''}</span>
-          </div>
-          <div style="font-size:13px;color:#c0bcd0;white-space:pre-wrap;word-break:break-word;">${escapeHtml(legacyReply)}</div>
-        </div>`;
-      }
 
       for (const r of replies) {
         const isAdmin = (r.sender_type || r.senderType) === 'admin';

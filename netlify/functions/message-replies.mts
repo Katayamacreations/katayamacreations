@@ -34,6 +34,26 @@ export default async (req: Request, _context: Context) => {
       .where(eq(messageReplies.messageId, messageId))
       .orderBy(asc(messageReplies.createdAt))
 
+    if (msg.adminReply && replies.length === 0) {
+      const [migrated] = await db
+        .insert(messageReplies)
+        .values({
+          messageId,
+          senderType: 'admin',
+          senderName: 'Admin',
+          body: msg.adminReply,
+        })
+        .returning()
+      if (msg.repliedAt) {
+        await db
+          .update(messageReplies)
+          .set({ createdAt: msg.repliedAt })
+          .where(eq(messageReplies.id, migrated.id))
+        migrated.createdAt = msg.repliedAt
+      }
+      replies.push(migrated)
+    }
+
     return Response.json({ message: msg, replies })
   }
 
@@ -61,6 +81,30 @@ export default async (req: Request, _context: Context) => {
         [meta?.firstName, meta?.lastName].filter(Boolean).join(' ').trim() ||
         user.email || ''
 
+    const existingReplies = await db
+      .select({ id: messageReplies.id })
+      .from(messageReplies)
+      .where(eq(messageReplies.messageId, messageId))
+      .limit(1)
+
+    if (msg.adminReply && existingReplies.length === 0) {
+      const [migrated] = await db
+        .insert(messageReplies)
+        .values({
+          messageId,
+          senderType: 'admin',
+          senderName: 'Admin',
+          body: msg.adminReply,
+        })
+        .returning()
+      if (msg.repliedAt) {
+        await db
+          .update(messageReplies)
+          .set({ createdAt: msg.repliedAt })
+          .where(eq(messageReplies.id, migrated.id))
+      }
+    }
+
     const [reply] = await db
       .insert(messageReplies)
       .values({
@@ -74,7 +118,7 @@ export default async (req: Request, _context: Context) => {
     if (isAdmin) {
       await db
         .update(messages)
-        .set({ adminReply: replyBody.slice(0, 5000), repliedAt: new Date(), isRead: true })
+        .set({ repliedAt: new Date(), isRead: true })
         .where(eq(messages.id, messageId))
 
       if (msg.userId) {
