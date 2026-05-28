@@ -634,6 +634,17 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="confirmEmailModal" role="dialog" aria-modal="true" aria-labelledby="confirmEmailTitle">
+  <div class="modal">
+    <h2 id="confirmEmailTitle">Confirm your email first</h2>
+    <p>Before you can place an order, please confirm your email address. We sent a confirmation link to <strong id="confirmEmailAddr">your inbox</strong> when you signed up — just click the link in that message.</p>
+    <p class="email-notice">📬 Don't see it? The confirmation email may have landed in your spam or junk folder, so be sure to check there too.</p>
+    <div class="actions" style="justify-content:center; margin-top:16px;">
+      <button class="button" type="button" id="confirmEmailClose">Got it</button>
+    </div>
+  </div>
+</div>
+
 <footer>© 2026 Katayama Creations — Curated reads, hand wrapped.</footer>
 
 <script type="module">
@@ -1137,6 +1148,12 @@
       return;
     }
 
+    if (currentUser && !currentUser.confirmedAt) {
+      document.getElementById('confirmEmailAddr').textContent = currentUser.email || 'your inbox';
+      document.getElementById('confirmEmailModal').classList.add('show');
+      return;
+    }
+
     pendingOrderPayload = {
       customerName,
       orderNotes,
@@ -1218,6 +1235,15 @@
     modal.classList.remove('show');
     document.getElementById('venmoConfirm').style.display = 'none';
   });
+
+  const confirmEmailModal = document.getElementById('confirmEmailModal');
+  document.getElementById('confirmEmailClose').addEventListener('click', () => {
+    confirmEmailModal.classList.remove('show');
+  });
+  confirmEmailModal.addEventListener('click', (e) => {
+    if (e.target === confirmEmailModal) confirmEmailModal.classList.remove('show');
+  });
+
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
       modal.classList.remove('show');
