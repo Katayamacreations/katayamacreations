@@ -145,6 +145,24 @@
       font-size: 14px;
       margin-bottom: 16px;
     }
+    .merch-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .merch-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      background: rgba(20, 10, 40, 0.5);
+      border: 1px solid rgba(192, 192, 210, 0.12);
+      border-radius: 12px;
+      margin-bottom: 8px;
+    }
+    .merch-item:last-child { margin-bottom: 0; }
+    .merch-item .merch-name { font-weight: 600; color: #e8e3f0; }
     .cart-item {
       display: grid;
       grid-template-columns: 1fr auto auto;
@@ -511,6 +529,12 @@
   </div>
 
   <div class="card">
+    <h2>Add merch</h2>
+    <p style="margin:0 0 16px;font-size:14px;color:#b8b3c8;">Totes and bookish glasses — no theme or genre needed, just add them straight to your cart.</p>
+    <ul class="merch-list" id="merchList"></ul>
+  </div>
+
+  <div class="card">
     <h2>Your cart</h2>
     <ul class="cart-list" id="cartList"></ul>
     <div class="cart-empty" id="cartEmpty">Your cart is empty. Add a bundle above to get started.</div>
@@ -856,6 +880,7 @@
   const bundleSel = document.getElementById('bundle');
   const statusLabels = { 'pre-order': ' (Pre-order)', 'out-of-stock': ' (Sold out)', 'shop-break': ' (Shop break)' };
   BUNDLES.forEach(b => {
+    if (b.merch) return; // merch (totes, glasses) is added separately — it has no theme/genre
     const o = document.createElement('option');
     o.value = b.id;
     const ss = b.stockStatus || 'available';
@@ -865,6 +890,18 @@
     const tag = !qtyOk ? ' (Sold out)' : (statusLabels[ss] || '');
     o.textContent = `${b.label} — $${b.price}${b.suffix || ''}${tag}`;
     bundleSel.appendChild(o);
+  });
+
+  // Merch (totes, glasses) is ordered separately — no theme/genre selection.
+  const merchList = document.getElementById('merchList');
+  MERCH_ITEMS.forEach(m => {
+    const li = document.createElement('li');
+    li.className = 'merch-item';
+    li.innerHTML = `
+      <span class="merch-name">${escapeHtml(m.label)} — ${fmt(m.price)}</span>
+      <button type="button" class="button" data-merch="${escapeHtml(m.id)}">Add to cart</button>
+    `;
+    merchList.appendChild(li);
   });
   const stateSel = document.getElementById('state');
   STATES.forEach(s => {
@@ -941,6 +978,22 @@
     document.getElementById('theme').value = '';
     document.getElementById('color').value = '';
     document.getElementById('itemNotes').value = '';
+  }
+
+  function addMerchToCart(id) {
+    const b = findBundle(id);
+    if (!b) return;
+    cart.push({
+      bundleId: b.id,
+      bundleLabel: b.label,
+      price: b.price,
+      qty: 1,
+      theme: '',
+      color: '',
+      notes: '',
+    });
+    saveCart();
+    render();
   }
 
   function changeQty(idx, delta) {
@@ -1094,6 +1147,11 @@
   }
 
   document.getElementById('addToCart').addEventListener('click', addToCart);
+  document.getElementById('merchList').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-merch]');
+    if (!btn) return;
+    addMerchToCart(btn.dataset.merch);
+  });
   document.getElementById('cartList').addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-act]');
     if (!btn) return;
