@@ -38,6 +38,10 @@ export default async (req: Request, _context: Context) => {
     return new Response('Unauthorized', { status: 401 })
   }
 
+  if (!user.confirmedAt) {
+    return new Response('Please confirm your email before placing an order.', { status: 403 })
+  }
+
   let body: IncomingOrder
   try {
     body = (await req.json()) as IncomingOrder
