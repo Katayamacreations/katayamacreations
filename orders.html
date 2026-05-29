@@ -58,6 +58,14 @@
       border: 1px solid rgba(192, 192, 210, 0.15);
     }
     .card + .card { margin-top: 20px; }
+    .verify-alert { border: 1px solid rgba(245, 200, 110, 0.45); background: linear-gradient(160deg, rgba(70, 52, 20, 0.75) 0%, rgba(45, 30, 18, 0.92) 100%); }
+    .verify-alert h2 { color: #f5d98a; }
+    .verify-success { border: 1px solid rgba(120, 220, 150, 0.45); background: linear-gradient(160deg, rgba(24, 56, 36, 0.8) 0%, rgba(18, 40, 28, 0.92) 100%); }
+    .verify-success h2 { color: #9ee7b0; }
+    .verify-hint { color: #b8b3c8; font-size: 14px; margin: 10px 0 0; }
+    .verify-feedback { margin: 12px 0 0; font-size: 14px; }
+    .verify-feedback.ok { color: #9ee7b0; }
+    .verify-feedback.err { color: #f3a89a; }
     .card h2 { margin: 0 0 16px; color: #e8e3f0; font-size: 22px; letter-spacing: 0.3px; }
     .button {
       display: inline-block;
@@ -275,6 +283,26 @@
   <h1>Your Orders</h1>
   <p class="subtitle">Track the status of every order you've placed and re-order any past favorite in one click.</p>
 </section>
+
+<section class="section" id="verifyConfirmedSection" style="display:none;">
+  <div class="card verify-success" id="verifyConfirmedCard">
+    <h2>✅ Email confirmed</h2>
+    <p>Thanks — your email is confirmed and you're all set to place orders.</p>
+  </div>
+</section>
+
+<section class="section" id="verifyNoticeSection" style="display:none;">
+  <div class="card verify-alert">
+    <h2>⚠️ Confirm your email to place orders</h2>
+    <p>You're signed in, but you'll need to confirm your email address before you can place an order. We sent a confirmation link to <strong id="verifyEmailAddr">your inbox</strong>.</p>
+    <p class="verify-hint">📬 Don't see it? The confirmation email may have landed in your spam or junk folder.</p>
+    <div class="actions">
+      <button class="button" type="button" id="resendConfirmBtn">Send a new confirmation link</button>
+    </div>
+    <p class="verify-feedback" id="resendFeedback" style="display:none;"></p>
+  </div>
+</section>
+
 
 <section class="section" id="gate">
   <div class="card gate" id="gateCard">
@@ -557,6 +585,12 @@
 
   if (!currentUser) {
     gateCard.style.display = 'block';
+    const confirmed = new URLSearchParams(window.location.search).get('confirmed');
+    if (confirmed === '1') {
+      const card = document.getElementById('verifyConfirmedCard');
+      card.querySelector('p').textContent = 'Thanks — your email is confirmed. Log in to place an order.';
+      document.getElementById('verifyConfirmedSection').style.display = 'block';
+    }
   } else {
     ordersSection.style.display = 'block';
     whoami.style.display = 'block';
@@ -574,6 +608,78 @@
     const token = await getAuthToken();
     await loadUserReviews(token);
     loadOrders();
+    checkVerification(token);
+  }
+
+  // Show the "confirm your email" alert (with a resend link) when the signed-in customer
+  // has not yet verified, and the green success banner right after they have. The state is
+  // read fresh from the server so a just-clicked confirmation link is reflected even before
+  // the session token refreshes.
+  async function checkVerification(token) {
+    const params = new URLSearchParams(window.location.search);
+    const confirmed = params.get('confirmed');
+    if (confirmed === 'expired' || confirmed === 'error') {
+      const card = document.getElementById('verifyConfirmedCard');
+      card.classList.remove('verify-success');
+      card.classList.add('verify-alert');
+      card.querySelector('h2').textContent = '⚠️ Confirmation link problem';
+      card.querySelector('p').textContent = confirmed === 'expired'
+        ? 'That confirmation link has expired or was already used. Use the button below to send a fresh one.'
+        : "Something went wrong confirming your email. Please try sending a new link below.";
+      document.getElementById('verifyConfirmedSection').style.display = 'block';
+    }
+
+    if (!token) return;
+    let verified = false;
+    try {
+      const res = await fetch('/.netlify/functions/verification-status', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (res.ok) verified = !!(await res.json()).verified;
+    } catch (_) { /* leave verified false; show the prompt to be safe */ }
+
+    if (verified) {
+      if (confirmed === '1') document.getElementById('verifyConfirmedSection').style.display = 'block';
+      return;
+    }
+
+    document.getElementById('verifyEmailAddr').textContent = currentUser.email || 'your inbox';
+    document.getElementById('verifyNoticeSection').style.display = 'block';
+
+    const resendBtn = document.getElementById('resendConfirmBtn');
+    const feedback = document.getElementById('resendFeedback');
+    resendBtn.addEventListener('click', async () => {
+      resendBtn.disabled = true;
+      resendBtn.textContent = 'Sending…';
+      feedback.style.display = 'none';
+      feedback.className = 'verify-feedback';
+      try {
+        const t = await getAuthToken();
+        const res = await fetch('/.netlify/functions/request-confirmation', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${t}` },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.alreadyVerified) {
+          window.location.reload();
+          return;
+        }
+        if (res.ok) {
+          feedback.textContent = `Sent! Check ${data.email || 'your inbox'} (and your spam folder) for the new confirmation link.`;
+          feedback.classList.add('ok');
+        } else {
+          feedback.textContent = data.error || "Couldn't send the confirmation link. Please try again shortly.";
+          feedback.classList.add('err');
+        }
+      } catch (_) {
+        feedback.textContent = "Couldn't send the confirmation link. Please check your connection and try again.";
+        feedback.classList.add('err');
+      } finally {
+        feedback.style.display = 'block';
+        resendBtn.disabled = false;
+        resendBtn.textContent = 'Send a new confirmation link';
+      }
+    });
   }
 
   async function getAuthToken() {

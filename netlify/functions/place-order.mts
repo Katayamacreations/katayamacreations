@@ -1,8 +1,9 @@
 import type { Context } from '@netlify/functions'
 import { getStore } from '@netlify/blobs'
-import { getUser } from '@netlify/identity'
+import { admin, getUser } from '@netlify/identity'
 import { renderOrderEmailHtml, renderOrderEmailText, renderOrderSummaryText, type OrderData, type CartItem } from './_order-email.mjs'
 import { sendEmail } from './_send-email.mjs'
+import { isEmailVerified } from './_verification.mjs'
 import { ALERT_RECIPIENTS } from './_admin.mjs'
 import { db } from '../../db/index.js'
 import { notifications } from '../../db/schema.js'
@@ -37,7 +38,16 @@ export default async (req: Request, _context: Context) => {
     return new Response('Unauthorized', { status: 401 })
   }
 
-  if (!user.confirmedAt) {
+  // Unconfirmed customers may sign in and browse, but they cannot place an order until
+  // their email is confirmed. Read the latest verification state from the admin API rather
+  // than trusting the possibly-stale session token.
+  let freshUser: { confirmedAt?: string; appMetadata?: Record<string, unknown> } = user
+  try {
+    freshUser = await admin.getUser(user.id)
+  } catch {
+    /* fall back to the session user */
+  }
+  if (!isEmailVerified(freshUser)) {
     return new Response('Please confirm your email before placing an order.', { status: 403 })
   }
 

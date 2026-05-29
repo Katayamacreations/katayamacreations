@@ -704,10 +704,12 @@
 <div class="modal-backdrop" id="confirmEmailModal" role="dialog" aria-modal="true" aria-labelledby="confirmEmailTitle">
   <div class="modal">
     <h2 id="confirmEmailTitle">Confirm your email first</h2>
-    <p>Before you can place an order, please confirm your email address. We sent a confirmation link to <strong id="confirmEmailAddr">your inbox</strong> when you signed up — just click the link in that message.</p>
+    <p>Before you can place an order, please confirm your email address. We sent a confirmation link to <strong id="confirmEmailAddr">your inbox</strong> — just click the link in that message.</p>
     <p class="email-notice">📬 Don't see it? The confirmation email may have landed in your spam or junk folder, so be sure to check there too.</p>
-    <div class="actions" style="justify-content:center; margin-top:16px;">
-      <button class="button" type="button" id="confirmEmailClose">Got it</button>
+    <p class="email-notice" id="confirmResendFeedback" style="display:none;"></p>
+    <div class="actions" style="justify-content:center; margin-top:16px; gap:10px; flex-wrap:wrap;">
+      <button class="button" type="button" id="confirmResendBtn">Send a new link</button>
+      <button class="button secondary" type="button" id="confirmEmailClose">Got it</button>
     </div>
   </div>
 </div>
@@ -1257,6 +1259,22 @@
     return match ? decodeURIComponent(match[1]) : null;
   }
 
+  // Check the fresh, server-side verification state. Defaults to "not verified" on any
+  // error so a failed check never lets an unconfirmed order through (the server enforces
+  // this too).
+  async function isVerified(token) {
+    if (!token) return false;
+    try {
+      const res = await fetch('/.netlify/functions/verification-status', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok) return false;
+      return !!(await res.json()).verified;
+    } catch (_) {
+      return false;
+    }
+  }
+
   let pendingOrderPayload = null;
 
   form.addEventListener('submit', async (e) => {
@@ -1276,8 +1294,8 @@
       return;
     }
 
-    if (currentUser && !currentUser.confirmedAt) {
-      document.getElementById('confirmEmailAddr').textContent = currentUser.email || 'your inbox';
+    if (!(await isVerified(token))) {
+      document.getElementById('confirmEmailAddr').textContent = currentUser?.email || 'your inbox';
       document.getElementById('confirmEmailModal').classList.add('show');
       return;
     }
@@ -1371,6 +1389,36 @@
   });
   confirmEmailModal.addEventListener('click', (e) => {
     if (e.target === confirmEmailModal) confirmEmailModal.classList.remove('show');
+  });
+
+  document.getElementById('confirmResendBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('confirmResendBtn');
+    const feedback = document.getElementById('confirmResendFeedback');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    feedback.style.display = 'none';
+    try {
+      const token = await getAuthToken();
+      const res = await fetch('/.netlify/functions/request-confirmation', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.alreadyVerified) {
+        confirmEmailModal.classList.remove('show');
+        return;
+      }
+      feedback.textContent = res.ok
+        ? `Sent! Check ${data.email || 'your inbox'} (and your spam folder) for the new confirmation link.`
+        : (data.error || "Couldn't send the confirmation link. Please try again shortly.");
+      feedback.style.display = 'block';
+    } catch (_) {
+      feedback.textContent = "Couldn't send the confirmation link. Please check your connection and try again.";
+      feedback.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Send a new link';
+    }
   });
 
   modal.addEventListener('click', (e) => {

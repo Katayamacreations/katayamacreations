@@ -451,6 +451,34 @@
     return 'Something went wrong. Please try again.';
   }
 
+  // GoTrue refuses to issue a session for an account it still considers unconfirmed, surfacing
+  // as "invalid_grant: Email not confirmed". We let unconfirmed customers sign in anyway, so
+  // detect that specific rejection.
+  function isUnconfirmedError(error) {
+    const msg = ((error && error.message) || '').toLowerCase();
+    return msg.includes('not confirmed');
+  }
+
+  // Sign in, transparently clearing GoTrue's "email not confirmed" block. If the login is
+  // rejected only because the email hasn't been confirmed, ask the server to force-confirm the
+  // account for sign-in purposes (this does NOT mark the email verified for ordering) and retry
+  // once. Any other failure propagates so the normal error message is shown.
+  async function loginWithAutoConfirm(email, password) {
+    try {
+      return await login(email, password);
+    } catch (error) {
+      if (!isUnconfirmedError(error)) throw error;
+      try {
+        await fetch('/.netlify/functions/confirm-for-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+      } catch (_) {}
+      return await login(email, password);
+    }
+  }
+
   async function processCallback() {
     try {
       const result = await handleAuthCallback();
@@ -535,7 +563,19 @@
 
     try {
       const user = await signup(email, password, { full_name: fullName, ...profile });
-      if (!user.emailVerified) {
+      // New accounts aren't email-verified yet, but they can sign in and browse right away;
+      // ordering stays gated until they confirm. If signup didn't already return a live session
+      // (the project's Autoconfirm setting is off), sign them in now — force-confirming in
+      // GoTrue if needed so the login isn't blocked.
+      let session = user.emailVerified ? user : null;
+      if (!session) {
+        try {
+          session = await loginWithAutoConfirm(email, password);
+        } catch (_) {
+          session = null;
+        }
+      }
+      if (!session) {
         document.getElementById('spamNoticeBig').classList.add('show');
         document.getElementById('spamNoticeBig').scrollIntoView({ behavior: 'smooth', block: 'center' });
         showAlert('info', 'Account created! Check your inbox to confirm your email, then log in. Be sure to check your spam or junk folder — the confirmation email sometimes ends up there.');
@@ -543,8 +583,13 @@
         return;
       }
       try { await updateUser({ data: { full_name: fullName, ...profile } }); } catch (_) {}
-      showAlert('success', `Welcome, ${fullName || email}! Redirecting to your dashboard…`);
-      setTimeout(() => { window.location.href = nextSafe; }, 600);
+      // Send our branded confirmation link now (best-effort) so it's waiting in their inbox —
+      // they need to confirm before they can place an order.
+      try {
+        await fetch('/.netlify/functions/request-confirmation', { method: 'POST' });
+      } catch (_) {}
+      showAlert('success', `Welcome, ${fullName || email}! We've emailed you a link to confirm your email — confirm it to place orders. Redirecting…`);
+      setTimeout(() => { window.location.href = nextSafe; }, 1200);
     } catch (error) {
       showAlert('error', describeAuthError(error));
       btn.disabled = false;
@@ -560,7 +605,7 @@
     const email = String(fd.get('email') || '').trim();
     const password = String(fd.get('password') || '');
     try {
-      const user = await login(email, password);
+      const user = await loginWithAutoConfirm(email, password);
       showAlert('success', `Welcome back, ${user.name || user.email}!`);
       setTimeout(() => { window.location.href = nextSafe; }, 500);
     } catch (error) {
