@@ -14,6 +14,14 @@ const ADMIN_EMAILS: Set<string> = new Set(
   [OWNER_EMAIL, 'nichole_avery@yahoo.com'].map((e) => e.toLowerCase()),
 )
 
+// Netlify Identity invokes this signup webhook synchronously and only dispatches the
+// "Confirm your email" message once it responds. The welcome email and the new-signup
+// notification are best-effort side effects — neither must ever delay or fail this
+// response, or the confirmation email can silently fail to go out even though the
+// account was created. So we compute the roles (the only field Identity consumes) up
+// front, then run the side effects in parallel under a hard time budget.
+const SIDE_EFFECT_BUDGET_MS = 2500
+
 const handler: Handler = async (event: HandlerEvent) => {
   let payload: { user?: IdentityUser } = {}
   try {
@@ -23,35 +31,74 @@ const handler: Handler = async (event: HandlerEvent) => {
   }
 
   const user = payload.user
+
+  const existingRoles = Array.isArray((user?.app_metadata as Record<string, unknown> | undefined)?.roles)
+    ? ((user?.app_metadata as Record<string, unknown>).roles as string[])
+    : []
+  const isAdmin = ADMIN_EMAILS.has((user?.email || '').toLowerCase())
+  const baseRoles = isAdmin ? existingRoles : existingRoles.filter((r) => r !== 'admin')
+  const roles = Array.from(new Set([...baseRoles, 'customer', ...(isAdmin ? ['admin'] : [])]))
+
+  const responseBody = JSON.stringify({
+    app_metadata: {
+      ...(user?.app_metadata || {}),
+      roles,
+    },
+  })
+
+  // Bound the best-effort work so a slow Resend call or a stalled DB connection can
+  // never hold the confirmation email hostage. Each task swallows its own errors.
+  await Promise.race([
+    Promise.allSettled([sendWelcomeEmail(user), recordSignupNotification(user)]),
+    delay(SIDE_EFFECT_BUDGET_MS),
+  ])
+
+  return { statusCode: 200, body: responseBody }
+}
+
+export { handler }
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function sendWelcomeEmail(user?: IdentityUser): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY
-  if (apiKey && user?.email) {
-    const meta = user.user_metadata || {}
-    const name =
-      (meta.full_name && String(meta.full_name)) ||
-      [meta.firstName, meta.lastName].filter(Boolean).join(' ').trim() ||
-      'friend'
+  if (!apiKey || !user?.email) return
 
-    try {
-      await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: FROM_EMAIL,
-          to: [user.email],
-          reply_to: OWNER_EMAIL,
-          subject: `Welcome to ${SITE_NAME}`,
-          html: renderWelcomeEmail({ name }),
-          text: renderWelcomeText({ name }),
-        }),
-      })
-    } catch (err) {
-      console.error('Welcome email failed', err)
-    }
+  const meta = user.user_metadata || {}
+  const name =
+    (meta.full_name && String(meta.full_name)) ||
+    [meta.firstName, meta.lastName].filter(Boolean).join(' ').trim() ||
+    'friend'
+
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), SIDE_EFFECT_BUDGET_MS)
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: [user.email],
+        reply_to: OWNER_EMAIL,
+        subject: `Welcome to ${SITE_NAME}`,
+        html: renderWelcomeEmail({ name }),
+        text: renderWelcomeText({ name }),
+      }),
+      signal: controller.signal,
+    })
+  } catch (err) {
+    console.error('Welcome email failed', err)
+  } finally {
+    clearTimeout(timer)
   }
+}
 
+async function recordSignupNotification(user?: IdentityUser): Promise<void> {
   try {
     const meta = user?.user_metadata || {}
     const displayName =
@@ -67,26 +114,7 @@ const handler: Handler = async (event: HandlerEvent) => {
   } catch (err) {
     console.error('Signup notification failed', err)
   }
-
-  const existingRoles = Array.isArray((user?.app_metadata as Record<string, unknown> | undefined)?.roles)
-    ? ((user?.app_metadata as Record<string, unknown>).roles as string[])
-    : []
-  const isAdmin = ADMIN_EMAILS.has((user?.email || '').toLowerCase())
-  const baseRoles = isAdmin ? existingRoles : existingRoles.filter((r) => r !== 'admin')
-  const roles = Array.from(new Set([...baseRoles, 'customer', ...(isAdmin ? ['admin'] : [])]))
-
-  return {
-    statusCode: 200,
-    body: JSON.stringify({
-      app_metadata: {
-        ...(user?.app_metadata || {}),
-        roles,
-      },
-    }),
-  }
 }
-
-export { handler }
 
 function renderWelcomeEmail({ name }: { name: string }) {
   const safeName = escapeHtml(name)
