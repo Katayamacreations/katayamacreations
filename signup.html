@@ -501,7 +501,7 @@
         try { await logout(); } catch (_) {}
         window.location.href = '/';
       });
-      if (['ogmegbeast@gmail.com', 'nichole_avery@yahoo.com'].includes((user.email || '').toLowerCase()) || (Array.isArray(user.roles) && user.roles.includes('admin'))) {
+      if (['ogmegbeast@gmail.com', 'nichole_avery@yahoo.com', 'katayamacreations@outlook.com'].includes((user.email || '').toLowerCase()) || (Array.isArray(user.roles) && user.roles.includes('admin'))) {
         const adminLink = document.getElementById('adminNav');
         if (adminLink) adminLink.style.display = '';
       }

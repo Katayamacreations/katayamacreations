@@ -1,9 +1,9 @@
 import type { Context } from '@netlify/functions'
 import { requireAdmin } from './_admin.mjs'
 import { wrapEmail, escapeHtml, SITE_NAME } from './_email-brand.mjs'
+import { sendEmail, isEmailConfigured } from './_send-email.mjs'
 
 const OWNER_EMAIL = Netlify.env.get('OWNER_EMAIL') || 'ogmegbeast@gmail.com'
-const FROM_EMAIL = Netlify.env.get('WELCOME_FROM_EMAIL') || `${SITE_NAME} <onboarding@resend.dev>`
 
 interface MassEmailBody {
   recipients?: string[]
@@ -58,11 +58,10 @@ export default async (req: Request, _context: Context) => {
     return Response.json({ ok: false, errors: ['Too many recipients (max 500)'] }, { status: 400 })
   }
 
-  const apiKey = Netlify.env.get('RESEND_API_KEY')
-  if (!apiKey) {
-    console.error('admin-mass-email: RESEND_API_KEY is not configured')
+  if (!isEmailConfigured()) {
+    console.error('admin-mass-email: no email provider configured')
     return Response.json(
-      { ok: false, errors: ['Email service is not configured. Please add RESEND_API_KEY in site settings.'] },
+      { ok: false, errors: ['Email service is not configured. Connect Mailgun (or set RESEND_API_KEY) in site settings.'] },
       { status: 500 },
     )
   }
@@ -82,36 +81,20 @@ export default async (req: Request, _context: Context) => {
   const errors: string[] = []
 
   for (const batch of batches) {
-    try {
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: FROM_EMAIL,
-          to: [OWNER_EMAIL],
-          bcc: batch,
-          reply_to: OWNER_EMAIL,
-          subject,
-          html,
-          text,
-        }),
-      })
-      if (res.ok) {
-        sent += batch.length
-      } else {
-        failed += batch.length
-        const err = await res.text().catch(() => '')
-        console.error(`admin-mass-email: Resend API error ${res.status}:`, err.slice(0, 500))
-        errors.push(`Email service error (${res.status}): ${err.slice(0, 200)}`)
-      }
-    } catch (err) {
+    const res = await sendEmail({
+      to: OWNER_EMAIL,
+      bcc: batch,
+      replyTo: OWNER_EMAIL,
+      subject,
+      html,
+      text,
+    })
+    if (res.ok) {
+      sent += batch.length
+    } else {
       failed += batch.length
-      const msg = err instanceof Error ? err.message : String(err)
-      console.error('admin-mass-email: fetch failed:', msg)
-      errors.push(msg)
+      console.error(`admin-mass-email: ${res.provider} error ${res.status}:`, (res.error || '').slice(0, 500))
+      errors.push(`Email service error (${res.status}): ${(res.error || '').slice(0, 200)}`)
     }
   }
 
