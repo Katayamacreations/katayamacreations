@@ -14,13 +14,18 @@ const ADMIN_EMAILS: Set<string> = new Set(
   [OWNER_EMAIL, 'nichole_avery@yahoo.com'].map((e) => e.toLowerCase()),
 )
 
-// Netlify Identity invokes this signup webhook synchronously and only dispatches the
-// "Confirm your email" message once it responds. The welcome email and the new-signup
-// notification are best-effort side effects — neither must ever delay or fail this
-// response, or the confirmation email can silently fail to go out even though the
-// account was created. So we compute the roles (the only field Identity consumes) up
-// front, then run the side effects in parallel under a hard time budget.
-const SIDE_EFFECT_BUDGET_MS = 2500
+// Netlify Identity invokes this signup webhook synchronously: GoTrue holds the signup
+// open until the function responds, and only then dispatches the "Confirm your email"
+// message. If the response is slow, GoTrue's webhook call times out and the whole signup
+// fails with "Failed to handle signup webhook". The only field GoTrue consumes is the
+// computed roles, so we return that immediately. The welcome email and the new-signup
+// notification are best-effort side effects — they run detached and must never gate or
+// fail the response.
+//
+// Each detached task carries its own timeout so it can't dangle indefinitely on a warm
+// container. We intentionally do NOT await them: blocking the webhook on a Resend round
+// trip or a DB insert is exactly what was timing the signup out.
+const SIDE_EFFECT_TIMEOUT_MS = 2500
 
 const handler: Handler = async (event: HandlerEvent) => {
   let payload: { user?: IdentityUser } = {}
@@ -46,21 +51,18 @@ const handler: Handler = async (event: HandlerEvent) => {
     },
   })
 
-  // Bound the best-effort work so a slow Resend call or a stalled DB connection can
-  // never hold the confirmation email hostage. Each task swallows its own errors.
-  await Promise.race([
-    Promise.allSettled([sendWelcomeEmail(user), recordSignupNotification(user)]),
-    delay(SIDE_EFFECT_BUDGET_MS),
-  ])
+  // Kick off the best-effort work without awaiting it. Each task swallows its own errors,
+  // so this can never reject and never delays the response GoTrue is waiting on.
+  void Promise.allSettled([sendWelcomeEmail(user), recordSignupNotification(user)])
 
-  return { statusCode: 200, body: responseBody }
+  return {
+    statusCode: 200,
+    headers: { 'Content-Type': 'application/json' },
+    body: responseBody,
+  }
 }
 
 export { handler }
-
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
 
 async function sendWelcomeEmail(user?: IdentityUser): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY
@@ -73,7 +75,7 @@ async function sendWelcomeEmail(user?: IdentityUser): Promise<void> {
     'friend'
 
   const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), SIDE_EFFECT_BUDGET_MS)
+  const timer = setTimeout(() => controller.abort(), SIDE_EFFECT_TIMEOUT_MS)
   try {
     await fetch('https://api.resend.com/emails', {
       method: 'POST',
