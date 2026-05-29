@@ -26,6 +26,7 @@ export interface OrderData {
   paymentDeadline: string
   orderNotes: string
   goodreadsUrl?: string
+  raffleTickets?: string[]
   cart: CartItem[]
 }
 
@@ -71,6 +72,10 @@ export function renderOrderEmailHtml(o: OrderData): string {
     ? `<p style="margin:8px 0 0;line-height:1.5;color:${COLORS.body};font-size:14px;"><strong>Goodreads:</strong> <a href="${escapeHtml(o.goodreadsUrl)}" style="color:${COLORS.link};">${escapeHtml(o.goodreadsUrl)}</a></p>`
     : ''
 
+  const raffleBlock = (o.raffleTickets && o.raffleTickets.length)
+    ? `<div style="margin-top:18px;padding:12px 14px;background:rgba(120,180,120,0.12);border:1px solid rgba(120,180,120,0.3);border-radius:12px;color:#b8e0c2;font-size:14px;line-height:1.5;">🎟️ <strong>Raffle ticket${o.raffleTickets.length > 1 ? 's' : ''}:</strong> ${o.raffleTickets.map(escapeHtml).join(', ')} <span style="color:${COLORS.muted};">(Kindle Book Box drawing — includes a Matcha Kindle E-Reader)</span></div>`
+    : ''
+
   const tipValue = parseFloat(o.tip || '0')
   const tipRow = tipValue > 0
     ? `<tr><td style="color:${COLORS.body};padding:4px 0;">Tip</td><td style="text-align:right;color:${COLORS.body};padding:4px 0;">$${escapeHtml(o.tip!)}</td></tr>`
@@ -96,6 +101,7 @@ export function renderOrderEmailHtml(o: OrderData): string {
 
 <p style="margin:18px 0 0;line-height:1.5;color:${COLORS.body};font-size:14px;"><strong>Ship to:</strong> ${escapeHtml(o.address1 || '')}${o.address2 ? `, ${escapeHtml(o.address2)}` : ''}, ${escapeHtml(o.city || '')}${o.state ? `, ${escapeHtml(o.state)}` : ''}${o.zip ? ` ${escapeHtml(o.zip)}` : ''}</p>
 ${goodreadsBlock}
+${raffleBlock}
 ${orderNotesBlock}`
 
   return wrapEmail(content, `This order was placed at ${SITE_NAME}.`)
@@ -130,6 +136,9 @@ export function renderOrderSummaryText(o: OrderData): string {
   lines.push(`Venmo deadline: ${fmtDeadline(o.paymentDeadline)}`)
   if (o.goodreadsUrl) {
     lines.push(`Goodreads: ${o.goodreadsUrl}`)
+  }
+  if (o.raffleTickets && o.raffleTickets.length) {
+    lines.push(`Raffle ticket${o.raffleTickets.length > 1 ? 's' : ''} (Kindle Book Box): ${o.raffleTickets.join(', ')}`)
   }
   if (o.orderNotes) {
     lines.push('')

@@ -675,6 +675,7 @@
         </div>
       </div>
       <div class="order-cart">${items}</div>
+      ${(Array.isArray(o.raffleTickets) && o.raffleTickets.length) ? `<div class="order-meta-row" style="color:#b8e0c2;">🎟️ Raffle ${o.raffleTickets.length > 1 ? 'tickets' : 'ticket'}: <strong>${o.raffleTickets.map(escapeHtml).join(', ')}</strong> — Kindle Book Box drawing</div>` : ''}
       <div class="order-meta-row">
         Ship to ${escapeHtml([o.address1, o.address2, o.city, o.state].filter(Boolean).join(', '))}${o.zip ? ` ${escapeHtml(o.zip)}` : ''} · ${escapeHtml(o.shippingMethod || '—')}
       </div>

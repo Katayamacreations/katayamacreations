@@ -1153,6 +1153,7 @@
           <div class="order-customer">${escapeHtml(o.customerName || '—')}</div>
           <div class="order-email">${escapeHtml(o.email || '')}</div>
           <div class="order-cart">${items}</div>
+          ${(Array.isArray(o.raffleTickets) && o.raffleTickets.length) ? `<div class="order-meta" style="color:#b8e0c2;">🎟️ Raffle ${o.raffleTickets.length > 1 ? 'tickets' : 'ticket'}: <strong>${o.raffleTickets.map(escapeHtml).join(', ')}</strong></div>` : ''}
           <div class="order-meta">
             Ship to ${escapeHtml([o.address1, o.address2, o.city, o.state].filter(Boolean).join(', '))}${o.zip ? ` ${escapeHtml(o.zip)}` : ''} · ${escapeHtml(o.shippingMethod || '—')}${o.paymentMethod ? ` · Paid via ${escapeHtml(o.paymentMethod)}` : ''}
           </div>
