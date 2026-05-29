@@ -71,6 +71,34 @@
       color: #e8e3f0;
       border-color: #c0bcd0;
     }
+    .announcement {
+      background: linear-gradient(135deg, #4a2d75 0%, #6b48a6 60%, #8a63c9 100%);
+      color: #f3eefb;
+      text-align: center;
+      padding: 14px 20px;
+      font-size: 16px;
+      line-height: 1.5;
+      border-bottom: 1px solid rgba(192, 192, 210, 0.25);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.35);
+    }
+    .announcement .announcement-title {
+      display: block;
+      font-weight: bold;
+      font-size: 18px;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+    .announcement a {
+      color: #fff;
+      font-weight: bold;
+      text-decoration: underline;
+    }
+    .announcement a:hover { color: #f0d8a8; }
+    @media (max-width: 768px) {
+      .announcement { font-size: 14px; padding: 12px 14px; }
+      .announcement .announcement-title { font-size: 16px; }
+    }
     .banner {
       width: 100%;
       margin: 0;
@@ -226,6 +254,11 @@
     <button type="button" class="signout" id="signOutBtn">Sign out</button>
   </div>
 </header>
+
+<div class="announcement" role="region" aria-label="Giveaway announcement">
+  <span class="announcement-title">🎉 New Kindle E-Reader Giveaway Is Now Live! 🎉</span>
+  Enter to win a book box with a six-inch Matcha Kindle! You can buy tickets in the <a href="/dashboard.html">Custom Order</a> tab for $5 per ticket. Drawing will be July 4th!
+</div>
 
 <div class="banner">
   <img src="/assets/katayama-banner-new.png" alt="Katayama Creations banner — fantasy scene with open book, dragons, castles, and a starry purple sky">
