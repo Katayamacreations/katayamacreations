@@ -763,7 +763,8 @@
         <label for="userSearch">Search</label>
         <input id="userSearch" type="search" placeholder="email or name…">
         <div class="spacer"></div>
-        <button type="button" class="button secondary" id="resendConfirmBtn">Resend confirmation emails</button>
+        <button type="button" class="button secondary" id="resendSelectedBtn">Resend to selected</button>
+        <button type="button" class="button secondary" id="resendConfirmBtn">Resend to all unconfirmed</button>
         <button type="button" class="button secondary" id="usersRefreshBtn">Refresh</button>
       </div>
       <div id="usersStatus" class="pane-msg">Click Refresh to load users.</div>
@@ -1326,35 +1327,54 @@
       const created = u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—';
       const roles = (u.roles || []).map(r => `<span class="badge ${r === 'admin' ? 'admin' : ''}">${escapeHtml(r)}</span>`).join('');
       const confirmed = u.confirmed ? '' : '<span class="badge unconfirmed">Unconfirmed</span>';
+      const lastSent = (!u.confirmed && u.confirmationSentAt)
+        ? `<div style="font-size:10px; color:#8b87a0; margin-top:3px;">last sent ${new Date(u.confirmationSentAt).toLocaleString()}</div>`
+        : '';
+      const selectCell = u.confirmed
+        ? '<td></td>'
+        : `<td style="text-align:center;"><input type="checkbox" class="resend-pick" data-email="${escapeHtml(u.email || '')}" aria-label="Select ${escapeHtml(u.email || '')} for resend"></td>`;
       const isAdmin = (u.roles || []).includes('admin');
       const isSelf = currentUser && u.email && currentUser.email && u.email.toLowerCase() === currentUser.email.toLowerCase();
       const actionBtn = isSelf ? '<span style="color:#8b87a0; font-size:11px;">You</span>' : isAdmin
         ? `<button type="button" class="button small secondary danger" data-act="revoke" data-uid="${escapeHtml(u.id)}">Remove admin</button>`
         : `<button type="button" class="button small secondary" data-act="grant" data-uid="${escapeHtml(u.id)}">Make admin</button>`;
       return `<tr>
+        ${selectCell}
         <td class="email">${escapeHtml(u.email || '')}</td>
         <td>${escapeHtml(u.fullName || '—')}</td>
         <td>${created}</td>
-        <td>${roles}${confirmed}</td>
+        <td>${roles}${confirmed}${lastSent}</td>
         <td style="text-align:right; white-space:nowrap;">${actionBtn}<span class="role-msg" data-uid="${escapeHtml(u.id)}" style="display:none; font-size:11px; margin-left:6px;"></span></td>
       </tr>`;
     }).join('');
     wrap.innerHTML = `<table class="users-table">
-      <thead><tr><th>Email</th><th>Name</th><th>Joined</th><th>Roles</th><th>Actions</th></tr></thead>
+      <thead><tr><th style="width:28px;"><input type="checkbox" id="resendPickAll" aria-label="Select all unconfirmed"></th><th>Email</th><th>Name</th><th>Joined</th><th>Roles</th><th>Actions</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
     wrap.querySelectorAll('[data-act]').forEach(btn => {
       btn.addEventListener('click', () => toggleAdminRole(btn.dataset.uid, btn.dataset.act));
     });
+    const pickAll = wrap.querySelector('#resendPickAll');
+    if (pickAll) {
+      pickAll.addEventListener('change', () => {
+        wrap.querySelectorAll('.resend-pick').forEach(cb => { cb.checked = pickAll.checked; });
+      });
+    }
+  }
+
+  function getSelectedResendEmails() {
+    return Array.from(document.querySelectorAll('.resend-pick:checked'))
+      .map(cb => cb.dataset.email)
+      .filter(Boolean);
   }
 
   document.getElementById('usersRefreshBtn').addEventListener('click', loadUsers);
   document.getElementById('userSearch').addEventListener('input', renderUsers);
 
-  document.getElementById('resendConfirmBtn').addEventListener('click', async () => {
-    const btn = document.getElementById('resendConfirmBtn');
+  // Resend confirmation emails. Pass an array of specific addresses, or null to send to
+  // every unconfirmed account. `btn` is disabled and labelled "Sending…" while in flight.
+  async function resendConfirmations(emails, btn) {
     const status = document.getElementById('usersStatus');
-    if (!confirm('Re-send a confirmation email to every account that has not yet confirmed its email address?')) return;
 
     const token = await getAuthToken();
     if (!token) {
@@ -1366,28 +1386,38 @@
     btn.disabled = true;
     const original = btn.textContent;
     btn.textContent = 'Sending…';
-    status.textContent = 'Sending confirmation emails to unconfirmed accounts…';
+    status.textContent = emails
+      ? `Sending confirmation email${emails.length === 1 ? '' : 's'} to ${emails.length} selected account${emails.length === 1 ? '' : 's'}…`
+      : 'Sending confirmation emails to all unconfirmed accounts…';
     status.className = 'pane-msg';
 
     try {
       const res = await fetch('/.netlify/functions/admin-resend-confirmations', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(emails ? { emails } : {}),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(data.error || `HTTP ${res.status}`);
       }
-      if (data.unconfirmed === 0) {
-        status.textContent = 'No unconfirmed accounts — everyone has already confirmed their email.';
+
+      const skipped = data.skipped || 0;
+      if (data.sent === 0 && data.failed === 0 && skipped === 0) {
+        status.textContent = emails
+          ? 'Nothing to send for the selected accounts.'
+          : 'No unconfirmed accounts — everyone has already confirmed their email.';
         status.className = 'pane-msg ok';
       } else if (data.failed === 0) {
-        status.textContent = `Sent confirmation emails to ${data.sent} unconfirmed account${data.sent === 1 ? '' : 's'}.`;
+        const skipNote = skipped ? ` (${skipped} skipped)` : '';
+        status.textContent = `Sent confirmation email${data.sent === 1 ? '' : 's'} to ${data.sent} account${data.sent === 1 ? '' : 's'}.${skipNote}`;
         status.className = 'pane-msg ok';
       } else {
-        status.textContent = `Sent ${data.sent} of ${data.unconfirmed}; ${data.failed} failed. ${(data.errors || [])[0] || ''}`;
+        const skipNote = skipped ? `, ${skipped} skipped` : '';
+        status.textContent = `Sent ${data.sent}; ${data.failed} failed${skipNote}. ${(data.errors || [])[0] || ''}`;
         status.className = 'pane-msg err';
       }
+      renderResendResults(data.results);
     } catch (err) {
       status.textContent = 'Failed to send confirmation emails. ' + (err && err.message ? err.message : '');
       status.className = 'pane-msg err';
@@ -1395,6 +1425,41 @@
       btn.disabled = false;
       btn.textContent = original;
     }
+  }
+
+  function renderResendResults(results) {
+    let box = document.getElementById('resendResults');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'resendResults';
+      box.style.cssText = 'margin-top:10px; font-size:12px; max-height:160px; overflow:auto;';
+      document.getElementById('usersStatus').insertAdjacentElement('afterend', box);
+    }
+    if (!Array.isArray(results) || results.length === 0) { box.innerHTML = ''; return; }
+    const color = { sent: '#b8e0c2', failed: '#f0b8a8', skipped: '#8b87a0' };
+    const label = { sent: 'Sent', failed: 'Failed', skipped: 'Skipped' };
+    box.innerHTML = results.map(r => {
+      const c = color[r.status] || '#c0bcd0';
+      const detail = r.detail ? ` — ${escapeHtml(r.detail)}` : '';
+      return `<div style="padding:3px 0; color:${c};"><strong>${label[r.status] || r.status}:</strong> ${escapeHtml(r.email || '')}${detail}</div>`;
+    }).join('');
+  }
+
+  document.getElementById('resendConfirmBtn').addEventListener('click', () => {
+    if (!confirm('Re-send a confirmation email to every account that has not yet confirmed its email address?')) return;
+    resendConfirmations(null, document.getElementById('resendConfirmBtn'));
+  });
+
+  document.getElementById('resendSelectedBtn').addEventListener('click', () => {
+    const status = document.getElementById('usersStatus');
+    const emails = getSelectedResendEmails();
+    if (emails.length === 0) {
+      status.textContent = 'Select one or more unconfirmed accounts first (use the checkboxes).';
+      status.className = 'pane-msg err';
+      return;
+    }
+    if (!confirm(`Re-send a confirmation email to ${emails.length} selected account${emails.length === 1 ? '' : 's'}?`)) return;
+    resendConfirmations(emails, document.getElementById('resendSelectedBtn'));
   });
 
   async function toggleAdminRole(userId, action) {
