@@ -763,6 +763,7 @@
         <label for="userSearch">Search</label>
         <input id="userSearch" type="search" placeholder="email or name…">
         <div class="spacer"></div>
+        <button type="button" class="button secondary" id="resendConfirmBtn">Resend confirmation emails</button>
         <button type="button" class="button secondary" id="usersRefreshBtn">Refresh</button>
       </div>
       <div id="usersStatus" class="pane-msg">Click Refresh to load users.</div>
@@ -1349,6 +1350,52 @@
 
   document.getElementById('usersRefreshBtn').addEventListener('click', loadUsers);
   document.getElementById('userSearch').addEventListener('input', renderUsers);
+
+  document.getElementById('resendConfirmBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('resendConfirmBtn');
+    const status = document.getElementById('usersStatus');
+    if (!confirm('Re-send a confirmation email to every account that has not yet confirmed its email address?')) return;
+
+    const token = await getAuthToken();
+    if (!token) {
+      status.textContent = 'Session expired — please log in again.';
+      status.className = 'pane-msg err';
+      return;
+    }
+
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = 'Sending…';
+    status.textContent = 'Sending confirmation emails to unconfirmed accounts…';
+    status.className = 'pane-msg';
+
+    try {
+      const res = await fetch('/.netlify/functions/admin-resend-confirmations', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      if (data.unconfirmed === 0) {
+        status.textContent = 'No unconfirmed accounts — everyone has already confirmed their email.';
+        status.className = 'pane-msg ok';
+      } else if (data.failed === 0) {
+        status.textContent = `Sent confirmation emails to ${data.sent} unconfirmed account${data.sent === 1 ? '' : 's'}.`;
+        status.className = 'pane-msg ok';
+      } else {
+        status.textContent = `Sent ${data.sent} of ${data.unconfirmed}; ${data.failed} failed. ${(data.errors || [])[0] || ''}`;
+        status.className = 'pane-msg err';
+      }
+    } catch (err) {
+      status.textContent = 'Failed to send confirmation emails. ' + (err && err.message ? err.message : '');
+      status.className = 'pane-msg err';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+  });
 
   async function toggleAdminRole(userId, action) {
     const msg = document.querySelector(`.role-msg[data-uid="${userId}"]`);
