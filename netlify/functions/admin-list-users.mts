@@ -28,6 +28,7 @@ export default async (_req: Request, _context: Context) => {
       email: u.email || '',
       fullName,
       confirmed: !!u.confirmedAt,
+      confirmationSentAt: u.confirmationSentAt || '',
       createdAt: u.createdAt || '',
       roles,
     }
