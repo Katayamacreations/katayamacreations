@@ -1326,15 +1326,22 @@
     const rows = filtered.map(u => {
       const created = u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—';
       const roles = (u.roles || []).map(r => `<span class="badge ${r === 'admin' ? 'admin' : ''}">${escapeHtml(r)}</span>`).join('');
-      const confirmed = u.confirmed ? '' : '<span class="badge unconfirmed">Unconfirmed</span>';
-      const lastSent = (!u.confirmed && u.confirmationSentAt)
+      // `verified` is the real "has confirmed their email / may place orders" state; an
+      // account can be force-confirmed for sign-in yet still unverified, so drive the
+      // customer-facing confirmation UI off it rather than GoTrue's confirmedAt.
+      const needsConfirm = !u.verified;
+      const confirmed = needsConfirm ? '<span class="badge unconfirmed">Unconfirmed</span>' : '';
+      const lastSent = (needsConfirm && u.confirmationSentAt)
         ? `<div style="font-size:10px; color:#8b87a0; margin-top:3px;">last sent ${new Date(u.confirmationSentAt).toLocaleString()}</div>`
         : '';
-      const selectCell = u.confirmed
-        ? '<td></td>'
-        : `<td style="text-align:center;"><input type="checkbox" class="resend-pick" data-email="${escapeHtml(u.email || '')}" aria-label="Select ${escapeHtml(u.email || '')} for resend"></td>`;
+      const selectCell = needsConfirm
+        ? `<td style="text-align:center;"><input type="checkbox" class="resend-pick" data-email="${escapeHtml(u.email || '')}" aria-label="Select ${escapeHtml(u.email || '')} for resend"></td>`
+        : '<td></td>';
       const isAdmin = (u.roles || []).includes('admin');
       const isSelf = currentUser && u.email && currentUser.email && u.email.toLowerCase() === currentUser.email.toLowerCase();
+      const confirmBtn = (!isSelf && needsConfirm)
+        ? `<button type="button" class="button small secondary" data-confirm="${escapeHtml(u.id)}" style="margin-right:6px;">Confirm account</button>`
+        : '';
       const actionBtn = isSelf ? '<span style="color:#8b87a0; font-size:11px;">You</span>' : isAdmin
         ? `<button type="button" class="button small secondary danger" data-act="revoke" data-uid="${escapeHtml(u.id)}">Remove admin</button>`
         : `<button type="button" class="button small secondary" data-act="grant" data-uid="${escapeHtml(u.id)}">Make admin</button>`;
@@ -1344,7 +1351,7 @@
         <td>${escapeHtml(u.fullName || '—')}</td>
         <td>${created}</td>
         <td>${roles}${confirmed}${lastSent}</td>
-        <td style="text-align:right; white-space:nowrap;">${actionBtn}<span class="role-msg" data-uid="${escapeHtml(u.id)}" style="display:none; font-size:11px; margin-left:6px;"></span></td>
+        <td style="text-align:right; white-space:nowrap;">${confirmBtn}${actionBtn}<span class="role-msg" data-uid="${escapeHtml(u.id)}" style="display:none; font-size:11px; margin-left:6px;"></span></td>
       </tr>`;
     }).join('');
     wrap.innerHTML = `<table class="users-table">
@@ -1353,6 +1360,9 @@
     </table>`;
     wrap.querySelectorAll('[data-act]').forEach(btn => {
       btn.addEventListener('click', () => toggleAdminRole(btn.dataset.uid, btn.dataset.act));
+    });
+    wrap.querySelectorAll('[data-confirm]').forEach(btn => {
+      btn.addEventListener('click', () => confirmUserAccount(btn.dataset.confirm));
     });
     const pickAll = wrap.querySelector('#resendPickAll');
     if (pickAll) {
@@ -1500,8 +1510,44 @@
     }
   }
 
-  // ------------------------------------------------------------------
-  // Reviews
+  // Confirm a customer's account directly, without waiting for them to click the link in
+  // their confirmation email. Marks the account verified server-side so it can both sign in
+  // and place orders.
+  async function confirmUserAccount(userId) {
+    const msg = document.querySelector(`.role-msg[data-uid="${userId}"]`);
+    const btn = document.querySelector(`[data-confirm="${userId}"]`);
+    if (!btn) return;
+
+    const targetUser = allUsers.find(u => u.id === userId);
+    if (!confirm(`Confirm ${targetUser?.email || 'this account'}? They'll be able to place orders without clicking the email link.`)) return;
+
+    btn.disabled = true;
+    if (msg) { msg.style.display = 'inline'; msg.textContent = 'Confirming…'; msg.style.color = '#8b87a0'; }
+
+    const token = await getAuthToken();
+    if (!token) {
+      if (msg) { msg.textContent = 'Session expired'; msg.style.color = '#f0b8a8'; }
+      btn.disabled = false;
+      return;
+    }
+
+    try {
+      const res = await fetch('/.netlify/functions/admin-confirm-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ userId }),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+      if (targetUser) { targetUser.verified = true; targetUser.confirmed = true; }
+      renderUsers();
+    } catch (err) {
+      if (msg) { msg.textContent = err && err.message ? err.message : 'Failed'; msg.style.color = '#f0b8a8'; }
+      btn.disabled = false;
+    }
+  }
   // ------------------------------------------------------------------
   let allReviews = [];
   let reviewsLoadedOnce = false;
