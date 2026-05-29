@@ -1,6 +1,7 @@
 import type { Context } from '@netlify/functions'
 import { admin } from '@netlify/identity'
 import { requireAdmin } from './_admin.mjs'
+import { isEmailVerified } from './_verification.mjs'
 
 export default async (_req: Request, _context: Context) => {
   const guard = await requireAdmin()
@@ -28,6 +29,10 @@ export default async (_req: Request, _context: Context) => {
       email: u.email || '',
       fullName,
       confirmed: !!u.confirmedAt,
+      // The real "has verified their email / may place an order" state, which can differ
+      // from GoTrue's confirmedAt (an account may be force-confirmed for sign-in yet still
+      // unverified). The admin UI keys its confirm action off this.
+      verified: isEmailVerified({ confirmedAt: u.confirmedAt, appMetadata: u.appMetadata }),
       confirmationSentAt: u.confirmationSentAt || '',
       createdAt: u.createdAt || '',
       roles,
