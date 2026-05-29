@@ -173,6 +173,31 @@
     .pane { display: none; }
     .pane.active { display: block; }
     .helper { font-size: 12px; color: #8b87a0; margin-top: 4px; }
+    .spam-notice {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(120, 90, 20, 0.55) 0%, rgba(90, 65, 15, 0.65) 100%);
+      border: 2px solid rgba(240, 200, 90, 0.55);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .spam-notice .spam-icon { font-size: 30px; line-height: 1; flex-shrink: 0; }
+    .spam-notice .spam-text { font-size: 16px; line-height: 1.5; color: #fdf3d0; }
+    .spam-notice .spam-text strong { display: block; font-size: 19px; margin-bottom: 4px; color: #fff6dd; text-transform: uppercase; letter-spacing: 0.5px; }
+    .spam-notice.big {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 28px 24px;
+    }
+    .spam-notice.big.show { display: flex; }
+    .spam-notice.big .spam-icon { font-size: 44px; }
+    .spam-notice.big .spam-text strong { font-size: 24px; }
+    .spam-notice.big .spam-text { font-size: 17px; }
     footer {
       text-align: center;
       padding: 30px;
@@ -245,6 +270,20 @@
     <div class="alert info" id="alertInfo"></div>
 
     <div class="pane active" id="paneSignup">
+      <div class="spam-notice big" id="spamNoticeBig" role="alert">
+        <div class="spam-icon">📬</div>
+        <div class="spam-text">
+          <strong>Check your spam folder!</strong>
+          Your confirmation email may land in your <strong style="display:inline;text-transform:none;font-size:inherit;">spam or junk</strong> folder. If you don't see it in your inbox within a few minutes, please look there to confirm your account.
+        </div>
+      </div>
+      <div class="spam-notice" id="spamNoticeStanding">
+        <div class="spam-icon">⚠️</div>
+        <div class="spam-text">
+          <strong>Heads up</strong>
+          After you sign up, a confirmation email is on its way — but it may land in your <b>spam or junk</b> folder. Please check there if it's not in your inbox.
+        </div>
+      </div>
       <form id="signupForm">
         <div class="grid">
           <div>
@@ -486,7 +525,9 @@
     try {
       const user = await signup(email, password, { full_name: fullName, ...profile });
       if (!user.emailVerified) {
-        showAlert('info', 'Account created! Check your inbox to confirm your email, then log in.');
+        document.getElementById('spamNoticeBig').classList.add('show');
+        document.getElementById('spamNoticeBig').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        showAlert('info', 'Account created! Check your inbox to confirm your email, then log in. Be sure to check your spam or junk folder — the confirmation email sometimes ends up there.');
         btn.disabled = false;
         return;
       }
