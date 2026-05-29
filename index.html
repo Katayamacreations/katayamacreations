@@ -309,9 +309,17 @@
 <script>
   // If a Netlify Identity confirmation/recovery/invite link lands on the home page,
   // forward to the dedicated confirmation landing page (preserving the hash).
+  //
+  // Two link shapes can arrive here. The implicit flow returns a `*_token` fragment that
+  // confirm.html exchanges for a session. GoTrue's server-side verify endpoint instead
+  // confirms the account itself and redirects to the site root with the live session in
+  // the hash as `#access_token=...` — or, when the link was already used or has expired,
+  // with an `#error=` / `#error_description=` fragment. The home page does not process any
+  // of these, so unless we forward every shape a freshly-verified visitor lands here still
+  // logged out (and an expired link silently does nothing). Forward them all to confirm.html.
   (function () {
     var hash = window.location.hash || '';
-    if (/(confirmation_token|recovery_token|invite_token|email_change_token)/.test(hash)) {
+    if (/(access_token|confirmation_token|recovery_token|invite_token|email_change_token)=|[#&]error(_description)?=/.test(hash)) {
       window.location.replace('/confirm.html' + hash);
     }
   })();

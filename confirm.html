@@ -293,9 +293,46 @@
     show('error');
   }
 
+  // GoTrue's server-side verify endpoint redirects back with an #error / #error_description
+  // fragment when a link has already been used or has expired. Turn those into something
+  // friendly the visitor can act on.
+  function friendlyHashError(raw) {
+    const text = String(raw || '').toLowerCase();
+    if (text.includes('expired') || text.includes('invalid') || text.includes('already')) {
+      return "This confirmation link has already been used or has expired. If you've already confirmed your email, just log in below. Otherwise, enter your email and we'll send you a fresh confirmation link.";
+    }
+    return "We couldn't confirm that link. If you've already confirmed your email, log in below — otherwise enter your email and we'll send you a fresh confirmation link.";
+  }
+
   (async () => {
     const hash = window.location.hash || '';
+    const params = new URLSearchParams(hash.replace(/^#/, ''));
+    const hashError = params.get('error_description') || params.get('error');
+    const hashType = params.get('type');
     const hasAuthHash = /(confirmation_token|recovery_token|invite_token|access_token|email_change_token)/.test(hash);
+
+    // An #error fragment carries no token to process. Route straight to the recoverable
+    // error (which sends already-confirmed users on and offers everyone else a fresh link)
+    // rather than dead-ending on "Nothing to confirm".
+    if (hashError && !hasAuthHash) {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+      await showRecoverableError(friendlyHashError(hashError));
+      return;
+    }
+
+    // Server-side password recovery returns a live session as #access_token with type=recovery.
+    // handleAuthCallback would treat that as a plain login and bounce to the dashboard, so the
+    // visitor would never get to set a new password. Process the session, then show the form.
+    if (params.get('access_token') && hashType === 'recovery') {
+      try {
+        await handleAuthCallback();
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        show('recovery');
+      } catch (error) {
+        await showRecoverableError(describeAuthError(error));
+      }
+      return;
+    }
 
     try {
       const result = await handleAuthCallback();
