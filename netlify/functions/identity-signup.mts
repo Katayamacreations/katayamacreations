@@ -52,10 +52,18 @@ const handler: Handler = async (event: HandlerEvent) => {
     const baseRoles = isAdmin ? existingRoles : existingRoles.filter((r) => r !== 'admin')
     const roles = Array.from(new Set([...baseRoles, 'customer', ...(isAdmin ? ['admin'] : [])]))
 
+    // New accounts start unverified. The site can run with Identity "Autoconfirm" on so
+    // customers can sign in immediately; the order gate keys off this flag rather than
+    // GoTrue's confirmed_at. Preserve an existing `true` so a re-fired webhook (GoTrue runs
+    // this during confirmation and on re-sent links) never downgrades a verified account.
+    const existingAppMeta = (user?.app_metadata || {}) as Record<string, unknown>
+    const emailVerified = existingAppMeta.email_verified === true
+
     const responseBody = JSON.stringify({
       app_metadata: {
-        ...(user?.app_metadata || {}),
+        ...existingAppMeta,
         roles,
+        email_verified: emailVerified,
       },
     })
 
@@ -74,7 +82,7 @@ const handler: Handler = async (event: HandlerEvent) => {
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ app_metadata: { roles: ['customer'] } }),
+      body: JSON.stringify({ app_metadata: { roles: ['customer'], email_verified: false } }),
     }
   }
 }
