@@ -163,6 +163,34 @@
     }
     .merch-item:last-child { margin-bottom: 0; }
     .merch-item .merch-name { font-weight: 600; color: #e8e3f0; }
+    .raffle-card {
+      border: 1px solid rgba(120, 200, 150, 0.35);
+      background: linear-gradient(135deg, rgba(45, 90, 60, 0.25) 0%, rgba(20, 10, 40, 0.6) 100%);
+    }
+    .raffle-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      background: rgba(20, 10, 40, 0.5);
+      border: 1px solid rgba(192, 192, 210, 0.12);
+      border-radius: 12px;
+    }
+    .raffle-row .raffle-name { font-weight: 600; color: #e8e3f0; flex: 1 1 auto; }
+    .raffle-row .raffle-price { color: #b8e0c2; font-weight: 700; }
+    .raffle-ticket-note {
+      margin-top: 12px;
+      padding: 10px 14px;
+      background: rgba(45, 90, 60, 0.4);
+      border: 1px solid rgba(184, 224, 194, 0.35);
+      border-radius: 10px;
+      color: #d8f0de;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .raffle-ticket-note strong { color: #ffffff; letter-spacing: 0.5px; }
     .cart-item {
       display: grid;
       grid-template-columns: 1fr auto auto;
@@ -534,6 +562,20 @@
     <ul class="merch-list" id="merchList"></ul>
   </div>
 
+  <div class="card raffle-card">
+    <h2>🎟️ Enter the raffle</h2>
+    <p style="margin:0 0 16px;font-size:14px;color:#d4d0e8;">
+      Add a <strong>$5 raffle ticket</strong> for a chance to win a <strong>Kindle Book Box</strong> —
+      including a brand-new <strong>Matcha-colored Kindle E-Reader</strong>. Buy as many tickets as you like;
+      each one gets its own number, and the winner is drawn from all entries.
+    </p>
+    <div class="raffle-row">
+      <span class="raffle-name">Raffle Ticket — Win a Kindle Book Box</span>
+      <span class="raffle-price">$5.00</span>
+      <button type="button" class="button" id="addRaffle">Add raffle ticket</button>
+    </div>
+  </div>
+
   <div class="card">
     <h2>Your cart</h2>
     <ul class="cart-list" id="cartList"></ul>
@@ -607,6 +649,7 @@
     <h2>Your details</h2>
     <div class="success" id="success">
       Thanks! Your custom order was sent. A payment prompt is on screen — please complete payment to lock in your order.
+      <div class="raffle-ticket-note" id="raffleReveal" style="display:none;"></div>
       <div class="email-notice">
         📬 A confirmation email is on its way. If you don't see it, check your spam or junk folder.
       </div>
@@ -807,6 +850,12 @@
 
   const MERCH_ITEMS = BUNDLES.filter(b => b.merch);
 
+  // Raffle ticket — a $5 entry to win a Kindle Book Box (including a Matcha-colored
+  // Kindle E-Reader). It is not a bundle or merch, so it is kept out of those lists
+  // and added to the cart via its own button.
+  const RAFFLE_ITEM = { id: 'raffle', label: 'Raffle Ticket — Win a Kindle Book Box', price: 5, raffle: true };
+  BUNDLES.push(RAFFLE_ITEM);
+
   try {
     const res = await fetch('/.netlify/functions/get-site-content');
     if (res.ok) {
@@ -825,6 +874,7 @@
           });
         }
         for (const m of MERCH_ITEMS) BUNDLES.push(m);
+        BUNDLES.push(RAFFLE_ITEM);
       }
     }
   } catch (_) {}
@@ -881,6 +931,7 @@
   const statusLabels = { 'pre-order': ' (Pre-order)', 'out-of-stock': ' (Sold out)', 'shop-break': ' (Shop break)' };
   BUNDLES.forEach(b => {
     if (b.merch) return; // merch (totes, glasses) is added separately — it has no theme/genre
+    if (b.raffle) return; // raffle tickets have their own button
     const o = document.createElement('option');
     o.value = b.id;
     const ss = b.stockStatus || 'available';
@@ -1147,6 +1198,8 @@
   }
 
   document.getElementById('addToCart').addEventListener('click', addToCart);
+  const addRaffleBtn = document.getElementById('addRaffle');
+  if (addRaffleBtn) addRaffleBtn.addEventListener('click', () => addMerchToCart('raffle'));
   document.getElementById('merchList').addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-merch]');
     if (!btn) return;
@@ -1181,6 +1234,23 @@
   const form = document.getElementById('customOrderForm');
   const success = document.getElementById('success');
   const modal = document.getElementById('payModal');
+
+  // Reveal the success banner, and if the order included raffle tickets, show their numbers.
+  function showSuccess(raffleTickets) {
+    success.style.display = 'block';
+    const reveal = document.getElementById('raffleReveal');
+    if (reveal) {
+      if (Array.isArray(raffleTickets) && raffleTickets.length) {
+        const many = raffleTickets.length > 1;
+        reveal.innerHTML = `🎟️ Your raffle ${many ? 'ticket numbers are' : 'ticket number is'} <strong>${raffleTickets.map(escapeHtml).join(', ')}</strong>. Hold onto ${many ? 'them' : 'it'} — the Kindle Book Box winner (including a Matcha Kindle E-Reader) is drawn from these numbers!`;
+        reveal.style.display = 'block';
+      } else {
+        reveal.style.display = 'none';
+        reveal.innerHTML = '';
+      }
+    }
+    success.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
 
   async function getAuthToken() {
     const match = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
@@ -1266,9 +1336,10 @@
             body: JSON.stringify({ ...pendingOrderPayload, paymentMethod: 'paypal', paymentStatus: 'paid' }),
           });
           if (!orderRes.ok) throw new Error('Order placement failed');
+          const orderData = await orderRes.json().catch(() => ({}));
 
           modal.classList.remove('show');
-          success.style.display = 'block';
+          showSuccess(orderData.raffleTickets);
           cart = []; saveCart(); render();
         } catch (err) {
           console.error(err);
@@ -1326,9 +1397,10 @@
         body: JSON.stringify({ ...pendingOrderPayload, paymentMethod: 'venmo', paymentStatus: 'pending' }),
       });
       if (!orderRes.ok) throw new Error('Order placement failed');
+      const orderData = await orderRes.json().catch(() => ({}));
       modal.classList.remove('show');
       document.getElementById('venmoConfirm').style.display = 'none';
-      success.style.display = 'block';
+      showSuccess(orderData.raffleTickets);
       cart = []; saveCart(); render();
     } catch (err) {
       console.error(err);

@@ -88,6 +88,24 @@ export default async (req: Request, _context: Context) => {
     await configStore.setJSON('products', products)
   }
 
+  // Generate a unique raffle ticket number for each raffle ticket purchased.
+  // Tickets are sequential and persisted via a counter in the site-config store.
+  const raffleQty = body.cart.reduce((sum, item) => {
+    if (item.bundleId !== 'raffle') return sum
+    const qty = typeof item.qty === 'number' ? item.qty : Number(item.qty) || 1
+    return sum + qty
+  }, 0)
+  const raffleTickets: string[] = []
+  if (raffleQty > 0) {
+    const counterRaw = await configStore.get('raffle-counter', { type: 'json' }).catch(() => null)
+    let counter = counterRaw && typeof (counterRaw as any).value === 'number' ? (counterRaw as any).value : 0
+    for (let i = 0; i < raffleQty; i++) {
+      counter++
+      raffleTickets.push(`KC-RAFFLE-${String(counter).padStart(4, '0')}`)
+    }
+    await configStore.setJSON('raffle-counter', { value: counter })
+  }
+
   const placedAt = new Date().toISOString()
   const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 
@@ -96,11 +114,13 @@ export default async (req: Request, _context: Context) => {
     userId: string
     placedAt: string
     status: string
+    raffleTickets: string[]
   } = {
     id,
     userId: user.id,
     placedAt,
     status: 'pending',
+    raffleTickets,
     customerName: String(body.customerName || user.name || '').trim(),
     email: user.email || '',
     address1: String(body.address1 || '').trim(),
@@ -185,7 +205,7 @@ export default async (req: Request, _context: Context) => {
     }
   }
 
-  return Response.json({ ok: true, id, placedAt })
+  return Response.json({ ok: true, id, placedAt, raffleTickets })
 }
 
 function sanitizeCartItem(it: CartItem): CartItem {
