@@ -469,6 +469,17 @@
           break;
       }
     } catch (error) {
+      // A confirmation, recovery, or email-change link that fails here is almost
+      // always one that was already used, has expired, or was replaced by a newer
+      // confirmation email — not a real fault. Rather than dead-ending the visitor
+      // with a discouraging error, hand them to the dedicated confirmation page,
+      // which recognizes already-confirmed accounts and otherwise lets them request
+      // a fresh link in one step.
+      const hash = window.location.hash || '';
+      if (/(confirmation_token|recovery_token|email_change_token)/.test(hash)) {
+        window.location.replace('/confirm.html' + hash);
+        return;
+      }
       showAlert('error', describeAuthError(error));
     }
   }

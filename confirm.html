@@ -198,10 +198,16 @@
     </div>
 
     <div id="stateError" class="state error">
-      <h1>We hit a snag</h1>
-      <p id="errorMsg">Your confirmation link may have expired or already been used.</p>
-      <a class="button" href="/signup.html?mode=login">Log in</a>
-      <a class="button ghost" href="/signup.html">Sign up again</a>
+      <h1>Let's finish confirming you</h1>
+      <p id="errorMsg">This confirmation link has already been used or has expired. If you've already confirmed your email, just log in below. Otherwise, enter your email and we'll send you a fresh confirmation link.</p>
+      <form id="resendForm" style="text-align:left;max-width:380px;margin:20px auto 6px;">
+        <label for="resendEmail" style="display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;color:#c0bcd0;">Your email</label>
+        <input id="resendEmail" type="email" required placeholder="jane@example.com" autocomplete="email"
+          style="width:100%;padding:10px 12px;border:1px solid rgba(192,192,210,0.25);border-radius:10px;font-size:14px;box-sizing:border-box;background:rgba(20,10,40,0.6);color:#e8e3f0;">
+        <p id="resendMsg" style="display:none;font-size:14px;margin:10px 0 0;line-height:1.5;"></p>
+        <button class="button" type="submit" id="resendBtn" style="cursor:pointer;margin-top:12px;">Send a fresh confirmation link</button>
+      </form>
+      <a class="button ghost" href="/signup.html?mode=login">Log in instead</a>
     </div>
   </div>
 </main>
@@ -214,6 +220,7 @@
     getUser,
     updateUser,
     logout,
+    signup,
     AuthError,
     MissingIdentityError,
   } from 'https://esm.sh/@netlify/identity@1.0.0?bundle'
@@ -269,6 +276,23 @@
     return 'Something went wrong while confirming your email.';
   }
 
+  // When a confirmation link fails, the account is often either already confirmed
+  // (the link was used before) or simply still waiting on a fresh link. Send already
+  // confirmed users straight on, and give everyone else a one-click way to recover
+  // instead of a dead end.
+  async function showRecoverableError(message) {
+    const user = await getUser().catch(() => null);
+    if (user) {
+      show('success');
+      document.getElementById('successMsg').textContent =
+        `You're confirmed and signed in as ${user.email}. Taking you to your dashboard…`;
+      setTimeout(() => { window.location.href = nextSafe; }, 1000);
+      return;
+    }
+    if (message) document.getElementById('errorMsg').textContent = message;
+    show('error');
+  }
+
   (async () => {
     const hash = window.location.hash || '';
     const hasAuthHash = /(confirmation_token|recovery_token|invite_token|access_token|email_change_token)/.test(hash);
@@ -278,8 +302,9 @@
 
       if (!result) {
         if (hasAuthHash) {
-          // Hash was present but library didn't recognize it — treat as error.
-          show('error');
+          // Hash was present but the confirmation didn't go through — the link was
+          // likely already used. Recover gracefully rather than dead-ending.
+          await showRecoverableError();
           return;
         }
         // No callback in URL. If the user is already signed in, send them along.
@@ -325,10 +350,49 @@
         }
       }
     } catch (error) {
-      show('error');
-      document.getElementById('errorMsg').textContent = describeAuthError(error);
+      await showRecoverableError(describeAuthError(error));
     }
   })();
+
+  // Re-send a fresh confirmation email. Re-posting to GoTrue's public signup for an
+  // unconfirmed account re-issues its "Confirm your email" link (the same mechanism the
+  // admin resend tool uses); the throwaway password is never used, since clicking the
+  // link signs the user in directly.
+  function randomPassword() {
+    const bytes = new Uint8Array(24);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  document.getElementById('resendForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('resendMsg');
+    const btn = document.getElementById('resendBtn');
+    const email = String(document.getElementById('resendEmail').value || '').trim();
+    if (!email) return;
+    msg.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    try {
+      await signup(email, randomPassword());
+      msg.style.color = '#b8e0c2';
+      msg.textContent = "Done! A fresh confirmation link is on its way. Check your inbox — and your spam or junk folder, since it sometimes lands there.";
+      msg.style.display = 'block';
+      btn.textContent = 'Sent';
+    } catch (error) {
+      // An "already registered" error means the account is already confirmed.
+      if (error instanceof AuthError && (error.status === 400 || error.status === 422)) {
+        msg.style.color = '#b8c8e0';
+        msg.textContent = 'Looks like this email is already confirmed. You can log in below.';
+      } else {
+        msg.style.color = '#f0b8a8';
+        msg.textContent = describeAuthError(error);
+      }
+      msg.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Send a fresh confirmation link';
+    }
+  });
 
   document.getElementById('recoveryForm').addEventListener('submit', async (e) => {
     e.preventDefault();
