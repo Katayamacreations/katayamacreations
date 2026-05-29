@@ -1,5 +1,6 @@
 import type { Handler, HandlerEvent } from '@netlify/functions'
 import { wrapEmail, escapeHtml, SITE_NAME, OWNER_EMAIL, COLORS } from './_email-brand.mjs'
+import { sendEmail } from './_send-email.mjs'
 import { db } from '../../db/index.js'
 import { notifications } from '../../db/schema.js'
 
@@ -9,9 +10,8 @@ interface IdentityUser {
   app_metadata?: Record<string, unknown>
 }
 
-const FROM_EMAIL = process.env.WELCOME_FROM_EMAIL || `${SITE_NAME} <onboarding@resend.dev>`
 const ADMIN_EMAILS: Set<string> = new Set(
-  [OWNER_EMAIL, 'nichole_avery@yahoo.com'].map((e) => e.toLowerCase()),
+  [OWNER_EMAIL, 'nichole_avery@yahoo.com', 'katayamacreations@outlook.com'].map((e) => e.toLowerCase()),
 )
 
 // Netlify Identity invokes this signup webhook synchronously: GoTrue holds the signup
@@ -65,8 +65,7 @@ const handler: Handler = async (event: HandlerEvent) => {
 export { handler }
 
 async function sendWelcomeEmail(user?: IdentityUser): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY
-  if (!apiKey || !user?.email) return
+  if (!user?.email) return
 
   const meta = user.user_metadata || {}
   const name =
@@ -77,20 +76,12 @@ async function sendWelcomeEmail(user?: IdentityUser): Promise<void> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), SIDE_EFFECT_TIMEOUT_MS)
   try {
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: FROM_EMAIL,
-        to: [user.email],
-        reply_to: OWNER_EMAIL,
-        subject: `Welcome to ${SITE_NAME}`,
-        html: renderWelcomeEmail({ name }),
-        text: renderWelcomeText({ name }),
-      }),
+    await sendEmail({
+      to: user.email,
+      replyTo: OWNER_EMAIL,
+      subject: `Welcome to ${SITE_NAME}`,
+      html: renderWelcomeEmail({ name }),
+      text: renderWelcomeText({ name }),
       signal: controller.signal,
     })
   } catch (err) {

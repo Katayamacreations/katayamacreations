@@ -237,7 +237,7 @@
     whoEmail.textContent = currentUser.email || 'your account';
     const authBtns = document.getElementById('authButtons');
     if (authBtns) authBtns.style.display = 'none';
-    if (['ogmegbeast@gmail.com', 'nichole_avery@yahoo.com'].includes((currentUser.email || '').toLowerCase()) || (Array.isArray(currentUser.roles) && currentUser.roles.includes('admin'))) {
+    if (['ogmegbeast@gmail.com', 'nichole_avery@yahoo.com', 'katayamacreations@outlook.com'].includes((currentUser.email || '').toLowerCase()) || (Array.isArray(currentUser.roles) && currentUser.roles.includes('admin'))) {
       const adminLink = document.getElementById('adminNav');
       if (adminLink) adminLink.style.display = '';
     }

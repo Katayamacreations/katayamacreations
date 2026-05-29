@@ -1,9 +1,9 @@
 import { getUser } from '@netlify/identity'
 import type { Context } from '@netlify/functions'
 import { wrapEmail, escapeHtml, SITE_NAME, COLORS } from './_email-brand.mjs'
+import { sendEmail, isEmailConfigured } from './_send-email.mjs'
 
 const OWNER_EMAIL = Netlify.env.get('OWNER_EMAIL') || 'ogmegbeast@gmail.com'
-const FROM_EMAIL = Netlify.env.get('WELCOME_FROM_EMAIL') || `${SITE_NAME} <onboarding@resend.dev>`
 
 export default async (req: Request, _context: Context) => {
   if (req.method !== 'POST') {
@@ -15,8 +15,7 @@ export default async (req: Request, _context: Context) => {
     return new Response('Unauthorized', { status: 401 })
   }
 
-  const apiKey = Netlify.env.get('RESEND_API_KEY')
-  if (!apiKey) {
+  if (!isEmailConfigured()) {
     return Response.json({ ok: true, sent: false })
   }
 
@@ -27,24 +26,15 @@ export default async (req: Request, _context: Context) => {
   const safeName = escapeHtml(name)
 
   try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: FROM_EMAIL,
-        to: [user.email],
-        reply_to: OWNER_EMAIL,
-        subject: `Your password has been changed — ${SITE_NAME}`,
-        html: renderHtml(safeName),
-        text: renderText(name),
-      }),
+    const res = await sendEmail({
+      to: user.email,
+      replyTo: OWNER_EMAIL,
+      subject: `Your password has been changed — ${SITE_NAME}`,
+      html: renderHtml(safeName),
+      text: renderText(name),
     })
     if (!res.ok) {
-      const body = await res.text().catch(() => '')
-      console.error(`Resend API error ${res.status}:`, body)
+      console.error(`Password-changed email error (${res.provider} ${res.status}):`, res.error || '')
       return Response.json({ ok: false, sent: false, error: 'Email service error' }, { status: 502 })
     }
   } catch (err) {

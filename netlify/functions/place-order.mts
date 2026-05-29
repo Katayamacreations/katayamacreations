@@ -2,11 +2,10 @@ import type { Context } from '@netlify/functions'
 import { getStore } from '@netlify/blobs'
 import { getUser } from '@netlify/identity'
 import { renderOrderEmailHtml, renderOrderEmailText, renderOrderSummaryText, type OrderData, type CartItem } from './_order-email.mjs'
+import { sendEmail } from './_send-email.mjs'
+import { ALERT_RECIPIENTS } from './_admin.mjs'
 import { db } from '../../db/index.js'
 import { notifications } from '../../db/schema.js'
-
-const FROM_EMAIL = Netlify.env.get('WELCOME_FROM_EMAIL') || 'Katayama Creations <onboarding@resend.dev>'
-const OWNER_EMAIL = Netlify.env.get('OWNER_EMAIL') || 'ogmegbeast@gmail.com'
 
 interface IncomingOrder {
   customerName?: string
@@ -155,31 +154,19 @@ export default async (req: Request, _context: Context) => {
     console.error('Notification insert failed', err)
   }
 
-  const apiKey = Netlify.env.get('RESEND_API_KEY')
-  if (apiKey) {
-    try {
-      const emailRes = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: FROM_EMAIL,
-          to: [OWNER_EMAIL],
-          reply_to: order.email || OWNER_EMAIL,
-          subject: `New order: ${order.customerName || 'unknown'} — $${order.total}`,
-          html: renderOrderEmailHtml(order),
-          text: renderOrderEmailText(order),
-        }),
-      })
-      if (!emailRes.ok) {
-        const errBody = await emailRes.text().catch(() => '')
-        console.error(`Resend API error ${emailRes.status}: ${errBody}`)
-      }
-    } catch (err) {
-      console.error('Resend send failed', err)
+  try {
+    const emailRes = await sendEmail({
+      to: ALERT_RECIPIENTS,
+      replyTo: order.email || ALERT_RECIPIENTS[0],
+      subject: `New order: ${order.customerName || 'unknown'} — $${order.total}`,
+      html: renderOrderEmailHtml(order),
+      text: renderOrderEmailText(order),
+    })
+    if (!emailRes.ok) {
+      console.error(`Order alert email failed (${emailRes.provider} ${emailRes.status}): ${emailRes.error || ''}`)
     }
+  } catch (err) {
+    console.error('Order alert email send failed', err)
   }
 
   const siteUrl = Netlify.env.get('URL')
