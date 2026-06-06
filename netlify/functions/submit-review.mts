@@ -2,8 +2,11 @@ import type { Context } from "@netlify/functions";
 import { getUser } from "@netlify/identity";
 import { getStore } from "@netlify/blobs";
 import { db } from "../../db/index.js";
-import { reviews, reviewImages } from "../../db/schema.js";
+import { reviews, reviewImages, notifications } from "../../db/schema.js";
 import { eq, and } from "drizzle-orm";
+import { sendEmail } from "./_send-email.mjs";
+import { renderReviewEmailHtml, renderReviewEmailText } from "./_review-email.mjs";
+import { ALERT_RECIPIENTS } from "./_admin.mjs";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = new Set([
@@ -91,6 +94,7 @@ export default async (req: Request, _context: Context) => {
     );
 
   let reviewId: number;
+  let isNewReview = false;
 
   if (existing.length > 0) {
     await db
@@ -116,6 +120,7 @@ export default async (req: Request, _context: Context) => {
       })
       .returning();
     reviewId = inserted.id;
+    isNewReview = true;
   }
 
   const imageStore = getStore("review-photos");
@@ -150,6 +155,45 @@ export default async (req: Request, _context: Context) => {
         })
         .returning();
       uploadedImages.push({ id: row.id, blobKey, fileName: row.fileName });
+    }
+  }
+
+  // Notify the shop admins when a customer leaves a brand-new review. Updates to an
+  // existing review are intentionally quiet so edits don't re-alert. Both the in-app
+  // notification and the email are best-effort — a failure here must not fail the review.
+  if (isNewReview) {
+    try {
+      await db.insert(notifications).values({
+        type: "review",
+        title: "New review",
+        body: `${userName || "A customer"} left a ${roundedRating}-star review`,
+        relatedId: String(reviewId),
+      });
+    } catch (err) {
+      console.error("Review notification insert failed", err);
+    }
+
+    try {
+      const reviewData = {
+        userName,
+        userEmail: user.email || "",
+        orderId,
+        rating: roundedRating,
+        reviewText,
+        imageCount: uploadedImages.length,
+      };
+      const emailRes = await sendEmail({
+        to: ALERT_RECIPIENTS,
+        replyTo: user.email || ALERT_RECIPIENTS[0],
+        subject: `New review: ${userName || "a customer"} — ${roundedRating}★`,
+        html: renderReviewEmailHtml(reviewData),
+        text: renderReviewEmailText(reviewData),
+      });
+      if (!emailRes.ok) {
+        console.error(`Review alert email failed (${emailRes.provider} ${emailRes.status}): ${emailRes.error || ""}`);
+      }
+    } catch (err) {
+      console.error("Review alert email send failed", err);
     }
   }
 
