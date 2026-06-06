@@ -461,18 +461,52 @@
   });
   photoInput.addEventListener('change', () => { addFiles(photoInput.files); photoInput.value = ''; });
 
-  function addFiles(files) {
+  async function addFiles(files) {
     for (const f of Array.from(files)) {
       if (pendingPhotos.length >= 5) break;
       if (!f.type.match(/^image\/(png|jpeg|jpg|webp|gif)$/)) continue;
-      if (f.size > 5 * 1024 * 1024) continue;
-      const reader = new FileReader();
-      reader.onload = () => {
-        pendingPhotos.push({ dataBase64: reader.result, fileName: f.name, contentType: f.type });
-        renderPhotoThumbs();
-      };
-      reader.readAsDataURL(f);
+      // Allow large originals; they get downscaled below before upload.
+      if (f.size > 25 * 1024 * 1024) continue;
+      const photo = await compressImage(f);
+      if (!photo) continue;
+      pendingPhotos.push(photo);
+      renderPhotoThumbs();
     }
+  }
+
+  // Downscale and re-encode photos in the browser so the review request body
+  // stays small. Sending full-size images as base64 inside the JSON payload can
+  // exceed the function request-size limit, which makes the request stall and
+  // the form appear stuck on "Submitting…".
+  function compressImage(file) {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const maxDim = 1600;
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          const scale = Math.min(maxDim / width, maxDim / height);
+          width = Math.max(1, Math.round(width * scale));
+          height = Math.max(1, Math.round(height * scale));
+        }
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataBase64 = canvas.toDataURL('image/jpeg', 0.82);
+          const fileName = (file.name || 'photo').replace(/\.[^.]+$/, '') + '.jpg';
+          resolve({ dataBase64, fileName, contentType: 'image/jpeg' });
+        } catch (_) {
+          resolve(null);
+        }
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+      img.src = url;
+    });
   }
 
   function renderPhotoThumbs() {
@@ -529,6 +563,8 @@
     btn.disabled = true;
     btn.textContent = 'Submitting…';
     const token = await getAuthToken();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
     try {
       const payload = {
         orderId: reviewingOrderId,
@@ -545,6 +581,7 @@
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+        signal: controller.signal,
       });
       if (!res.ok) throw new Error(await res.text());
       closeReviewModal();
@@ -552,8 +589,13 @@
       await loadOrders();
     } catch (err) {
       console.error(err);
-      alert('Could not submit review. Please try again.');
+      if (err.name === 'AbortError') {
+        alert('Submitting your review timed out. Please check your connection and try again.');
+      } else {
+        alert('Could not submit review. Please try again.');
+      }
     } finally {
+      clearTimeout(timeoutId);
       btn.disabled = false;
       btn.textContent = 'Submit Review';
     }
