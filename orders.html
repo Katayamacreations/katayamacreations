@@ -827,6 +827,7 @@
       <div class="order-meta-row">
         Ship to ${escapeHtml([o.address1, o.address2, o.city, o.state].filter(Boolean).join(', '))}${o.zip ? ` ${escapeHtml(o.zip)}` : ''} · ${escapeHtml(o.shippingMethod || '—')}
       </div>
+      ${(o.billingSameAsShipping === false && [o.billingAddress1, o.billingCity].some(Boolean)) ? `<div class="order-meta-row">Bill to ${escapeHtml([o.billingAddress1, o.billingAddress2, o.billingCity, o.billingState].filter(Boolean).join(', '))}${o.billingZip ? ` ${escapeHtml(o.billingZip)}` : ''}</div>` : ''}
       ${o.trackingNumber ? `<div class="order-meta-row">Tracking: <span class="tracking">${escapeHtml(o.trackingNumber)}</span></div>` : ''}
       ${o.orderNotes ? `<div class="order-meta-row">Note: ${escapeHtml(o.orderNotes)}</div>` : ''}
       <div class="order-meta-row" style="margin-top:8px;">

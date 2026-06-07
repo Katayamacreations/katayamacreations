@@ -21,6 +21,12 @@ interface IncomingOrder {
   city?: string
   state?: string
   zip?: string
+  billingSameAsShipping?: boolean
+  billingAddress1?: string
+  billingAddress2?: string
+  billingCity?: string
+  billingState?: string
+  billingZip?: string
   tip?: string
   total?: string
   paymentDeadline?: string
@@ -137,6 +143,12 @@ export default async (req: Request, _context: Context) => {
     city: String(body.city || '').trim(),
     state: String(body.state || ''),
     zip: String(body.zip || '').trim(),
+    billingSameAsShipping: body.billingSameAsShipping !== false,
+    billingAddress1: String(body.billingAddress1 || '').trim(),
+    billingAddress2: String(body.billingAddress2 || '').trim(),
+    billingCity: String(body.billingCity || '').trim(),
+    billingState: String(body.billingState || ''),
+    billingZip: String(body.billingZip || '').trim(),
     shippingMethod: String(body.shippingMethod || ''),
     subtotal: String(body.subtotal || '0.00'),
     shippingCost: String(body.shippingCost || '0.00'),
