@@ -1,4 +1,8 @@
 (function () {
+  // Only show the flying dragon on the home page.
+  var path = location.pathname.replace(/\/index\.html$/, '/');
+  if (path !== '/') return;
+
   var container = document.createElement('div');
   container.className = 'dragon-wrap';
   container.id = 'dragon';
