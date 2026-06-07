@@ -1,0 +1,47 @@
+/* Global mobile usability fixes — loaded on every page.
+ *
+ * Root cause of the "hard to scroll down on some phones" reports: a few
+ * elements (a long signed-in email in the header, the wide USPS rate table on
+ * the FAQ page) rendered slightly wider than narrow phone viewports. Once a
+ * page is wider than the screen, mobile browsers allow sideways panning, and
+ * vertical swipes get misread as diagonal pans — so scrolling down feels
+ * sticky or jumpy. It only shows up on narrower devices, which is why it was
+ * intermittent ("some phones").
+ *
+ * These rules stop content from overflowing horizontally and let any genuinely
+ * wide content (data tables) scroll inside its own box instead of stretching
+ * the page.
+ */
+
+html {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%; /* stop iOS from auto-zooming text on rotate */
+}
+
+body {
+  overflow-x: hidden;             /* neutralize any stray horizontal overflow */
+  overscroll-behavior-y: contain; /* keep vertical scrolling smooth */
+}
+
+/* Media should never push the layout wider than the screen. */
+img,
+video,
+table {
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  /* Let the signed-in header info wrap instead of forcing the page wider
+     with a long email address. */
+  .who { white-space: normal; }
+  .auth-buttons { flex-wrap: wrap; }
+
+  /* Wide data tables (e.g. the FAQ shipping rate table) scroll within their
+     own container rather than stretching the whole page sideways. */
+  .rate-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+}
