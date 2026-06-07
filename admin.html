@@ -1159,6 +1159,7 @@
           <div class="order-meta">
             Ship to ${escapeHtml([o.address1, o.address2, o.city, o.state].filter(Boolean).join(', '))}${o.zip ? ` ${escapeHtml(o.zip)}` : ''} · ${escapeHtml(o.shippingMethod || '—')}${o.paymentMethod ? ` · Paid via ${escapeHtml(o.paymentMethod)}` : ''}
           </div>
+          ${(o.billingSameAsShipping === false && [o.billingAddress1, o.billingCity].some(Boolean)) ? `<div class="order-meta">Bill to ${escapeHtml([o.billingAddress1, o.billingAddress2, o.billingCity, o.billingState].filter(Boolean).join(', '))}${o.billingZip ? ` ${escapeHtml(o.billingZip)}` : ''}</div>` : ''}
           ${o.orderNotes ? `<div class="order-meta">Customer note: ${escapeHtml(o.orderNotes)}</div>` : ''}
           ${o.goodreadsUrl ? `<div class="order-meta">Goodreads: <a href="${escapeHtml(o.goodreadsUrl)}" target="_blank" rel="noopener" style="color:#b8e0c2;">${escapeHtml(o.goodreadsUrl)}</a></div>` : ''}
           ${o.adminNotes ? `<div class="order-meta">Admin note: ${escapeHtml(o.adminNotes)}</div>` : ''}

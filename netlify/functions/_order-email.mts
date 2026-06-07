@@ -18,6 +18,12 @@ export interface OrderData {
   city?: string
   state: string
   zip?: string
+  billingSameAsShipping?: boolean
+  billingAddress1?: string
+  billingAddress2?: string
+  billingCity?: string
+  billingState?: string
+  billingZip?: string
   shippingMethod: string
   subtotal: string
   shippingCost: string
@@ -28,6 +34,15 @@ export interface OrderData {
   goodreadsUrl?: string
   raffleTickets?: string[]
   cart: CartItem[]
+}
+
+// True when the customer provided a billing address that differs from the shipping address.
+function hasSeparateBilling(o: OrderData): boolean {
+  if (o.billingSameAsShipping) return false
+  const billing = [o.billingAddress1, o.billingAddress2, o.billingCity, o.billingState, o.billingZip]
+  if (!billing.some((v) => (v || '').trim())) return false
+  const shipping = [o.address1, o.address2, o.city, o.state, o.zip]
+  return billing.map((v) => (v || '').trim()).join('|') !== shipping.map((v) => (v || '').trim()).join('|')
 }
 
 function fmtDeadline(iso: string) {
@@ -81,6 +96,10 @@ export function renderOrderEmailHtml(o: OrderData): string {
     ? `<tr><td style="color:${COLORS.body};padding:4px 0;">Tip</td><td style="text-align:right;color:${COLORS.body};padding:4px 0;">$${escapeHtml(o.tip!)}</td></tr>`
     : ''
 
+  const billingBlock = hasSeparateBilling(o)
+    ? `<p style="margin:8px 0 0;line-height:1.5;color:${COLORS.body};font-size:14px;"><strong>Bill to:</strong> ${escapeHtml(o.billingAddress1 || '')}${o.billingAddress2 ? `, ${escapeHtml(o.billingAddress2)}` : ''}, ${escapeHtml(o.billingCity || '')}${o.billingState ? `, ${escapeHtml(o.billingState)}` : ''}${o.billingZip ? ` ${escapeHtml(o.billingZip)}` : ''}</p>`
+    : ''
+
   const content = `<h1 style="margin:0 0 8px;font-size:22px;color:${COLORS.heading};">New custom order</h1>
 <p style="margin:0 0 20px;color:#b8b3c8;font-size:14px;">From <strong>${escapeHtml(o.customerName || 'unknown')}</strong> — <a href="mailto:${escapeHtml(o.email)}" style="color:${COLORS.link};">${escapeHtml(o.email)}</a></p>
 
@@ -100,6 +119,7 @@ export function renderOrderEmailHtml(o: OrderData): string {
 </div>
 
 <p style="margin:18px 0 0;line-height:1.5;color:${COLORS.body};font-size:14px;"><strong>Ship to:</strong> ${escapeHtml(o.address1 || '')}${o.address2 ? `, ${escapeHtml(o.address2)}` : ''}, ${escapeHtml(o.city || '')}${o.state ? `, ${escapeHtml(o.state)}` : ''}${o.zip ? ` ${escapeHtml(o.zip)}` : ''}</p>
+${billingBlock}
 ${goodreadsBlock}
 ${raffleBlock}
 ${orderNotesBlock}`
@@ -133,6 +153,10 @@ export function renderOrderSummaryText(o: OrderData): string {
   lines.push('')
   const addrParts = [o.address1, o.address2, o.city, o.state].filter(Boolean)
   lines.push(`Ship to: ${addrParts.join(', ')}${o.zip ? ` ${o.zip}` : ''}`)
+  if (hasSeparateBilling(o)) {
+    const billParts = [o.billingAddress1, o.billingAddress2, o.billingCity, o.billingState].filter(Boolean)
+    lines.push(`Bill to: ${billParts.join(', ')}${o.billingZip ? ` ${o.billingZip}` : ''}`)
+  }
   lines.push(`Venmo deadline: ${fmtDeadline(o.paymentDeadline)}`)
   if (o.goodreadsUrl) {
     lines.push(`Goodreads: ${o.goodreadsUrl}`)

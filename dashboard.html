@@ -273,6 +273,22 @@
       padding-top: 14px;
       margin-top: 10px;
     }
+    .billing-section {
+      border-top: 1px solid rgba(192, 192, 210, 0.15);
+      padding-top: 14px;
+      margin-top: 14px;
+    }
+    .billing-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #d4d0e8;
+    }
+    .billing-toggle input { width: 16px; height: 16px; cursor: pointer; accent-color: #9b6dd1; }
+    .billing-fields { margin-top: 16px; }
+    .billing-fields[hidden] { display: none; }
     .tip-section label {
       margin-bottom: 8px;
       display: block;
@@ -611,6 +627,37 @@
           <option value="priority">USPS Priority Mail (1–3 days)</option>
           <option value="express">USPS Priority Mail Express (1–2 days)</option>
         </select>
+      </div>
+    </div>
+
+    <div class="billing-section">
+      <label class="billing-toggle">
+        <input type="checkbox" id="billingSame" checked>
+        <span>Billing address is the same as my shipping address</span>
+      </label>
+      <div class="grid billing-fields" id="billingFields" hidden>
+        <div class="full">
+          <label for="billingAddress1">Billing street address</label>
+          <input id="billingAddress1" placeholder="123 Main St" autocomplete="billing address-line1">
+        </div>
+        <div class="full">
+          <label for="billingAddress2">Apt / Suite / Unit (optional)</label>
+          <input id="billingAddress2" placeholder="Apt 4B" autocomplete="billing address-line2">
+        </div>
+        <div>
+          <label for="billingCity">City</label>
+          <input id="billingCity" placeholder="Portland" autocomplete="billing address-level2">
+        </div>
+        <div>
+          <label for="billingState">State</label>
+          <select id="billingState">
+            <option value="">— select —</option>
+          </select>
+        </div>
+        <div>
+          <label for="billingZip">ZIP code</label>
+          <input id="billingZip" inputmode="numeric" pattern="[0-9-]*" placeholder="12345" autocomplete="billing postal-code">
+        </div>
       </div>
     </div>
 
@@ -964,6 +1011,14 @@
     stateSel.appendChild(o);
   });
 
+  const billingStateSel = document.getElementById('billingState');
+  STATES.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.name;
+    o.textContent = `${s.name} (${s.abbr})`;
+    billingStateSel.appendChild(o);
+  });
+
   // Autofill shipping fields from profile
   if (currentUser) {
     const meta = currentUser.user_metadata || {};
@@ -1196,7 +1251,11 @@
     const placeBtn = document.getElementById('placeOrder');
     const addr1 = document.getElementById('address1').value.trim();
     const cityVal = document.getElementById('city').value.trim();
-    placeBtn.disabled = cart.length === 0 || ship.cost === null || !addr1 || !cityVal;
+    const billingSame = document.getElementById('billingSame').checked;
+    const billingOk = billingSame ||
+      (document.getElementById('billingAddress1').value.trim() &&
+       document.getElementById('billingCity').value.trim());
+    placeBtn.disabled = cart.length === 0 || ship.cost === null || !addr1 || !cityVal || !billingOk;
   }
 
   document.getElementById('addToCart').addEventListener('click', addToCart);
@@ -1219,6 +1278,16 @@
   document.getElementById('shipMethod').addEventListener('change', render);
   document.getElementById('address1').addEventListener('input', render);
   document.getElementById('city').addEventListener('input', render);
+
+  const billingSameToggle = document.getElementById('billingSame');
+  const billingFields = document.getElementById('billingFields');
+  billingSameToggle.addEventListener('change', () => {
+    billingFields.hidden = billingSameToggle.checked;
+    render();
+  });
+  ['billingAddress1', 'billingCity'].forEach(id => {
+    document.getElementById(id).addEventListener('input', render);
+  });
   zipInput.addEventListener('input', () => { syncLocalOption(); render(); });
   syncLocalOption();
 
@@ -1318,6 +1387,22 @@
       total: total.toFixed(2),
       paymentDeadline: deadline.toISOString(),
     };
+
+    const billingSame = document.getElementById('billingSame').checked;
+    pendingOrderPayload.billingSameAsShipping = billingSame;
+    if (billingSame) {
+      pendingOrderPayload.billingAddress1 = pendingOrderPayload.address1;
+      pendingOrderPayload.billingAddress2 = pendingOrderPayload.address2;
+      pendingOrderPayload.billingCity = pendingOrderPayload.city;
+      pendingOrderPayload.billingState = pendingOrderPayload.state;
+      pendingOrderPayload.billingZip = pendingOrderPayload.zip;
+    } else {
+      pendingOrderPayload.billingAddress1 = document.getElementById('billingAddress1').value.trim();
+      pendingOrderPayload.billingAddress2 = document.getElementById('billingAddress2').value.trim();
+      pendingOrderPayload.billingCity = document.getElementById('billingCity').value.trim();
+      pendingOrderPayload.billingState = document.getElementById('billingState').value;
+      pendingOrderPayload.billingZip = document.getElementById('billingZip').value.trim();
+    }
 
     document.getElementById('modalTotal').textContent = fmt(total);
     const note = encodeURIComponent(`Blind Date Order ${fmt(total)}`);
