@@ -698,7 +698,7 @@
   <div class="card">
     <h2>Your details</h2>
     <div class="success" id="success">
-      Thanks! Your custom order was sent. A payment prompt is on screen — please complete payment to lock in your order.
+      <span id="successMsg">Thanks! Your custom order was sent. A payment prompt is on screen — please complete payment to lock in your order.</span>
       <div class="raffle-ticket-note" id="raffleReveal" style="display:none;"></div>
       <div class="email-notice">
         📬 A confirmation email is on its way. If you don't see it, check your spam or junk folder.
@@ -1310,8 +1310,16 @@
   const modal = document.getElementById('payModal');
 
   // Reveal the success banner, and if the order included raffle tickets, show their numbers.
-  function showSuccess(raffleTickets) {
+  // `paid` is true when payment already completed (e.g. PayPal); false when payment is still
+  // outstanding (e.g. Venmo) and the customer must finish paying to lock in the order.
+  function showSuccess(raffleTickets, paid) {
     success.style.display = 'block';
+    const msg = document.getElementById('successMsg');
+    if (msg) {
+      msg.textContent = paid
+        ? 'Thanks! Your payment went through and your custom order is locked in.'
+        : 'Thanks! Your custom order was sent. A payment prompt is on screen — please complete payment to lock in your order.';
+    }
     const reveal = document.getElementById('raffleReveal');
     if (reveal) {
       if (Array.isArray(raffleTickets) && raffleTickets.length) {
@@ -1445,7 +1453,7 @@
           const orderData = await orderRes.json().catch(() => ({}));
 
           modal.classList.remove('show');
-          showSuccess(orderData.raffleTickets);
+          showSuccess(orderData.raffleTickets, true);
           cart = []; saveCart(); render();
         } catch (err) {
           console.error(err);
@@ -1536,7 +1544,7 @@
       const orderData = await orderRes.json().catch(() => ({}));
       modal.classList.remove('show');
       document.getElementById('venmoConfirm').style.display = 'none';
-      showSuccess(orderData.raffleTickets);
+      showSuccess(orderData.raffleTickets, false);
       cart = []; saveCart(); render();
     } catch (err) {
       console.error(err);
