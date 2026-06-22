@@ -878,7 +878,7 @@
     ground:   'USPS Ground Advantage',
     priority: 'USPS Priority Mail',
     express:  'USPS Priority Mail Express',
-    local:    'Local Delivery (Tri-Cities)',
+    local:    'Free Local Pickup/Delivery (Tri-Cities)',
   };
 
   // ZIP codes within ~20 miles of 99301 (Pasco, WA) — eligible for free local delivery.
@@ -1140,9 +1140,12 @@
     if (local && !existing) {
       const o = document.createElement('option');
       o.value = LOCAL_OPT_VALUE;
-      o.textContent = 'Local Delivery — Tri-Cities (free)';
+      o.textContent = 'Free Local Pickup/Delivery — Tri-Cities';
       shipMethodSel.insertBefore(o, shipMethodSel.firstChild);
       shipMethodSel.value = LOCAL_OPT_VALUE;
+      // Pre-fill Washington so USPS rates compute right away if the customer
+      // would rather have it shipped than do the free local pickup/delivery.
+      if (!stateSel.value) stateSel.value = 'Washington';
     } else if (!local && existing) {
       if (shipMethodSel.value === LOCAL_OPT_VALUE) shipMethodSel.value = 'ground';
       existing.remove();
@@ -1225,7 +1228,7 @@
     } else if (ship.local) {
       shipEl.innerHTML = '<span class="free">FREE</span>';
       labelEl.textContent = `Shipping (${ship.methodLabel})`;
-      noteEl.textContent = 'Free local delivery within ~20 miles of Pasco, WA (99301). Megan will reach out to schedule a drop-off window.';
+      noteEl.textContent = 'Free local pickup/delivery within ~20 miles of Pasco, WA (99301). Megan will reach out to schedule a pickup or drop-off window. Prefer it shipped instead? Choose a USPS option below.';
     } else if (ship.free) {
       shipEl.innerHTML = '<span class="free">FREE</span>';
       labelEl.textContent = `Shipping (${ship.methodLabel}, ${ship.info.label}, ${ship.lb} lb)`;
