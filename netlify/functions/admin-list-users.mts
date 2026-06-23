@@ -1,6 +1,6 @@
 import type { Context } from '@netlify/functions'
 import { admin } from '@netlify/identity'
-import { requireAdmin } from './_admin.mjs'
+import { requireAdmin, OWNER_EMAIL } from './_admin.mjs'
 import { isEmailVerified } from './_verification.mjs'
 
 export default async (_req: Request, _context: Context) => {
@@ -28,6 +28,9 @@ export default async (_req: Request, _context: Context) => {
       id: u.id || '',
       email: u.email || '',
       fullName,
+      // The site owner can't be deleted; flag it so the admin UI can hide the action
+      // without exposing the owner's address to the client.
+      isOwner: (u.email || '').toLowerCase() === OWNER_EMAIL,
       confirmed: !!u.confirmedAt,
       // The real "has verified their email / may place an order" state, which can differ
       // from GoTrue's confirmedAt (an account may be force-confirmed for sign-in yet still

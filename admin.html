@@ -1347,13 +1347,17 @@
       const actionBtn = isSelf ? '<span style="color:#8b87a0; font-size:11px;">You</span>' : isAdmin
         ? `<button type="button" class="button small secondary danger" data-act="revoke" data-uid="${escapeHtml(u.id)}">Remove admin</button>`
         : `<button type="button" class="button small secondary" data-act="grant" data-uid="${escapeHtml(u.id)}">Make admin</button>`;
+      // The site owner and the admin's own account can't be deleted from here.
+      const deleteBtn = (!isSelf && !u.isOwner)
+        ? `<button type="button" class="button small secondary danger" data-delete="${escapeHtml(u.id)}" style="margin-left:6px;">Delete</button>`
+        : '';
       return `<tr>
         ${selectCell}
         <td class="email">${escapeHtml(u.email || '')}</td>
         <td>${escapeHtml(u.fullName || '—')}</td>
         <td>${created}</td>
         <td>${roles}${confirmed}${lastSent}</td>
-        <td style="text-align:right; white-space:nowrap;">${confirmBtn}${actionBtn}<span class="role-msg" data-uid="${escapeHtml(u.id)}" style="display:none; font-size:11px; margin-left:6px;"></span></td>
+        <td style="text-align:right; white-space:nowrap;">${confirmBtn}${actionBtn}${deleteBtn}<span class="role-msg" data-uid="${escapeHtml(u.id)}" style="display:none; font-size:11px; margin-left:6px;"></span></td>
       </tr>`;
     }).join('');
     wrap.innerHTML = `<table class="users-table">
@@ -1365,6 +1369,9 @@
     });
     wrap.querySelectorAll('[data-confirm]').forEach(btn => {
       btn.addEventListener('click', () => confirmUserAccount(btn.dataset.confirm));
+    });
+    wrap.querySelectorAll('[data-delete]').forEach(btn => {
+      btn.addEventListener('click', () => deleteUser(btn.dataset.delete));
     });
     const pickAll = wrap.querySelector('#resendPickAll');
     if (pickAll) {
@@ -1545,6 +1552,52 @@
       }
       if (targetUser) { targetUser.verified = true; targetUser.confirmed = true; }
       renderUsers();
+    } catch (err) {
+      if (msg) { msg.textContent = err && err.message ? err.message : 'Failed'; msg.style.color = '#f0b8a8'; }
+      btn.disabled = false;
+    }
+  }
+
+  // Permanently delete a customer's account. Reviews and message history are anonymized
+  // server-side; orders and notifications are removed. Requires a typed confirmation
+  // because it can't be undone.
+  async function deleteUser(userId) {
+    const msg = document.querySelector(`.role-msg[data-uid="${userId}"]`);
+    const btn = document.querySelector(`[data-delete="${userId}"]`);
+    if (!btn) return;
+
+    const targetUser = allUsers.find(u => u.id === userId);
+    const who = targetUser?.email || 'this account';
+    if (!confirm(`Permanently delete ${who}? This removes their login and order history and cannot be undone. Their reviews will be kept but anonymized.`)) return;
+
+    btn.disabled = true;
+    if (msg) { msg.style.display = 'inline'; msg.textContent = 'Deleting…'; msg.style.color = '#8b87a0'; }
+
+    const token = await getAuthToken();
+    if (!token) {
+      if (msg) { msg.textContent = 'Session expired'; msg.style.color = '#f0b8a8'; }
+      btn.disabled = false;
+      return;
+    }
+
+    try {
+      const res = await fetch('/.netlify/functions/admin-delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ userId }),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+      allUsers = allUsers.filter(u => u.id !== userId);
+      const status = document.getElementById('usersStatus');
+      if (status) {
+        status.textContent = `Deleted ${who}. ${allUsers.length} user${allUsers.length === 1 ? '' : 's'} remaining.`;
+        status.className = 'pane-msg ok';
+      }
+      renderUsers();
+      if (emailRecipientsLoaded) populateEmailRecipients();
     } catch (err) {
       if (msg) { msg.textContent = err && err.message ? err.message : 'Failed'; msg.style.color = '#f0b8a8'; }
       btn.disabled = false;
