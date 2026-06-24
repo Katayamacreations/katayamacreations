@@ -805,14 +805,21 @@
         const reply = m.admin_reply || m.adminReply;
         const replyCount = m.reply_count || m.replyCount || 0;
         const hasReply = replyCount > 0 || !!reply;
+        const startedByAdmin = (m.initiated_by || m.initiatedBy) === 'admin';
+        const fromTag = startedByAdmin
+          ? '<span style="font-size:10px;color:#b8e0c2;background:rgba(90,180,120,0.15);padding:2px 8px;border-radius:10px;">From the team</span>'
+          : '';
+        const statusLabel = startedByAdmin
+          ? (replyCount > 0 ? '<span style="font-size:11px;color:#b8e0c2;">&#10003; You replied</span>' : '<span style="font-size:11px;color:#e8a87c;">Tap to reply</span>')
+          : (hasReply ? '<span style="font-size:11px;color:#b8e0c2;">&#10003; Replied</span>' : '<span style="font-size:11px;color:#e8a87c;">Awaiting reply</span>');
         return `<div style="border:1px solid rgba(192,192,210,0.15);border-radius:10px;padding:14px;margin-bottom:10px;cursor:pointer;transition:border-color 0.2s;" onclick="window._openUserThread(${m.id})" onmouseenter="this.style.borderColor='rgba(168,156,200,0.4)'" onmouseleave="this.style.borderColor='rgba(192,192,210,0.15)'">
           <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-            <strong style="color:#e8e3f0;font-size:13px;">${escapeHtml(subj)}</strong>
+            <strong style="color:#e8e3f0;font-size:13px;">${escapeHtml(subj)} ${fromTag}</strong>
             <span style="font-size:11px;color:#8a85a0;">${date}</span>
           </div>
           <div style="font-size:13px;color:#c0bcd0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:8px;">${escapeHtml((m.body || '').slice(0, 150))}</div>
           <div style="display:flex;align-items:center;gap:8px;">
-            ${hasReply ? '<span style="font-size:11px;color:#b8e0c2;">&#10003; Replied</span>' : '<span style="font-size:11px;color:#e8a87c;">Awaiting reply</span>'}
+            ${statusLabel}
             ${replyCount > 0 ? `<span style="font-size:11px;color:#a89cc8;background:rgba(107,72,166,0.2);padding:2px 8px;border-radius:10px;">${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}</span>` : ''}
             <button type="button" onclick="event.stopPropagation();window._deleteMsg(${m.id})" style="background:none;border:1px solid rgba(220,80,80,0.4);color:#e07070;font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;margin-left:auto;">Delete</button>
           </div>
@@ -858,9 +865,12 @@
 
       let html = '';
 
-      html += `<div style="padding:12px 14px;background:rgba(107,72,166,0.12);border-radius:10px;border-left:3px solid #a89cc8;">
+      // The opening message is the customer's own bubble normally, or a bubble from the
+      // team when they started the conversation.
+      const startedByAdmin = (msg.initiated_by || msg.initiatedBy) === 'admin';
+      html += `<div style="padding:12px 14px;background:${startedByAdmin ? 'rgba(90,180,120,0.08)' : 'rgba(107,72,166,0.12)'};border-radius:10px;border-left:3px solid ${startedByAdmin ? '#b8e0c2' : '#a89cc8'};">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <span style="font-size:12px;font-weight:600;color:#a89cc8;">You</span>
+          <span style="font-size:12px;font-weight:600;color:${startedByAdmin ? '#b8e0c2' : '#a89cc8'};">${startedByAdmin ? 'Katayama Creations' : 'You'}</span>
           <span style="font-size:10px;color:#8a85a0;">${new Date(msg.created_at || msg.createdAt).toLocaleString()}</span>
         </div>
         <div style="font-size:13px;color:#c0bcd0;white-space:pre-wrap;word-break:break-word;">${escapeHtml(msg.body)}</div>
