@@ -2602,7 +2602,12 @@
     wrap.innerHTML = msgs.map(m => {
       const isRead = m.is_read || m.isRead;
       const replyCount = m.reply_count || m.replyCount || 0;
-      const hasReply = replyCount > 0 || !!(m.admin_reply || m.adminReply);
+      const adminReplyCount = m.admin_reply_count ?? m.adminReplyCount ?? 0;
+      const userReplyCount = m.user_reply_count ?? m.userReplyCount ?? 0;
+      // Did the *other* party respond? Count replies by sender, not the total — a
+      // follow-up the admin sends must not read as the customer replying.
+      const customerReplied = userReplyCount > 0;
+      const adminReplied = adminReplyCount > 0 || !!(m.admin_reply || m.adminReply);
       const date = new Date(m.created_at || m.createdAt).toLocaleString();
       const name = escapeHtml((m.user_name || m.userName || '').trim() || m.user_email || m.userEmail);
       const subject = escapeHtml((m.subject || '').trim() || '(no subject)');
@@ -2621,8 +2626,8 @@
         <div style="font-size:12px;color:#9a96ab;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${body}</div>
         <div style="margin-top:6px;display:flex;gap:8px;align-items:center;">
           ${startedByAdmin
-            ? (replyCount > 0 ? '<span style="font-size:11px;color:#b8e0c2;">&#10003; Customer replied</span>' : '<span style="font-size:11px;color:#9a96ab;">No reply yet</span>')
-            : (hasReply ? '<span style="font-size:11px;color:#b8e0c2;">&#10003; Replied</span>' : '<span style="font-size:11px;color:#e8a87c;">Awaiting reply</span>')}
+            ? (customerReplied ? '<span style="font-size:11px;color:#b8e0c2;">&#10003; Customer replied</span>' : '<span style="font-size:11px;color:#9a96ab;">No reply yet</span>')
+            : (adminReplied ? '<span style="font-size:11px;color:#b8e0c2;">&#10003; Replied</span>' : '<span style="font-size:11px;color:#e8a87c;">Awaiting reply</span>')}
           ${replyCount > 0 ? `<span style="font-size:11px;color:#a89cc8;background:rgba(107,72,166,0.2);padding:2px 8px;border-radius:10px;">${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}</span>` : ''}
           <button type="button" style="font-size:11px;padding:4px 10px;background:none;border:1px solid rgba(220,80,80,0.4);color:#e07070;border-radius:6px;cursor:pointer;margin-left:auto;" onclick="event.stopPropagation();deleteMessage(${m.id})">Delete</button>
         </div>
