@@ -962,8 +962,10 @@
           </div>
           <div id="msgComposeStatus" class="pane-msg" style="margin-bottom:12px;">Loading customers…</div>
           <label for="msgComposeRecipient" style="display:block;font-size:12px;color:#a89cc8;margin-bottom:6px;">Recipient</label>
-          <input list="msgComposeRecipientList" id="msgComposeRecipient" placeholder="Search by name or email…" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid rgba(192,192,210,0.25);background:rgba(20,10,40,0.6);color:#e8e3f0;font-size:14px;margin-bottom:14px;">
-          <datalist id="msgComposeRecipientList"></datalist>
+          <div style="position:relative;margin-bottom:14px;">
+            <input id="msgComposeRecipient" placeholder="Start typing a name or email…" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="msgComposeRecipientResults" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid rgba(192,192,210,0.25);background:rgba(20,10,40,0.6);color:#e8e3f0;font-size:14px;">
+            <div id="msgComposeRecipientResults" role="listbox" style="display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);max-height:220px;overflow-y:auto;background:#1a0f2e;border:1px solid rgba(192,192,210,0.3);border-radius:10px;z-index:10;box-shadow:0 10px 28px rgba(0,0,0,0.45);"></div>
+          </div>
           <label for="msgComposeSubject" style="display:block;font-size:12px;color:#a89cc8;margin-bottom:6px;">Subject</label>
           <input id="msgComposeSubject" placeholder="Subject (optional)" maxlength="200" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid rgba(192,192,210,0.25);background:rgba(20,10,40,0.6);color:#e8e3f0;font-size:14px;margin-bottom:14px;">
           <label for="msgComposeBody" style="display:block;font-size:12px;color:#a89cc8;margin-bottom:6px;">Message</label>
@@ -2637,14 +2639,131 @@
   const composeOverlay = document.getElementById('msgComposeOverlay');
   const composeStatus = document.getElementById('msgComposeStatus');
   const composeRecipient = document.getElementById('msgComposeRecipient');
-  const composeList = document.getElementById('msgComposeRecipientList');
+  const composeResults = document.getElementById('msgComposeRecipientResults');
+
+  // Typeahead state for the recipient field.
+  let composeSelectedUser = null;   // the customer the admin actually picked
+  let composeMatches = [];          // current filtered list shown in the dropdown
+  let composeActiveIndex = -1;      // keyboard-highlighted row
 
   function closeCompose() {
     composeOverlay.style.display = 'none';
+    hideComposeResults();
   }
+
+  function recipientPool() {
+    return (allUsers || []).filter(u => u.email);
+  }
+
+  function hideComposeResults() {
+    composeResults.style.display = 'none';
+    composeResults.innerHTML = '';
+    composeMatches = [];
+    composeActiveIndex = -1;
+    composeRecipient.setAttribute('aria-expanded', 'false');
+  }
+
+  function highlightComposeOption() {
+    composeResults.querySelectorAll('.compose-option').forEach((el, i) => {
+      el.style.background = i === composeActiveIndex ? 'rgba(107,72,166,0.4)' : 'transparent';
+    });
+    const active = composeResults.querySelector(`.compose-option[data-idx="${composeActiveIndex}"]`);
+    if (active) active.scrollIntoView({ block: 'nearest' });
+  }
+
+  function renderComposeResults() {
+    const query = composeRecipient.value.trim().toLowerCase();
+    let pool = recipientPool();
+    if (query) {
+      pool = pool.filter(u =>
+        (u.fullName || '').toLowerCase().includes(query) ||
+        (u.email || '').toLowerCase().includes(query)
+      );
+    }
+    composeMatches = pool.slice(0, 50);
+    composeActiveIndex = -1;
+
+    if (!recipientPool().length) {
+      hideComposeResults();
+      return;
+    }
+    if (!composeMatches.length) {
+      composeResults.innerHTML = '<div style="padding:10px 12px;color:#8a85a0;font-size:13px;">No matching customers</div>';
+      composeResults.style.display = 'block';
+      composeRecipient.setAttribute('aria-expanded', 'true');
+      return;
+    }
+    composeResults.innerHTML = composeMatches.map((u, i) => {
+      const name = (u.fullName || '').trim();
+      const primary = name || u.email;
+      const secondary = name ? u.email : '';
+      return `<div class="compose-option" role="option" data-idx="${i}" style="padding:9px 12px;cursor:pointer;border-bottom:1px solid rgba(192,192,210,0.08);">
+        <div style="color:#e8e3f0;font-size:13px;font-weight:600;">${escapeHtml(primary)}</div>
+        ${secondary ? `<div style="color:#9a96ab;font-size:11px;">${escapeHtml(secondary)}</div>` : ''}
+      </div>`;
+    }).join('');
+    composeResults.style.display = 'block';
+    composeRecipient.setAttribute('aria-expanded', 'true');
+  }
+
+  function selectComposeMatch(i) {
+    const u = composeMatches[i];
+    if (!u) return;
+    composeSelectedUser = u;
+    const name = (u.fullName || '').trim();
+    composeRecipient.value = name ? `${name} — ${u.email}` : u.email;
+    hideComposeResults();
+  }
+
+  // ---- typeahead wiring -------------------------------------------------
+  composeRecipient.addEventListener('input', () => {
+    // Any edit invalidates a previous pick — the admin must reselect.
+    composeSelectedUser = null;
+    renderComposeResults();
+  });
+  composeRecipient.addEventListener('focus', () => {
+    if (composeOverlay.style.display !== 'none') renderComposeResults();
+  });
+  composeRecipient.addEventListener('keydown', (e) => {
+    if (composeResults.style.display === 'none') {
+      if (e.key === 'ArrowDown') { renderComposeResults(); }
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      composeActiveIndex = Math.min(composeActiveIndex + 1, composeMatches.length - 1);
+      highlightComposeOption();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      composeActiveIndex = Math.max(composeActiveIndex - 1, 0);
+      highlightComposeOption();
+    } else if (e.key === 'Enter') {
+      if (composeActiveIndex >= 0) { e.preventDefault(); selectComposeMatch(composeActiveIndex); }
+    } else if (e.key === 'Escape') {
+      hideComposeResults();
+    }
+  });
+  // mousedown (not click) so the pick lands before the input's blur fires.
+  composeResults.addEventListener('mousedown', (e) => {
+    const opt = e.target.closest('.compose-option');
+    if (!opt) return;
+    e.preventDefault();
+    selectComposeMatch(Number(opt.dataset.idx));
+  });
+  composeResults.addEventListener('mousemove', (e) => {
+    const opt = e.target.closest('.compose-option');
+    if (!opt) return;
+    composeActiveIndex = Number(opt.dataset.idx);
+    highlightComposeOption();
+  });
+  composeRecipient.addEventListener('blur', () => {
+    setTimeout(hideComposeResults, 150);
+  });
 
   async function openCompose() {
     composeRecipient.value = '';
+    composeSelectedUser = null;
+    hideComposeResults();
     document.getElementById('msgComposeSubject').value = '';
     document.getElementById('msgComposeBody').value = '';
     composeOverlay.style.display = 'flex';
@@ -2662,14 +2781,8 @@
       }
     }
 
-    const recipients = (allUsers || []).filter(u => u.email);
-    composeList.innerHTML = recipients.map(u => {
-      const label = u.fullName ? `${u.fullName} — ${u.email}` : u.email;
-      return `<option value="${escapeHtml(u.email)}">${escapeHtml(label)}</option>`;
-    }).join('');
-
-    if (recipients.length) {
-      composeStatus.textContent = 'Pick a customer, then write your message.';
+    if (recipientPool().length) {
+      composeStatus.textContent = 'Start typing a name or email, then pick a customer.';
       composeStatus.className = 'pane-msg';
     } else {
       composeStatus.textContent = 'No customers available to message.';
@@ -2682,13 +2795,12 @@
   document.getElementById('msgComposeCancel').addEventListener('click', closeCompose);
 
   document.getElementById('msgComposeSendBtn').addEventListener('click', async () => {
-    const email = composeRecipient.value.trim();
     const subject = document.getElementById('msgComposeSubject').value.trim();
     const bodyText = document.getElementById('msgComposeBody').value.trim();
 
-    const recipient = (allUsers || []).find(u => (u.email || '').toLowerCase() === email.toLowerCase());
+    const recipient = composeSelectedUser;
     if (!recipient || !recipient.id) {
-      composeStatus.textContent = 'Choose a customer from the list.';
+      composeStatus.textContent = 'Choose a customer from the dropdown.';
       composeStatus.className = 'pane-msg err';
       return;
     }
