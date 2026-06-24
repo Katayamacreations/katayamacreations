@@ -484,6 +484,20 @@
       <div id="myMsgList"></div>
     </div>
 
+    <!-- New-message popup: greets the customer on login when the team has written to them. -->
+    <div id="loginMsgPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;align-items:center;justify-content:center;padding:20px;">
+      <div style="background:linear-gradient(180deg,#2a1745,#1a0f2e);border:1px solid rgba(192,192,210,0.3);border-radius:16px;padding:30px 28px;width:100%;max-width:440px;box-shadow:0 16px 56px rgba(0,0,0,0.6);text-align:center;">
+        <div style="font-size:42px;line-height:1;margin-bottom:12px;">&#128172;</div>
+        <h3 id="loginMsgPopupTitle" style="margin:0 0 8px;font-size:21px;color:#e8e3f0;">You have a new message</h3>
+        <p style="margin:0 0 6px;color:#a89cc8;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;">From Katayama Creations</p>
+        <p id="loginMsgPopupBody" style="margin:0 0 22px;color:#c0bcd0;font-size:14px;line-height:1.5;"></p>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+          <button type="button" class="button" id="loginMsgPopupReply">Read &amp; reply</button>
+          <button type="button" class="button" id="loginMsgPopupDismiss" style="background:rgba(192,192,210,0.12);">Maybe later</button>
+        </div>
+      </div>
+    </div>
+
     <div id="userThreadOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
       <div style="background:linear-gradient(180deg,#2a1745,#1a0f2e);border:1px solid rgba(192,192,210,0.25);border-radius:16px;padding:28px;width:90%;max-width:600px;max-height:85vh;display:flex;flex-direction:column;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
@@ -804,14 +818,19 @@
         const subj = (m.subject || '').trim() || '(no subject)';
         const reply = m.admin_reply || m.adminReply;
         const replyCount = m.reply_count || m.replyCount || 0;
-        const hasReply = replyCount > 0 || !!reply;
+        const adminReplyCount = m.admin_reply_count ?? m.adminReplyCount ?? 0;
+        const userReplyCount = m.user_reply_count ?? m.userReplyCount ?? 0;
+        // Status reflects who the customer is waiting on, so count replies by sender
+        // rather than the total — the team's own follow-up isn't "you replied".
+        const youReplied = userReplyCount > 0;
+        const adminReplied = adminReplyCount > 0 || !!reply;
         const startedByAdmin = (m.initiated_by || m.initiatedBy) === 'admin';
         const fromTag = startedByAdmin
           ? '<span style="font-size:10px;color:#b8e0c2;background:rgba(90,180,120,0.15);padding:2px 8px;border-radius:10px;">From the team</span>'
           : '';
         const statusLabel = startedByAdmin
-          ? (replyCount > 0 ? '<span style="font-size:11px;color:#b8e0c2;">&#10003; You replied</span>' : '<span style="font-size:11px;color:#e8a87c;">Tap to reply</span>')
-          : (hasReply ? '<span style="font-size:11px;color:#b8e0c2;">&#10003; Replied</span>' : '<span style="font-size:11px;color:#e8a87c;">Awaiting reply</span>');
+          ? (youReplied ? '<span style="font-size:11px;color:#b8e0c2;">&#10003; You replied</span>' : '<span style="font-size:11px;color:#e8a87c;">Tap to reply</span>')
+          : (adminReplied ? '<span style="font-size:11px;color:#b8e0c2;">&#10003; Replied</span>' : '<span style="font-size:11px;color:#e8a87c;">Awaiting reply</span>');
         return `<div style="border:1px solid rgba(192,192,210,0.15);border-radius:10px;padding:14px;margin-bottom:10px;cursor:pointer;transition:border-color 0.2s;" onclick="window._openUserThread(${m.id})" onmouseenter="this.style.borderColor='rgba(168,156,200,0.4)'" onmouseleave="this.style.borderColor='rgba(192,192,210,0.15)'">
           <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
             <strong style="color:#e8e3f0;font-size:13px;">${escapeHtml(subj)} ${fromTag}</strong>
@@ -833,8 +852,65 @@
   if (currentUser) {
     loadMyMessages();
     setInterval(loadMyMessages, 30000);
+    checkLoginMessagePopup();
   }
   window._refreshUserMessages = loadMyMessages;
+
+  // Greet the customer with a popup when the team has sent them something unread, and
+  // take them straight into the thread so they can reply in one tap. Backed by the same
+  // notifications the bell uses; each notification is only popped once per browser session.
+  async function checkLoginMessagePopup() {
+    try {
+      const nfJwt = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
+      const token = nfJwt ? decodeURIComponent(nfJwt[1]) : null;
+      if (!token) return;
+      const res = await fetch('/.netlify/functions/user-notifications', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const notes = await res.json();
+
+      // Unread notifications that point at a message thread from the team.
+      const fresh = notes.filter(n =>
+        !(n.is_read || n.isRead) &&
+        (n.type === 'message' || n.type === 'reply') &&
+        (n.related_id || n.relatedId));
+      if (!fresh.length) return;
+
+      let shown = [];
+      try { shown = JSON.parse(sessionStorage.getItem('shownMsgPopups') || '[]'); } catch {}
+      const unseen = fresh.filter(n => !shown.includes(n.id));
+      if (!unseen.length) return;
+
+      // Notifications come newest-first; lead with the latest one.
+      const latest = unseen[0];
+      const relatedId = Number(latest.related_id || latest.relatedId);
+
+      document.getElementById('loginMsgPopupTitle').textContent =
+        fresh.length > 1 ? `You have ${fresh.length} new messages` : 'You have a new message';
+      document.getElementById('loginMsgPopupBody').textContent =
+        (latest.body || latest.title || 'The team sent you a message.').slice(0, 240);
+
+      const popup = document.getElementById('loginMsgPopup');
+      popup.style.display = 'flex';
+
+      // Remember everything we surfaced so the popup doesn't nag on every page view.
+      sessionStorage.setItem('shownMsgPopups', JSON.stringify(shown.concat(fresh.map(n => n.id))));
+
+      document.getElementById('loginMsgPopupReply').onclick = function () {
+        popup.style.display = 'none';
+        if (relatedId && typeof window._openUserThread === 'function') {
+          window._openUserThread(relatedId);
+        } else {
+          const card = document.getElementById('myMessagesCard');
+          if (card) card.scrollIntoView({ behavior: 'smooth' });
+        }
+      };
+      document.getElementById('loginMsgPopupDismiss').onclick = function () {
+        popup.style.display = 'none';
+      };
+    } catch {}
+  }
 
   let userThreadMsgId = null;
 

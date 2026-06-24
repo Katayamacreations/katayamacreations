@@ -29,6 +29,8 @@ export default async (req: Request, _context: Context) => {
         deletedAt: messages.deletedAt,
         deletedBy: messages.deletedBy,
         replyCount: sql<number>`(SELECT count(*) FROM message_replies WHERE message_id = ${messages.id})`.as('reply_count'),
+        adminReplyCount: sql<number>`(SELECT count(*) FROM message_replies WHERE message_id = ${messages.id} AND sender_type = 'admin')`.as('admin_reply_count'),
+        userReplyCount: sql<number>`(SELECT count(*) FROM message_replies WHERE message_id = ${messages.id} AND sender_type = 'user')`.as('user_reply_count'),
       })
       .from(messages)
       .where(and(eq(messages.userId, user.id), isNull(messages.deletedAt)))
