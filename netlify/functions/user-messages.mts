@@ -21,6 +21,7 @@ export default async (req: Request, _context: Context) => {
         userName: messages.userName,
         subject: messages.subject,
         body: messages.body,
+        initiatedBy: messages.initiatedBy,
         adminReply: messages.adminReply,
         repliedAt: messages.repliedAt,
         isRead: messages.isRead,

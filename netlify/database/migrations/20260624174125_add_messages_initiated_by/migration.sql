@@ -1,0 +1,1 @@
+ALTER TABLE "messages" ADD COLUMN "initiated_by" text DEFAULT 'user' NOT NULL;

@@ -51,6 +51,9 @@ export const messages = pgTable("messages", {
   userName: text("user_name").notNull().default(""),
   subject: text("subject").notNull().default(""),
   body: text("body").notNull(),
+  // Who opened the thread: 'user' (customer messaged the team) or 'admin' (team
+  // reached out to the customer). Drives which side renders the first bubble.
+  initiatedBy: text("initiated_by").notNull().default("user"),
   adminReply: text("admin_reply"),
   repliedAt: timestamp("replied_at"),
   isRead: boolean("is_read").notNull().default(false),

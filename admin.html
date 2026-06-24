@@ -932,6 +932,7 @@
           <option value="unreplied">Needs reply</option>
         </select>
         <div class="spacer"></div>
+        <button type="button" class="button" id="msgComposeBtn">New message</button>
         <button type="button" class="button secondary" id="msgRefreshBtn">Refresh</button>
       </div>
       <div id="msgStatus" class="pane-msg">Loading…</div>
@@ -949,6 +950,27 @@
             <div style="display:flex;gap:10px;margin-top:10px;">
               <button type="button" class="button" id="msgThreadSendBtn">Send reply</button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="msgComposeOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+        <div style="background:linear-gradient(180deg,#2a1745,#1a0f2e);border:1px solid rgba(192,192,210,0.25);border-radius:16px;padding:28px;width:90%;max-width:560px;max-height:85vh;display:flex;flex-direction:column;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h3 style="margin:0;font-size:18px;color:#e8e3f0;">Message a customer</h3>
+            <button type="button" id="msgComposeClose" style="background:none;border:none;color:#8a85a0;font-size:22px;cursor:pointer;padding:0 4px;">&times;</button>
+          </div>
+          <div id="msgComposeStatus" class="pane-msg" style="margin-bottom:12px;">Loading customers…</div>
+          <label for="msgComposeRecipient" style="display:block;font-size:12px;color:#a89cc8;margin-bottom:6px;">Recipient</label>
+          <input list="msgComposeRecipientList" id="msgComposeRecipient" placeholder="Search by name or email…" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid rgba(192,192,210,0.25);background:rgba(20,10,40,0.6);color:#e8e3f0;font-size:14px;margin-bottom:14px;">
+          <datalist id="msgComposeRecipientList"></datalist>
+          <label for="msgComposeSubject" style="display:block;font-size:12px;color:#a89cc8;margin-bottom:6px;">Subject</label>
+          <input id="msgComposeSubject" placeholder="Subject (optional)" maxlength="200" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid rgba(192,192,210,0.25);background:rgba(20,10,40,0.6);color:#e8e3f0;font-size:14px;margin-bottom:14px;">
+          <label for="msgComposeBody" style="display:block;font-size:12px;color:#a89cc8;margin-bottom:6px;">Message</label>
+          <textarea id="msgComposeBody" rows="5" placeholder="Write your message…" maxlength="5000" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(192,192,210,0.25);background:rgba(20,10,40,0.6);color:#e8e3f0;font-size:14px;resize:vertical;"></textarea>
+          <div style="display:flex;gap:10px;margin-top:14px;justify-content:flex-end;">
+            <button type="button" class="button secondary" id="msgComposeCancel">Cancel</button>
+            <button type="button" class="button" id="msgComposeSendBtn">Send message</button>
           </div>
         </div>
       </div>
@@ -2583,16 +2605,22 @@
       const name = escapeHtml((m.user_name || m.userName || '').trim() || m.user_email || m.userEmail);
       const subject = escapeHtml((m.subject || '').trim() || '(no subject)');
       const body = escapeHtml((m.body || '').slice(0, 200));
+      const startedByAdmin = (m.initiated_by || m.initiatedBy) === 'admin';
+      const sentTag = startedByAdmin
+        ? '<span style="font-size:10px;color:#b8e0c2;background:rgba(90,180,120,0.15);padding:2px 8px;border-radius:10px;">Sent by you</span>'
+        : '';
 
       return `<div class="order-row" style="border-left:3px solid ${isRead ? '#3a3555' : '#b8e0c2'};margin-bottom:8px;padding:14px 16px;cursor:pointer;" onclick="openThread(${m.id})" data-msg-id="${m.id}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-          <strong style="color:#e8e3f0;font-size:14px;">${name}</strong>
+          <strong style="color:#e8e3f0;font-size:14px;">${name} ${sentTag}</strong>
           <span style="font-size:11px;color:#8a85a0;">${date}</span>
         </div>
         <div style="font-size:13px;color:#c0bcd0;font-weight:600;margin-bottom:4px;">${subject}</div>
         <div style="font-size:12px;color:#9a96ab;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${body}</div>
         <div style="margin-top:6px;display:flex;gap:8px;align-items:center;">
-          ${hasReply ? '<span style="font-size:11px;color:#b8e0c2;">&#10003; Replied</span>' : '<span style="font-size:11px;color:#e8a87c;">Awaiting reply</span>'}
+          ${startedByAdmin
+            ? (replyCount > 0 ? '<span style="font-size:11px;color:#b8e0c2;">&#10003; Customer replied</span>' : '<span style="font-size:11px;color:#9a96ab;">No reply yet</span>')
+            : (hasReply ? '<span style="font-size:11px;color:#b8e0c2;">&#10003; Replied</span>' : '<span style="font-size:11px;color:#e8a87c;">Awaiting reply</span>')}
           ${replyCount > 0 ? `<span style="font-size:11px;color:#a89cc8;background:rgba(107,72,166,0.2);padding:2px 8px;border-radius:10px;">${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}</span>` : ''}
           <button type="button" style="font-size:11px;padding:4px 10px;background:none;border:1px solid rgba(220,80,80,0.4);color:#e07070;border-radius:6px;cursor:pointer;margin-left:auto;" onclick="event.stopPropagation();deleteMessage(${m.id})">Delete</button>
         </div>
@@ -2602,6 +2630,103 @@
 
   document.getElementById('msgFilter').addEventListener('change', renderMessages);
   document.getElementById('msgRefreshBtn').addEventListener('click', loadMessages);
+
+  // ------------------------------------------------------------------
+  // Compose: start a new thread with a customer
+  // ------------------------------------------------------------------
+  const composeOverlay = document.getElementById('msgComposeOverlay');
+  const composeStatus = document.getElementById('msgComposeStatus');
+  const composeRecipient = document.getElementById('msgComposeRecipient');
+  const composeList = document.getElementById('msgComposeRecipientList');
+
+  function closeCompose() {
+    composeOverlay.style.display = 'none';
+  }
+
+  async function openCompose() {
+    composeRecipient.value = '';
+    document.getElementById('msgComposeSubject').value = '';
+    document.getElementById('msgComposeBody').value = '';
+    composeOverlay.style.display = 'flex';
+
+    // Reuse the Users pane's roster; load it on demand if it hasn't been fetched yet.
+    if (!usersLoadedOnce) {
+      composeStatus.textContent = 'Loading customers…';
+      composeStatus.className = 'pane-msg';
+      try {
+        await loadUsers();
+      } catch {
+        composeStatus.textContent = 'Failed to load customers.';
+        composeStatus.className = 'pane-msg err';
+        return;
+      }
+    }
+
+    const recipients = (allUsers || []).filter(u => u.email);
+    composeList.innerHTML = recipients.map(u => {
+      const label = u.fullName ? `${u.fullName} — ${u.email}` : u.email;
+      return `<option value="${escapeHtml(u.email)}">${escapeHtml(label)}</option>`;
+    }).join('');
+
+    if (recipients.length) {
+      composeStatus.textContent = 'Pick a customer, then write your message.';
+      composeStatus.className = 'pane-msg';
+    } else {
+      composeStatus.textContent = 'No customers available to message.';
+      composeStatus.className = 'pane-msg';
+    }
+  }
+
+  document.getElementById('msgComposeBtn').addEventListener('click', openCompose);
+  document.getElementById('msgComposeClose').addEventListener('click', closeCompose);
+  document.getElementById('msgComposeCancel').addEventListener('click', closeCompose);
+
+  document.getElementById('msgComposeSendBtn').addEventListener('click', async () => {
+    const email = composeRecipient.value.trim();
+    const subject = document.getElementById('msgComposeSubject').value.trim();
+    const bodyText = document.getElementById('msgComposeBody').value.trim();
+
+    const recipient = (allUsers || []).find(u => (u.email || '').toLowerCase() === email.toLowerCase());
+    if (!recipient || !recipient.id) {
+      composeStatus.textContent = 'Choose a customer from the list.';
+      composeStatus.className = 'pane-msg err';
+      return;
+    }
+    if (!bodyText) {
+      composeStatus.textContent = 'Message body is required.';
+      composeStatus.className = 'pane-msg err';
+      return;
+    }
+
+    const btn = document.getElementById('msgComposeSendBtn');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    composeStatus.textContent = '';
+
+    try {
+      const token = await getAuthToken();
+      const res = await fetch('/.netlify/functions/admin-send-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({
+          userId: recipient.id,
+          userEmail: recipient.email,
+          userName: recipient.fullName || '',
+          subject,
+          body: bodyText,
+        }),
+      });
+      if (!res.ok) throw new Error(await res.text().catch(() => `HTTP ${res.status}`));
+      closeCompose();
+      await loadMessages();
+    } catch (err) {
+      composeStatus.textContent = 'Failed to send message. ' + (err && err.message ? err.message : '');
+      composeStatus.className = 'pane-msg err';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Send message';
+    }
+  });
 
   window.deleteMessage = async function(id) {
     if (!confirm('Delete this message? It will be hidden from view.')) return;
@@ -2643,9 +2768,15 @@
 
       let html = '';
 
-      html += `<div style="padding:12px 14px;background:rgba(107,72,166,0.12);border-radius:10px;border-left:3px solid #a89cc8;">
+      // The opening message renders as the customer's bubble for customer-started threads,
+      // or as the admin's (green, right-aligned) bubble when the team started it.
+      const startedByAdmin = (msg.initiated_by || msg.initiatedBy) === 'admin';
+      const openName = startedByAdmin
+        ? 'You'
+        : escapeHtml((msg.user_name || msg.userName || '').trim() || msg.user_email || msg.userEmail);
+      html += `<div style="padding:12px 14px;background:${startedByAdmin ? 'rgba(90,180,120,0.08)' : 'rgba(107,72,166,0.12)'};border-radius:10px;border-left:3px solid ${startedByAdmin ? '#b8e0c2' : '#a89cc8'};${startedByAdmin ? 'align-self:flex-end;max-width:90%;' : ''}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <span style="font-size:12px;font-weight:600;color:#a89cc8;">${escapeHtml((msg.user_name || msg.userName || '').trim() || msg.user_email || msg.userEmail)}</span>
+          <span style="font-size:12px;font-weight:600;color:${startedByAdmin ? '#b8e0c2' : '#a89cc8'};">${openName}</span>
           <span style="font-size:10px;color:#8a85a0;">${new Date(msg.created_at || msg.createdAt).toLocaleString()}</span>
         </div>
         ${msg.subject ? `<div style="font-size:13px;color:#e8e3f0;font-weight:600;margin-bottom:4px;">${escapeHtml(msg.subject)}</div>` : ''}
