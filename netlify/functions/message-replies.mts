@@ -1,9 +1,26 @@
 import type { Context } from '@netlify/functions'
 import { getUser } from '@netlify/identity'
 import { requireAdmin } from './_admin.mts'
+import { sendEmail } from './_send-email.mjs'
+import { wrapEmail, escapeHtml, SITE_NAME, COLORS, siteUrl, ctaButton } from './_email-brand.mjs'
 import { db } from '../../db/index.js'
 import { messages, messageReplies, notifications } from '../../db/schema.js'
 import { eq, asc } from 'drizzle-orm'
+
+function renderReplyToCustomer(opts: { subject: string; body: string }): string {
+  const safeSubject = escapeHtml(opts.subject || '')
+  const safeBody = escapeHtml(opts.body).replace(/\n/g, '<br>')
+  return wrapEmail(
+    `<h1 style="margin:0 0 16px;font-size:22px;color:${COLORS.heading};">${SITE_NAME}</h1>
+${safeSubject ? `<p style="margin:0 0 6px;color:${COLORS.muted};font-size:13px;text-transform:uppercase;letter-spacing:0.05em;">Thread</p>
+<p style="margin:0 0 16px;color:${COLORS.heading};font-weight:700;">${safeSubject}</p>` : ''}
+<p style="margin:0 0 6px;color:${COLORS.muted};font-size:13px;text-transform:uppercase;letter-spacing:0.05em;">New reply</p>
+<p style="margin:0;line-height:1.6;color:${COLORS.body};">${safeBody}</p>
+${ctaButton('Read and reply', `${siteUrl()}/account.html#messages`)}`,
+    `You're receiving this because ${SITE_NAME} replied to your message thread. Sign in to your account to reply.`,
+    `New reply from ${SITE_NAME}`,
+  )
+}
 
 export default async (req: Request, _context: Context) => {
   const url = new URL(req.url)
@@ -129,6 +146,23 @@ export default async (req: Request, _context: Context) => {
           relatedId: String(msg.id),
           userId: msg.userId,
         })
+      }
+
+      if (msg.userEmail) {
+        try {
+          const subject = msg.subject || `Your message with ${SITE_NAME}`
+          const sent = await sendEmail({
+            to: msg.userEmail,
+            subject: `New reply from ${SITE_NAME}`,
+            html: renderReplyToCustomer({ subject, body: replyBody.slice(0, 5000) }),
+            text: `${SITE_NAME}\n\nNew reply${subject ? `: ${subject}` : ''}\n\n${replyBody.slice(0, 5000)}\n\nSign in to read and reply: ${siteUrl()}/account.html#messages`,
+          })
+          if (!sent.ok) {
+            console.error(`Customer reply email failed (${sent.provider} ${sent.status}): ${sent.error || ''}`)
+          }
+        } catch (err) {
+          console.error('Customer reply email send failed', err)
+        }
       }
     } else {
       await db.insert(notifications).values({
