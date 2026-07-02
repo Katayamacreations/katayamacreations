@@ -164,16 +164,18 @@
       padding-top: 12px;
       border-top: 1px dashed rgba(192, 192, 210, 0.15);
     }
-    .order-actions select, .order-actions input {
+    .order-actions select, .order-actions input, .order-actions textarea {
       padding: 8px 10px;
       border: 1px solid rgba(192, 192, 210, 0.25);
       border-radius: 8px;
       background: rgba(20, 10, 40, 0.6);
       color: #e8e3f0;
       font-size: 13px;
+      font-family: inherit;
       width: 100%;
       box-sizing: border-box;
     }
+    .order-actions textarea { min-height: 82px; resize: vertical; }
     .order-actions .label { font-size: 11px; color: #8b87a0; text-transform: uppercase; letter-spacing: 0.4px; font-weight: 700; }
     .row-msg { font-size: 12px; color: #8b87a0; }
     .row-msg.ok { color: #b8e0c2; }
@@ -1187,6 +1189,7 @@
           ${(o.billingSameAsShipping === false && [o.billingAddress1, o.billingCity].some(Boolean)) ? `<div class="order-meta">Bill to ${escapeHtml([o.billingAddress1, o.billingAddress2, o.billingCity, o.billingState].filter(Boolean).join(', '))}${o.billingZip ? ` ${escapeHtml(o.billingZip)}` : ''}</div>` : ''}
           ${o.orderNotes ? `<div class="order-meta">Customer note: ${escapeHtml(o.orderNotes)}</div>` : ''}
           ${o.goodreadsUrl ? `<div class="order-meta">Goodreads: <a href="${escapeHtml(o.goodreadsUrl)}" target="_blank" rel="noopener" style="color:#b8e0c2;">${escapeHtml(o.goodreadsUrl)}</a></div>` : ''}
+          ${o.customerNotes ? `<div class="order-meta">Notes to customer: ${escapeHtml(o.customerNotes)}</div>` : ''}
           ${o.adminNotes ? `<div class="order-meta">Admin note: ${escapeHtml(o.adminNotes)}</div>` : ''}
           ${o.updatedAt ? `<div class="order-meta">Last updated ${escapeHtml(new Date(o.updatedAt).toLocaleString())}${o.updatedBy ? ` by ${escapeHtml(o.updatedBy)}` : ''}</div>` : ''}
         </div>
@@ -1215,6 +1218,12 @@
           <input data-field="adminNotes" type="text" placeholder="Notes for your records" value="${escapeHtml(o.adminNotes || '')}">
         </div>
       </div>
+      <div class="order-actions" style="grid-template-columns: 1fr;">
+        <div>
+          <div class="label">Notes to the customer</div>
+          <textarea data-field="customerNotes" placeholder="Optional notes included in the shipped email">${escapeHtml(o.customerNotes || '')}</textarea>
+        </div>
+      </div>
       <div class="row-msg" data-role="msg" style="margin-top:8px;"></div>
     `;
 
@@ -1232,6 +1241,7 @@
     const status = li.querySelector('[data-field="status"]').value;
     const trackingNumber = li.querySelector('[data-field="trackingNumber"]').value.trim();
     const adminNotes = li.querySelector('[data-field="adminNotes"]').value;
+    const customerNotes = li.querySelector('[data-field="customerNotes"]').value;
 
     const token = await getAuthToken();
     if (!token) {
@@ -1253,6 +1263,7 @@
           status,
           trackingNumber,
           adminNotes,
+          customerNotes,
         }),
       });
       if (!res.ok) {
