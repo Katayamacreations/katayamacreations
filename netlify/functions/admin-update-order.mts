@@ -1,6 +1,8 @@
 import type { Context } from '@netlify/functions'
 import { getStore } from '@netlify/blobs'
 import { requireAdmin } from './_admin.mjs'
+import { renderShippedOrderEmailHtml, renderShippedOrderEmailText } from './_order-email.mjs'
+import { sendEmail } from './_send-email.mjs'
 
 const ALLOWED_STATUSES = new Set([
   'pending',
@@ -44,6 +46,8 @@ export default async (req: Request, _context: Context) => {
   }
 
   const updated: Record<string, unknown> = { ...(existing as Record<string, unknown>) }
+  const previousStatus = String(updated.status || '').toLowerCase().trim()
+  let nextStatus = previousStatus
 
   if (body.status !== undefined) {
     const next = String(body.status).toLowerCase().trim()
@@ -51,6 +55,7 @@ export default async (req: Request, _context: Context) => {
       return new Response('Invalid status', { status: 400 })
     }
     updated.status = next
+    nextStatus = next
   }
 
   if (body.trackingNumber !== undefined) {
@@ -66,5 +71,34 @@ export default async (req: Request, _context: Context) => {
 
   await store.setJSON(key, updated)
 
-  return Response.json({ ok: true, order: { ...updated, _key: key } })
+  let shippedEmailSent = false
+  const shouldSendShippedEmail = previousStatus !== 'shipped' && nextStatus === 'shipped'
+  const customerEmail = String(updated.email || '').trim()
+  if (shouldSendShippedEmail && customerEmail) {
+    const trackingNumber = String(updated.trackingNumber || '').trim()
+    try {
+      const emailRes = await sendEmail({
+        to: customerEmail,
+        subject: trackingNumber ? 'Your Katayama Creations order has shipped' : 'Your order has shipped',
+        html: renderShippedOrderEmailHtml({
+          id: String(updated.id || ''),
+          customerName: String(updated.customerName || ''),
+          trackingNumber,
+        }),
+        text: renderShippedOrderEmailText({
+          id: String(updated.id || ''),
+          customerName: String(updated.customerName || ''),
+          trackingNumber,
+        }),
+      })
+      shippedEmailSent = emailRes.ok
+      if (!emailRes.ok) {
+        console.error(`Shipped order email failed (${emailRes.provider} ${emailRes.status}): ${emailRes.error || ''}`)
+      }
+    } catch (err) {
+      console.error('Shipped order email send failed', err)
+    }
+  }
+
+  return Response.json({ ok: true, shippedEmailSent, order: { ...updated, _key: key } })
 }

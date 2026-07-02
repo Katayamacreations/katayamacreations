@@ -11,6 +11,7 @@ export interface CartItem {
 }
 
 export interface OrderData {
+  id?: string
   customerName: string
   email: string
   address1?: string
@@ -34,6 +35,12 @@ export interface OrderData {
   goodreadsUrl?: string
   raffleTickets?: string[]
   cart: CartItem[]
+}
+
+export interface ShippedOrderEmailData {
+  id?: string
+  customerName?: string
+  trackingNumber?: string
 }
 
 // True when the customer provided a billing address that differs from the shipping address.
@@ -129,6 +136,37 @@ ${orderNotesBlock}`
 
 export function renderOrderEmailText(o: OrderData): string {
   return renderOrderSummaryText(o)
+}
+
+export function renderShippedOrderEmailHtml(o: ShippedOrderEmailData): string {
+  const tracking = (o.trackingNumber || '').trim()
+  const trackingBlock = tracking
+    ? `<div style="margin:18px 0 0;padding:12px 14px;background:rgba(184,224,194,0.12);border:1px solid rgba(184,224,194,0.35);border-radius:12px;color:${COLORS.body};font-size:14px;line-height:1.5;">
+  <strong style="color:${COLORS.heading};">Tracking number:</strong> ${escapeHtml(tracking)}
+</div>`
+    : ''
+  const orderLine = o.id
+    ? `<p style="margin:8px 0 0;color:${COLORS.muted};font-size:13px;">Order ${escapeHtml(o.id)}</p>`
+    : ''
+  const content = `<h1 style="margin:0 0 8px;font-size:22px;color:${COLORS.heading};">Your order has shipped</h1>
+<p style="margin:0;color:${COLORS.body};font-size:15px;line-height:1.6;">Hi ${escapeHtml(o.customerName || 'there')}, your Katayama Creations order is on its way.</p>
+${orderLine}
+${trackingBlock}
+<p style="margin:18px 0 0;color:${COLORS.body};font-size:14px;line-height:1.6;">Thank you for your order. Keep an eye on your mailbox for your bookish surprise.</p>`
+
+  return wrapEmail(content, `You received this email because your ${SITE_NAME} order was marked as shipped.`, tracking ? `Your order has shipped. Tracking: ${tracking}` : 'Your order has shipped.')
+}
+
+export function renderShippedOrderEmailText(o: ShippedOrderEmailData): string {
+  const lines: string[] = []
+  lines.push(`Hi ${o.customerName || 'there'},`)
+  lines.push('')
+  lines.push('Your Katayama Creations order has shipped.')
+  if (o.id) lines.push(`Order: ${o.id}`)
+  if ((o.trackingNumber || '').trim()) lines.push(`Tracking number: ${o.trackingNumber!.trim()}`)
+  lines.push('')
+  lines.push('Thank you for your order.')
+  return lines.join('\n')
 }
 
 export function renderOrderSummaryText(o: OrderData): string {
