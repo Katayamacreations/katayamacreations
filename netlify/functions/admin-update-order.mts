@@ -17,6 +17,7 @@ interface UpdateBody {
   status?: string
   trackingNumber?: string
   adminNotes?: string
+  customerNotes?: string
 }
 
 export default async (req: Request, _context: Context) => {
@@ -66,16 +67,21 @@ export default async (req: Request, _context: Context) => {
     updated.adminNotes = String(body.adminNotes)
   }
 
+  if (body.customerNotes !== undefined) {
+    updated.customerNotes = String(body.customerNotes)
+  }
+
   updated.updatedAt = new Date().toISOString()
   updated.updatedBy = guard.email
 
   await store.setJSON(key, updated)
 
   let shippedEmailSent = false
-  const shouldSendShippedEmail = previousStatus !== 'shipped' && nextStatus === 'shipped'
+  const shouldSendShippedEmail = nextStatus === 'shipped'
   const customerEmail = String(updated.email || '').trim()
   if (shouldSendShippedEmail && customerEmail) {
     const trackingNumber = String(updated.trackingNumber || '').trim()
+    const customerNotes = String(updated.customerNotes || '').trim()
     try {
       const emailRes = await sendEmail({
         to: customerEmail,
@@ -84,11 +90,13 @@ export default async (req: Request, _context: Context) => {
           id: String(updated.id || ''),
           customerName: String(updated.customerName || ''),
           trackingNumber,
+          customerNotes,
         }),
         text: renderShippedOrderEmailText({
           id: String(updated.id || ''),
           customerName: String(updated.customerName || ''),
           trackingNumber,
+          customerNotes,
         }),
       })
       shippedEmailSent = emailRes.ok

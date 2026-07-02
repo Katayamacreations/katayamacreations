@@ -41,6 +41,7 @@ export interface ShippedOrderEmailData {
   id?: string
   customerName?: string
   trackingNumber?: string
+  customerNotes?: string
 }
 
 // True when the customer provided a billing address that differs from the shipping address.
@@ -140,9 +141,15 @@ export function renderOrderEmailText(o: OrderData): string {
 
 export function renderShippedOrderEmailHtml(o: ShippedOrderEmailData): string {
   const tracking = (o.trackingNumber || '').trim()
+  const customerNotes = (o.customerNotes || '').trim()
   const trackingBlock = tracking
     ? `<div style="margin:18px 0 0;padding:12px 14px;background:rgba(184,224,194,0.12);border:1px solid rgba(184,224,194,0.35);border-radius:12px;color:${COLORS.body};font-size:14px;line-height:1.5;">
   <strong style="color:${COLORS.heading};">Tracking number:</strong> ${escapeHtml(tracking)}
+</div>`
+    : ''
+  const customerNotesBlock = customerNotes
+    ? `<div style="margin:18px 0 0;padding:12px 14px;background:rgba(192,192,210,0.08);border:1px solid ${COLORS.border};border-radius:12px;color:${COLORS.body};font-size:14px;line-height:1.5;">
+  <strong style="color:${COLORS.heading};">Notes from Katayama Creations:</strong><br>${escapeHtml(customerNotes).replace(/\n/g, '<br>')}
 </div>`
     : ''
   const orderLine = o.id
@@ -152,6 +159,7 @@ export function renderShippedOrderEmailHtml(o: ShippedOrderEmailData): string {
 <p style="margin:0;color:${COLORS.body};font-size:15px;line-height:1.6;">Hi ${escapeHtml(o.customerName || 'there')}, your Katayama Creations order is on its way.</p>
 ${orderLine}
 ${trackingBlock}
+${customerNotesBlock}
 <p style="margin:18px 0 0;color:${COLORS.body};font-size:14px;line-height:1.6;">Thank you for your order. Keep an eye on your mailbox for your bookish surprise.</p>`
 
   return wrapEmail(content, `You received this email because your ${SITE_NAME} order was marked as shipped.`, tracking ? `Your order has shipped. Tracking: ${tracking}` : 'Your order has shipped.')
@@ -159,11 +167,17 @@ ${trackingBlock}
 
 export function renderShippedOrderEmailText(o: ShippedOrderEmailData): string {
   const lines: string[] = []
+  const customerNotes = (o.customerNotes || '').trim()
   lines.push(`Hi ${o.customerName || 'there'},`)
   lines.push('')
   lines.push('Your Katayama Creations order has shipped.')
   if (o.id) lines.push(`Order: ${o.id}`)
   if ((o.trackingNumber || '').trim()) lines.push(`Tracking number: ${o.trackingNumber!.trim()}`)
+  if (customerNotes) {
+    lines.push('')
+    lines.push('Notes from Katayama Creations:')
+    lines.push(customerNotes)
+  }
   lines.push('')
   lines.push('Thank you for your order.')
   return lines.join('\n')
