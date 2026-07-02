@@ -551,6 +551,7 @@
     updateUser,
     logout,
     handleAuthCallback,
+    refreshSession,
     AuthError,
     MissingIdentityError,
   } from 'https://esm.sh/@netlify/identity@1.0.0?bundle'
@@ -706,12 +707,18 @@
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
+  async function getAuthToken() {
+    const refreshed = await refreshSession().catch(() => null);
+    if (refreshed) return refreshed;
+    const nfJwt = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
+    return nfJwt ? decodeURIComponent(nfJwt[1]) : null;
+  }
+
   async function loadOrders(user) {
     const status = document.getElementById('ordersStatus');
     const list = document.getElementById('ordersList');
     status.textContent = 'Loading…';
-    const nfJwt = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
-    const token = nfJwt ? decodeURIComponent(nfJwt[1]) : null;
+    const token = await getAuthToken();
     if (!token) { status.textContent = 'Please log in again to see your orders.'; return; }
     try {
       const res = await fetch('/.netlify/functions/list-orders', {
@@ -769,8 +776,7 @@
     btn.textContent = 'Saving…';
     try {
       await updateUser({ password: pw });
-      const nfJwt = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
-      const token = nfJwt ? decodeURIComponent(nfJwt[1]) : null;
+      const token = await getAuthToken();
       if (token) {
         fetch('/.netlify/functions/password-changed-email', {
           method: 'POST',
@@ -799,8 +805,7 @@
     const status = document.getElementById('myMsgStatus');
     const list = document.getElementById('myMsgList');
     try {
-      const nfJwt = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
-      const token = nfJwt ? decodeURIComponent(nfJwt[1]) : null;
+      const token = await getAuthToken();
       if (!token) { status.textContent = ''; list.innerHTML = ''; return; }
       const res = await fetch('/.netlify/functions/user-messages', {
         headers: { Authorization: `Bearer ${token}` },
@@ -853,6 +858,7 @@
     loadMyMessages();
     setInterval(loadMyMessages, 30000);
     checkLoginMessagePopup();
+    setTimeout(checkLoginMessagePopup, 1200);
   }
   window._refreshUserMessages = loadMyMessages;
 
@@ -861,8 +867,7 @@
   // notifications the bell uses; each notification is only popped once per browser session.
   async function checkLoginMessagePopup() {
     try {
-      const nfJwt = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
-      const token = nfJwt ? decodeURIComponent(nfJwt[1]) : null;
+      const token = await getAuthToken();
       if (!token) return;
       const res = await fetch('/.netlify/functions/user-notifications', {
         headers: { Authorization: `Bearer ${token}` },
@@ -924,8 +929,7 @@
     document.getElementById('userThreadReplyText').value = '';
 
     try {
-      const nfJwt = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
-      const token = nfJwt ? decodeURIComponent(nfJwt[1]) : null;
+      const token = await getAuthToken();
       if (!token) throw new Error('Not signed in');
 
       const res = await fetch(`/.netlify/functions/message-replies?messageId=${id}`, {
@@ -984,8 +988,7 @@
     btn.disabled = true;
     btn.textContent = 'Sending…';
     try {
-      const nfJwt = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
-      const token = nfJwt ? decodeURIComponent(nfJwt[1]) : null;
+      const token = await getAuthToken();
       if (!token) throw new Error('Not signed in');
       const res = await fetch(`/.netlify/functions/message-replies?messageId=${userThreadMsgId}`, {
         method: 'POST',
@@ -1006,8 +1009,7 @@
   window._deleteMsg = async function(id) {
     if (!confirm('Delete this message? This cannot be undone.')) return;
     try {
-      const nfJwt = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
-      const token = nfJwt ? decodeURIComponent(nfJwt[1]) : null;
+      const token = await getAuthToken();
       if (!token) throw new Error('Not signed in');
       const res = await fetch('/.netlify/functions/delete-message', {
         method: 'POST',
@@ -1037,8 +1039,7 @@
     btn.textContent = 'Sending…';
 
     try {
-      const nfJwt = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
-      const token = nfJwt ? decodeURIComponent(nfJwt[1]) : null;
+      const token = await getAuthToken();
       if (!token) throw new Error('Not signed in');
       const res = await fetch('/.netlify/functions/send-message', {
         method: 'POST',
@@ -1084,8 +1085,7 @@
     confirmDeleteBtn.textContent = 'Deleting…';
     const deleteError = document.getElementById('deleteError');
     deleteError.classList.remove('show');
-    const nfJwt = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
-    const token = nfJwt ? decodeURIComponent(nfJwt[1]) : null;
+    const token = await getAuthToken();
     if (!token) {
       deleteError.textContent = 'Session expired. Please log in again.';
       deleteError.classList.add('show');
