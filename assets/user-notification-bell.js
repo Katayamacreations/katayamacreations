@@ -1,6 +1,6 @@
 (function () {
   var POLL_MS = 30000;
-  var bell, badge, dropdown, list;
+  var bell, badge, dropdown, list, popup;
 
   function el(tag, attrs, children) {
     var e = document.createElement(tag);
@@ -103,6 +103,95 @@
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
+  function ensurePopup() {
+    if (popup) return popup;
+    popup = document.getElementById('loginMsgPopup');
+    if (popup) return popup;
+    popup = el('div', {
+      id: 'loginMsgPopup',
+      style: {
+        display: 'none', position: 'fixed', inset: '0', background: 'rgba(0,0,0,0.7)',
+        zIndex: '10000', alignItems: 'center', justifyContent: 'center', padding: '20px'
+      }
+    }, [
+      el('div', {
+        style: {
+          background: 'linear-gradient(160deg,#2d1b46,#1e1232)', border: '1px solid rgba(192,192,210,0.22)',
+          borderRadius: '14px', padding: '24px', maxWidth: '420px', width: '100%',
+          boxShadow: '0 22px 70px rgba(0,0,0,0.5)'
+        }
+      }, [
+        el('div', { style: { fontSize: '28px', marginBottom: '10px' } }, ['\u{1F4AC}']),
+        el('h3', { id: 'loginMsgPopupTitle', style: { margin: '0 0 8px', fontSize: '21px', color: '#e8e3f0' } }, ['You have a new message']),
+        el('p', { id: 'loginMsgPopupBody', style: { margin: '0 0 22px', color: '#c0bcd0', fontSize: '14px', lineHeight: '1.5' } }),
+        el('div', { style: { display: 'flex', gap: '10px', flexWrap: 'wrap' } }, [
+          el('button', {
+            type: 'button',
+            id: 'loginMsgPopupReply',
+            style: {
+              background: 'linear-gradient(135deg,#4a2d75,#6b48a6)', border: '1px solid rgba(192,192,210,0.25)',
+              borderRadius: '8px', color: '#e8e3f0', cursor: 'pointer', fontWeight: '700', padding: '10px 14px'
+            }
+          }, ['Read & reply']),
+          el('button', {
+            type: 'button',
+            id: 'loginMsgPopupDismiss',
+            style: {
+              background: 'rgba(192,192,210,0.12)', border: '1px solid rgba(192,192,210,0.18)',
+              borderRadius: '8px', color: '#e8e3f0', cursor: 'pointer', fontWeight: '700', padding: '10px 14px'
+            }
+          }, ['Maybe later'])
+        ])
+      ])
+    ]);
+    document.body.appendChild(popup);
+    return popup;
+  }
+
+  function openMessageTarget(relatedId) {
+    if (relatedId && typeof window._openUserThread === 'function') {
+      window._openUserThread(relatedId);
+      return;
+    }
+    if (relatedId) {
+      window.location.href = '/account.html#messages';
+      return;
+    }
+    window.location.href = '/account.html';
+  }
+
+  function showLoginMessagePopup(data) {
+    var fresh = data.filter(function (n) {
+      return !(n.is_read || n.isRead) &&
+        (n.type === 'message' || n.type === 'reply') &&
+        (n.related_id || n.relatedId);
+    });
+    if (!fresh.length) return;
+
+    var shown = [];
+    try { shown = JSON.parse(sessionStorage.getItem('shownMsgPopups') || '[]'); } catch (_) {}
+    var unseen = fresh.filter(function (n) { return shown.indexOf(n.id) === -1; });
+    if (!unseen.length) return;
+
+    var latest = unseen[0];
+    var relatedId = Number(latest.related_id || latest.relatedId);
+    var popupEl = ensurePopup();
+    document.getElementById('loginMsgPopupTitle').textContent =
+      fresh.length > 1 ? 'You have ' + fresh.length + ' new messages' : 'You have a new message';
+    document.getElementById('loginMsgPopupBody').textContent =
+      String(latest.body || latest.title || 'The team sent you a message.').slice(0, 240);
+    popupEl.style.display = 'flex';
+
+    sessionStorage.setItem('shownMsgPopups', JSON.stringify(shown.concat(fresh.map(function (n) { return n.id; }))));
+    document.getElementById('loginMsgPopupReply').onclick = function () {
+      popupEl.style.display = 'none';
+      openMessageTarget(relatedId);
+    };
+    document.getElementById('loginMsgPopupDismiss').onclick = function () {
+      popupEl.style.display = 'none';
+    };
+  }
+
   function renderItem(n) {
     var icons = { reply: '\u{1F4AC}', order: '\u{1F4E6}' };
     var ago = timeAgo(n.created_at || n.createdAt);
@@ -151,6 +240,7 @@
       .then(function (data) {
         _cache = data;
         render(data);
+        showLoginMessagePopup(data);
         if (data.some(function (n) { return !(n.is_read || n.isRead); })) {
           refreshMessages();
         }
@@ -215,6 +305,7 @@
         var unread = data.filter(function (n) { return !(n.is_read || n.isRead); }).length;
         badge.textContent = unread > 99 ? '99+' : String(unread);
         badge.style.display = unread ? 'inline-block' : 'none';
+        showLoginMessagePopup(data);
         if (unread && !hadUnread) {
           refreshMessages();
         }
