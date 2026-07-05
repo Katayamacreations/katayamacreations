@@ -249,7 +249,7 @@ export const SAMPLE_ORDER: OrderData = {
     {
       bundleId: 'deluxe',
       bundleLabel: 'The Deluxe Date',
-      price: 25,
+      price: 27,
       qty: 1,
       theme: 'thriller',
       color: 'black',
