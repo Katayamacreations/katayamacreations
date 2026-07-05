@@ -71,64 +71,6 @@
       color: #e8e3f0;
       border-color: #c0bcd0;
     }
-    .announcement {
-      background: linear-gradient(135deg, #4a2d75 0%, #6b48a6 60%, #8a63c9 100%);
-      color: #f3eefb;
-      text-align: center;
-      padding: 14px 20px;
-      font-size: 16px;
-      line-height: 1.5;
-      border-bottom: 1px solid rgba(192, 192, 210, 0.25);
-      box-shadow: 0 2px 12px rgba(0,0,0,0.35);
-    }
-    .announcement .announcement-title {
-      display: block;
-      font-weight: bold;
-      font-size: 18px;
-      letter-spacing: 0.5px;
-      margin-bottom: 4px;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.4);
-    }
-    .announcement a {
-      color: #fff;
-      font-weight: bold;
-      text-decoration: underline;
-    }
-    .announcement a:hover { color: #f0d8a8; }
-    @media (max-width: 768px) {
-      .announcement { font-size: 14px; padding: 12px 14px; }
-      .announcement .announcement-title { font-size: 16px; }
-    }
-    .flash-sale {
-      background: linear-gradient(135deg, #7a1f3d 0%, #b8323f 55%, #d9682e 100%);
-      color: #fff4ec;
-      text-align: center;
-      padding: 14px 20px;
-      font-size: 16px;
-      line-height: 1.5;
-      border-bottom: 1px solid rgba(255, 220, 200, 0.3);
-      box-shadow: 0 2px 12px rgba(0,0,0,0.35);
-    }
-    .flash-sale .flash-sale-title {
-      display: block;
-      font-weight: bold;
-      font-size: 18px;
-      letter-spacing: 0.5px;
-      margin-bottom: 4px;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.4);
-    }
-    .flash-sale .flash-old { text-decoration: line-through; opacity: 0.8; }
-    .flash-sale .flash-new { font-weight: bold; color: #ffe1b0; }
-    .flash-sale a {
-      color: #fff;
-      font-weight: bold;
-      text-decoration: underline;
-    }
-    .flash-sale a:hover { color: #ffe1b0; }
-    @media (max-width: 768px) {
-      .flash-sale { font-size: 14px; padding: 12px 14px; }
-      .flash-sale .flash-sale-title { font-size: 16px; }
-    }
     .banner {
       width: 100%;
       margin: 0;
@@ -286,16 +228,6 @@
   </div>
 </header>
 
-<div class="announcement" role="region" aria-label="Giveaway announcement">
-  <span class="announcement-title">🎉 New Kindle E-Reader Giveaway Is Now Live! 🎉</span>
-  Enter to win a book box with a six-inch Matcha Kindle! You can buy tickets in the <a href="/dashboard.html">Custom Order</a> tab for $5 per ticket. Drawing will be July 4th!
-</div>
-
-<div class="flash-sale" role="region" aria-label="Flash sale announcement">
-  <span class="flash-sale-title">⚡ Flash Sale — Ends July 4th! ⚡</span>
-  Limited-time prices on every book box: Blind Date with a Book Box <span class="flash-old">$45</span> <span class="flash-new">$37</span>, Blind Date with a Book <span class="flash-old">$25</span> <span class="flash-new">$20</span>, Kindle Blind Date Box <span class="flash-old">$18</span> <span class="flash-new">$15</span>. <a href="/dashboard.html">Order now</a> before the sale ends!
-</div>
-
 <div class="banner">
   <img src="/assets/katayama-banner-new.png" alt="Katayama Creations banner — fantasy scene with open book, dragons, castles, and a starry purple sky">
 </div>
@@ -313,14 +245,14 @@
 <section class="section" id="shop">
   <h2>Choose Your Book Date</h2>
   <div class="cards" id="shopCards">
-    <a href="/dashboard.html" class="book-tile" aria-label="Order the $15 Kindle Blind Date Box (flash sale, was $18)">
-      <img src="/assets/kindle-blind-date.png" alt="$15 Kindle Blind Date Box (flash sale, was $18) — includes Kindle download code, 2 coasters, self-care goodies, tea or hot chocolate, stickers, pin, and a magnetic bookmark">
+    <a href="/dashboard.html" class="book-tile" aria-label="Order the $18 Kindle Blind Date Box">
+      <img src="/assets/kindle-blind-date.png" alt="$18 Kindle Blind Date Box — includes Kindle download code, 2 coasters, self-care goodies, tea or hot chocolate, stickers, pin, and a magnetic bookmark">
     </a>
-    <a href="/dashboard.html" class="book-tile" aria-label="Order the $20 Blind Date with a Book (flash sale, was $25)">
-      <img src="/assets/blind-date-book.png" alt="$20 Blind Date with a Book (flash sale, was $25) — includes self care items, pen/highlighter, tabs, stickers, a bookmark, and hot chocolate">
+    <a href="/dashboard.html" class="book-tile" aria-label="Order the $25 Blind Date with a Book">
+      <img src="/assets/blind-date-book.png" alt="$25 Blind Date with a Book — includes self care items, pen/highlighter, tabs, stickers, a bookmark, and hot chocolate">
     </a>
-    <a href="/dashboard.html" class="book-tile" aria-label="Order the $37 Blind Date with a Book Box (flash sale, was $45) — the ultimate bookish surprise">
-      <img src="/assets/blind-date-book-deluxe.png" alt="$37 Blind Date with a Book Box (flash sale, was $45) — the ultimate bookish surprise with double the goodies, tote, pencil bag, glass bookish cup, tea, and hot chocolate">
+    <a href="/dashboard.html" class="book-tile" aria-label="Order the $45 Blind Date with a Book Box — the ultimate bookish surprise">
+      <img src="/assets/blind-date-book-deluxe.png" alt="$45 Blind Date with a Book Box — the ultimate bookish surprise with double the goodies, tote, pencil bag, glass bookish cup, tea, and hot chocolate">
     </a>
   </div>
 </section>
