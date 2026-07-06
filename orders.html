@@ -766,6 +766,7 @@
   }
 
   const REVIEW_WAIT_DAYS = 14;
+  const CANCEL_WINDOW_MS = 24 * 60 * 60 * 1000;
 
   function canReview(order) {
     if ((order.status || '').toLowerCase() === 'delivered') return { allowed: true };
@@ -776,6 +777,13 @@
       return { allowed: false, daysLeft: Math.ceil(REVIEW_WAIT_DAYS - daysPassed) };
     }
     return { allowed: false, daysLeft: REVIEW_WAIT_DAYS };
+  }
+
+  function canCancel(order) {
+    const state = (order.status || 'pending').toLowerCase();
+    if (['cancelled', 'shipped', 'delivered'].includes(state)) return false;
+    const placed = order.placedAt ? new Date(order.placedAt) : null;
+    return !!placed && !isNaN(placed.getTime()) && Date.now() - placed.getTime() <= CANCEL_WINDOW_MS;
   }
 
   function renderOrder(o) {
@@ -793,6 +801,7 @@
       return `${it.qty}× ${escapeHtml(it.bundleLabel || '')}${extras ? ` <span style="color:#8b87a0;">(${escapeHtml(extras)})</span>` : ''}`;
     }).join('<br>');
     const stateClass = (o.status || 'pending').toLowerCase();
+    const cancelAllowed = canCancel(o);
 
     let reviewBtnHtml;
     if (reviewAllowed) {
@@ -839,14 +848,57 @@
       </div>
       <div class="order-actions">
         <button type="button" class="button secondary" data-act="reorder">Re-order this</button>
+        ${cancelAllowed ? '<button type="button" class="button secondary" data-act="cancel" style="border-color:rgba(230,115,92,0.45);color:#f0b8a8;">Cancel order</button>' : ''}
         ${reviewBtnHtml}
       </div>
+      <div class="order-meta-row" data-role="cancel-msg" style="margin-top:8px;"></div>
       ${reviewStatusHtml}
     `;
     li.querySelector('[data-act="reorder"]').addEventListener('click', () => reorder(o));
+    const cancelBtn = li.querySelector('[data-act="cancel"]');
+    if (cancelBtn) cancelBtn.addEventListener('click', () => cancelOrder(o, li));
     const reviewBtn = li.querySelector('[data-act="review"]');
     if (reviewBtn) reviewBtn.addEventListener('click', () => openReviewModal(o));
     return li;
+  }
+
+  async function cancelOrder(order, li) {
+    if (!order || !order.id) return;
+    if (!confirm('Cancel this order? This can only be done within 24 hours of placing it.')) return;
+    const msg = li.querySelector('[data-role="cancel-msg"]');
+    const btn = li.querySelector('[data-act="cancel"]');
+    msg.textContent = 'Cancelling…';
+    msg.style.color = '#8b87a0';
+    btn.disabled = true;
+    const token = await getAuthToken();
+    if (!token) {
+      msg.textContent = 'Please log in again to cancel this order.';
+      msg.style.color = '#f0b8a8';
+      btn.disabled = false;
+      return;
+    }
+    try {
+      const res = await fetch('/.netlify/functions/cancel-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id: order.id }),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+      msg.textContent = 'Order cancelled. Confirmation emails have been sent.';
+      msg.style.color = '#b8e0c2';
+      await loadOrders();
+    } catch (err) {
+      console.error(err);
+      msg.textContent = err && err.message ? err.message : 'Cancellation failed. Please try again.';
+      msg.style.color = '#f0b8a8';
+      btn.disabled = false;
+    }
   }
 
   function reorder(o) {
