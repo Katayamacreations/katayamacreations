@@ -44,6 +44,14 @@ export interface ShippedOrderEmailData {
   customerNotes?: string
 }
 
+export interface CancelledOrderEmailData {
+  id?: string
+  customerName?: string
+  email?: string
+  total?: string
+  cancelledAt?: string
+}
+
 // True when the customer provided a billing address that differs from the shipping address.
 function hasSeparateBilling(o: OrderData): boolean {
   if (o.billingSameAsShipping) return false
@@ -180,6 +188,52 @@ export function renderShippedOrderEmailText(o: ShippedOrderEmailData): string {
   }
   lines.push('')
   lines.push('Thank you for your order.')
+  return lines.join('\n')
+}
+
+export function renderCancelledOrderCustomerEmailHtml(o: CancelledOrderEmailData): string {
+  const orderLine = o.id
+    ? `<p style="margin:8px 0 0;color:${COLORS.muted};font-size:13px;">Order ${escapeHtml(o.id)}</p>`
+    : ''
+  const content = `<h1 style="margin:0 0 8px;font-size:22px;color:${COLORS.heading};">Your order was cancelled</h1>
+<p style="margin:0;color:${COLORS.body};font-size:15px;line-height:1.6;">Hi ${escapeHtml(o.customerName || 'there')}, your Katayama Creations order has been cancelled.</p>
+${orderLine}
+<p style="margin:18px 0 0;color:${COLORS.body};font-size:14px;line-height:1.6;">No further action is needed. If you already sent payment, please reply to this email so we can help with the next steps.</p>`
+
+  return wrapEmail(content, `You received this email because your ${SITE_NAME} order was cancelled.`, 'Your order was cancelled.')
+}
+
+export function renderCancelledOrderCustomerEmailText(o: CancelledOrderEmailData): string {
+  const lines: string[] = []
+  lines.push(`Hi ${o.customerName || 'there'},`)
+  lines.push('')
+  lines.push('Your Katayama Creations order has been cancelled.')
+  if (o.id) lines.push(`Order: ${o.id}`)
+  lines.push('')
+  lines.push('No further action is needed. If you already sent payment, please reply to this email so we can help with the next steps.')
+  return lines.join('\n')
+}
+
+export function renderCancelledOrderAdminEmailHtml(o: CancelledOrderEmailData): string {
+  const cancelled = o.cancelledAt ? fmtDeadline(o.cancelledAt) : 'now'
+  const content = `<h1 style="margin:0 0 8px;font-size:22px;color:${COLORS.heading};">Customer cancelled an order</h1>
+<p style="margin:0;color:${COLORS.body};font-size:15px;line-height:1.6;"><strong>${escapeHtml(o.customerName || 'A customer')}</strong> cancelled order ${escapeHtml(o.id || '')}.</p>
+<div style="margin:18px 0 0;padding:12px 14px;background:rgba(230,115,92,0.12);border:1px solid rgba(230,115,92,0.3);border-radius:12px;color:${COLORS.body};font-size:14px;line-height:1.5;">
+  <strong style="color:${COLORS.heading};">Customer:</strong> ${escapeHtml(o.email || '')}<br>
+  <strong style="color:${COLORS.heading};">Total:</strong> $${escapeHtml(o.total || '0.00')}<br>
+  <strong style="color:${COLORS.heading};">Cancelled:</strong> ${escapeHtml(cancelled)}
+</div>`
+
+  return wrapEmail(content, `This cancellation notice was sent by ${SITE_NAME}.`, `Order ${o.id || ''} was cancelled.`)
+}
+
+export function renderCancelledOrderAdminEmailText(o: CancelledOrderEmailData): string {
+  const lines: string[] = []
+  lines.push(`Customer cancelled order ${o.id || ''}`)
+  lines.push('')
+  lines.push(`Customer: ${o.customerName || 'unknown'} <${o.email || ''}>`)
+  lines.push(`Total: $${o.total || '0.00'}`)
+  if (o.cancelledAt) lines.push(`Cancelled: ${fmtDeadline(o.cancelledAt)}`)
   return lines.join('\n')
 }
 

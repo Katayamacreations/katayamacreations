@@ -714,10 +714,20 @@
     return nfJwt ? decodeURIComponent(nfJwt[1]) : null;
   }
 
+  const CANCEL_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+  function canCancelOrder(order) {
+    const state = (order.status || 'pending').toLowerCase();
+    if (['cancelled', 'shipped', 'delivered'].includes(state)) return false;
+    const placed = order.placedAt ? new Date(order.placedAt) : null;
+    return !!placed && !isNaN(placed.getTime()) && Date.now() - placed.getTime() <= CANCEL_WINDOW_MS;
+  }
+
   async function loadOrders(user) {
     const status = document.getElementById('ordersStatus');
     const list = document.getElementById('ordersList');
     status.textContent = 'Loading…';
+    list.innerHTML = '';
     const token = await getAuthToken();
     if (!token) { status.textContent = 'Please log in again to see your orders.'; return; }
     try {
@@ -739,6 +749,7 @@
         }) : '';
         const items = (o.cart || []).map(it => `${it.qty}× ${it.bundleLabel}`).join(', ');
         const stateClass = (o.status || 'pending').toLowerCase();
+        const cancelAllowed = canCancelOrder(o);
         li.innerHTML = `
           <div class="order-head">
             <div>
@@ -748,12 +759,55 @@
             <div class="order-total">${escapeHtml('$' + (o.total || '0.00'))}</div>
           </div>
           <div class="order-cart">${escapeHtml(items)}</div>
+          ${cancelAllowed ? '<div style="margin-top:10px;"><button type="button" class="button" data-act="cancel-order" style="padding:8px 12px;font-size:13px;background:transparent;border:1px solid rgba(230,115,92,0.45);color:#f0b8a8;box-shadow:none;">Cancel order</button></div>' : ''}
+          <div data-role="cancel-msg" style="font-size:12px;color:#8b87a0;margin-top:8px;"></div>
         `;
+        const cancelBtn = li.querySelector('[data-act="cancel-order"]');
+        if (cancelBtn) cancelBtn.addEventListener('click', () => cancelOrder(o, li));
         list.appendChild(li);
       });
     } catch (err) {
       console.error(err);
       status.textContent = "Couldn't load past orders right now. Please refresh and try again.";
+    }
+  }
+
+  async function cancelOrder(order, li) {
+    if (!order || !order.id) return;
+    if (!confirm('Cancel this order? This can only be done within 24 hours of placing it.')) return;
+    const msg = li.querySelector('[data-role="cancel-msg"]');
+    const btn = li.querySelector('[data-act="cancel-order"]');
+    msg.textContent = 'Cancelling…';
+    msg.style.color = '#8b87a0';
+    btn.disabled = true;
+    const token = await getAuthToken();
+    if (!token) {
+      msg.textContent = 'Please log in again to cancel this order.';
+      msg.style.color = '#f0b8a8';
+      btn.disabled = false;
+      return;
+    }
+    try {
+      const res = await fetch('/.netlify/functions/cancel-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id: order.id }),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+      msg.textContent = 'Order cancelled. Confirmation emails have been sent.';
+      msg.style.color = '#b8e0c2';
+      await loadOrders();
+    } catch (err) {
+      console.error(err);
+      msg.textContent = err && err.message ? err.message : 'Cancellation failed. Please try again.';
+      msg.style.color = '#f0b8a8';
+      btn.disabled = false;
     }
   }
 
