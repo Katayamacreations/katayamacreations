@@ -331,6 +331,8 @@
     .badge.admin { color: #d4c0f0; border-color: rgba(212, 192, 240, 0.4); }
     .badge.unconfirmed { color: #f0b8a8; border-color: rgba(230, 115, 92, 0.4); }
     .badge.warning { color: #f0d8a8; border-color: rgba(240, 200, 120, 0.4); }
+    .badge.cart-active { color: #b8e0c2; border-color: rgba(116, 191, 137, 0.45); background: rgba(36, 92, 52, 0.24); }
+    .cart-updated { color: #8b87a0; font-size: 10px; margin-top: 3px; white-space: nowrap; }
 
     .stock-inline {
       display: flex;
@@ -1371,6 +1373,9 @@
       const lastSent = (needsConfirm && u.confirmationSentAt)
         ? `<div style="font-size:10px; color:#8b87a0; margin-top:3px;">last sent ${new Date(u.confirmationSentAt).toLocaleString()}</div>`
         : '';
+      const cartStatus = u.cart && u.cart.itemCount > 0
+        ? `<span class="badge cart-active">${u.cart.itemCount} item${u.cart.itemCount === 1 ? '' : 's'} · $${Number(u.cart.subtotal || 0).toFixed(2)}</span><div class="cart-updated">updated ${new Date(u.cart.updatedAt).toLocaleString()}</div>`
+        : '<span style="color:#8b87a0; font-size:11px;">Empty</span>';
       const selectCell = needsConfirm
         ? `<td style="text-align:center;"><input type="checkbox" class="resend-pick" data-email="${escapeHtml(u.email || '')}" aria-label="Select ${escapeHtml(u.email || '')} for resend"></td>`
         : '<td></td>';
@@ -1391,12 +1396,13 @@
         <td class="email">${escapeHtml(u.email || '')}</td>
         <td>${escapeHtml(u.fullName || '—')}</td>
         <td>${created}</td>
+        <td>${cartStatus}</td>
         <td>${roles}${confirmed}${lastSent}</td>
         <td style="text-align:right; white-space:nowrap;">${confirmBtn}${actionBtn}${deleteBtn}<span class="role-msg" data-uid="${escapeHtml(u.id)}" style="display:none; font-size:11px; margin-left:6px;"></span></td>
       </tr>`;
     }).join('');
     wrap.innerHTML = `<table class="users-table">
-      <thead><tr><th style="width:28px;"><input type="checkbox" id="resendPickAll" aria-label="Select all unconfirmed"></th><th>Email</th><th>Name</th><th>Joined</th><th>Roles</th><th>Actions</th></tr></thead>
+      <thead><tr><th style="width:28px;"><input type="checkbox" id="resendPickAll" aria-label="Select all unconfirmed"></th><th>Email</th><th>Name</th><th>Joined</th><th>Cart</th><th>Roles</th><th>Actions</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
     wrap.querySelectorAll('[data-act]').forEach(btn => {
