@@ -438,6 +438,20 @@ document.getElementById('menuToggle').addEventListener('click', function() {
   }
   function writeCart(cart) {
     try { sessionStorage.setItem(CART_KEY, JSON.stringify(cart)); } catch (_) {}
+    syncCartPresence(cart);
+  }
+  function getAuthToken() {
+    var match = document.cookie.match(/(?:^|; )nf_jwt=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : null;
+  }
+  function syncCartPresence(cart) {
+    var token = getAuthToken();
+    if (!token) return;
+    fetch('/.netlify/functions/update-cart', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ items: cart.map(function (item) { return { price: item.price, qty: item.qty }; }) })
+    }).catch(function () {});
   }
   function updateBag() {
     var count = readCart().reduce(function (sum, it) { return sum + (it.qty || 1); }, 0);

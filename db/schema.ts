@@ -70,3 +70,11 @@ export const messageReplies = pgTable("message_replies", {
   body: text("body").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const userCarts = pgTable("user_carts", {
+  userId: text("user_id").primaryKey(),
+  userEmail: text("user_email").notNull().default(""),
+  itemCount: integer("item_count").notNull().default(0),
+  subtotal: numeric("subtotal", { precision: 10, scale: 2 }).notNull().default("0"),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});

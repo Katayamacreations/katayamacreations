@@ -2,6 +2,8 @@ import type { Context } from '@netlify/functions'
 import { admin } from '@netlify/identity'
 import { requireAdmin, OWNER_EMAIL } from './_admin.mjs'
 import { isEmailVerified } from './_verification.mjs'
+import { db } from '../../db/index.js'
+import { userCarts } from '../../db/schema.js'
 
 export default async (_req: Request, _context: Context) => {
   const guard = await requireAdmin()
@@ -16,6 +18,9 @@ export default async (_req: Request, _context: Context) => {
     return new Response(message, { status: 502 })
   }
 
+  const carts = await db.select().from(userCarts)
+  const cartsByUserId = new Map(carts.map((cart) => [cart.userId, cart]))
+
   const summarized = (users || []).map((u) => {
     const meta = (u.userMetadata || {}) as Record<string, unknown>
     const fullName =
@@ -24,6 +29,7 @@ export default async (_req: Request, _context: Context) => {
       u.name ||
       ''
     const roles = Array.isArray(u.roles) ? u.roles : []
+    const cart = u.id ? cartsByUserId.get(u.id) : undefined
     return {
       id: u.id || '',
       email: u.email || '',
@@ -39,6 +45,13 @@ export default async (_req: Request, _context: Context) => {
       confirmationSentAt: u.confirmationSentAt || '',
       createdAt: u.createdAt || '',
       roles,
+      cart: cart
+        ? {
+            itemCount: cart.itemCount,
+            subtotal: Number(cart.subtotal),
+            updatedAt: cart.updatedAt || '',
+          }
+        : null,
     }
   })
 

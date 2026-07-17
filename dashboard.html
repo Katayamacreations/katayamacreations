@@ -988,6 +988,7 @@
   // cart state
   let cart = [];
   let tipAmount = 0;
+  let cartSyncTimer = null;
   try {
     const raw = sessionStorage.getItem(CART_KEY);
     if (raw) cart = JSON.parse(raw);
@@ -1006,6 +1007,25 @@
 
   function saveCart() {
     try { sessionStorage.setItem(CART_KEY, JSON.stringify(cart)); } catch (_) {}
+    scheduleCartSync();
+  }
+
+  function scheduleCartSync() {
+    if (!currentUser) return;
+    clearTimeout(cartSyncTimer);
+    cartSyncTimer = setTimeout(syncCartPresence, 250);
+  }
+
+  async function syncCartPresence() {
+    const token = await getAuthToken();
+    if (!token) return;
+    try {
+      await fetch('/.netlify/functions/update-cart', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ items: cart.map(({ price, qty }) => ({ price, qty })) }),
+      });
+    } catch (_) {}
   }
   function findBundle(id) { return BUNDLES.find(b => b.id === id); }
 
